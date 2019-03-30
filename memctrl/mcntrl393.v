@@ -1167,6 +1167,7 @@ module  mcntrl393 #(
                mcntrl_tiled_linear_rw #(
                 .ADDRESS_NUMBER                (ADDRESS_NUMBER),
                 .COLADDR_NUMBER                (COLADDR_NUMBER),
+                .NUM_XFER_BITS                 (NUM_XFER_BITS),
                 .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
                 .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
                 .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),

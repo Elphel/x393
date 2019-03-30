@@ -36,7 +36,8 @@
  * with at least one of the Free Software programs.
  */
  
-        parameter FPGA_VERSION =          32'h03930104;      // serial - 17.4 - added RAW mode (for tiff files) timing met
+        parameter FPGA_VERSION =          32'h03930105;      // parallel - 17.4 - fixing wide raw frames
+//      parameter FPGA_VERSION =          32'h03930104;      // parallel - 17.4 - added RAW mode (for tiff files) timing met
 //      parameter FPGA_VERSION =          32'h03930103;      // serial - 17.4 - trigger polarity on GP1 inverted
 //      parameter FPGA_VERSION =          32'h03930102;      // serial - 17.4 - disabling SOF when setting interface, bug fix
 //      parameter FPGA_VERSION =          32'h03930101;      // serial - 17.4 - disabling SOF when setting interface - met

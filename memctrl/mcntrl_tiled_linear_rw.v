@@ -45,6 +45,7 @@
 module  mcntrl_tiled_linear_rw#(
     parameter ADDRESS_NUMBER=                   15,
     parameter COLADDR_NUMBER=                   10,
+    parameter NUM_XFER_BITS=                     6,    // number of bits to specify transfer length - linear mode
     parameter FRAME_WIDTH_BITS=                 13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height 
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64). Used as NUM_XFER_BITS in LINEAR mode
@@ -594,11 +595,8 @@ module  mcntrl_tiled_linear_rw#(
                 row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
 */
             lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH] || (!linear_mode && (row_left[MAX_TILE_WIDTH:0] >= tile_cols)))?
-                                    (linear_mode ? {(MAX_TILE_WIDTH + 1){1'b1}}  : tile_cols):
+                                    (linear_mode ? (1<< NUM_XFER_BITS)  : tile_cols):
                                     row_left[MAX_TILE_WIDTH:0]; // 7 bits, max 'h40
-
-
-                                    
         end
 
 
@@ -722,9 +720,9 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (chn_rst || frame_start_r[0])     curr_x <= start_x;
         else if (xfer_start_r[0])                 curr_x <= last_in_row?0: curr_x + num_cols_r; // LINEAR:  xfer_num128_r;
         
-        if (mrst)                                 curr_y <= 0;
+        if (mrst)                                 curr_y <= 0;   
         else if (chn_rst || frame_start_r[0])     curr_y <= start_y;
-        else if (xfer_start_r[0] && last_in_row)  curr_y <= next_y[FRAME_HEIGHT_BITS-1:0];
+        else if (xfer_start_r[0] && last_in_row)  curr_y <= next_y[FRAME_HEIGHT_BITS-1:0];  //FIXME: never happens last_in_row
                
         if      (mrst)                            last_block <= 0;
         else if (chn_rst || !busy_r)              last_block <= 0;
