@@ -91,7 +91,8 @@ module   simul_sensor12bits # (
     localparam   t_afterHACT=lline-nbpf-ngp1-ncols;   // 352
     localparam   t_lastline=   nrowa*lline+1;   // 1664
 
-reg   [15:0]   sensor_data[0:4095]; // up to 64 x 64 pixels // SuppressThisWarning VEditor - Will be assigned by $readmem
+//reg   [15:0]   sensor_data[0:4095]; // up to 64 x 64 pixels // SuppressThisWarning VEditor - Will be assigned by $readmem
+reg   [15:0]   sensor_data[0:65535]; // up to 1024 x 64 pixels // SuppressThisWarning VEditor - Will be assigned by $readmem
 //    $readmemh("sensor.dat",sensor_data);
 
 
@@ -114,8 +115,11 @@ wire   [15:0]   cntrd;
 wire         NMRST=!MRST;
 
 
-wire   [5:0] row_index=row[5:0]-new_bayer;
-wire   [5:0] col_index=col[5:0]-new_bayer;
+//wire   [5:0] row_index=row[5:0]-new_bayer;
+//wire   [5:0] col_index=col[5:0]-new_bayer;
+
+wire   [11:0] row_index=row-new_bayer;
+wire   [11:0] col_index=col-new_bayer;
 
 
 // random
@@ -133,13 +137,11 @@ assign      #1   cntrd=   cntr;
 
 
 
-//assign   #tDDO   D   =  OE?   {10{1'bz}}:   ((ihact || ibpf)?   ((ramp)?(col[9:0] + row[9:0]):(d_rand)): 10'b0); // just test pattern
-//assign   #tDDO   D   =  OE?   {10{1'bz}}:   ((ihact || ibpf)?   ((ramp)?(col[9:0] + row[9:0]):(sensor_data[{row_index[5:0],col_index[5:0]}])): 10'b0); // just test pattern
-//assign   #tDDO   D   =  OE?   {12{1'bz}}:   ((ihact || ibpf)?   ((ramp)?(col[11:0] + row[11:0]):(sensor_data[{row_index[5:0],col_index[5:0]}])): 12'b0); // just test pattern
-assign   #tDDO   D   =  OE?   {12{1'bz}}:   ((ihact || ibpf)?   ((ramp)?({row[11:8],8'h0} + col[11:0]):(sensor_data[{row_index[5:0],col_index[5:0]}])): 12'b0); // just test pattern
-//assign   #tDDO   BPF   = ibpf;
-//assign   #tDDO   HACT= ihact;
-//assign   #tDDO   VACT= ivact;
+//assign   #tDDO   D   =  OE?   {12{1'bz}}:   ((ihact || ibpf)?   ((ramp)?({row[11:8],8'h0} + col[11:0]):(sensor_data[{row_index[5:0],col_index[5:0]}])): 12'b0); // just test pattern
+assign   #tDDO   D   =  OE?   {12{1'bz}}:   ((ihact || ibpf)?   ((ramp)?({row[11:8],8'h0} + col[11:0]):(sensor_data[ncols * row_index + col_index])): 12'b0); // just test pattern
+
+
+
 assign   #tDDO1   BPF   = ibpf;
 assign   #tDDO1   HACT= ihact;
 assign   #tDDO1   VACT= ivact;
@@ -189,6 +191,7 @@ initial begin
     else if (SENSOR_IMAGE_TYPE == "NORM14")    $readmemh({`ROOTPATH,"/input_data/sensor_14.dat"},sensor_data);
     else if (SENSOR_IMAGE_TYPE == "NORM15")    $readmemh({`ROOTPATH,"/input_data/sensor_15.dat"},sensor_data);
     else if (SENSOR_IMAGE_TYPE == "NORM16")    $readmemh({`ROOTPATH,"/input_data/sensor_16.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "TEST01-1044X36") $readmemh({`ROOTPATH,"/input_data/test01-1044x36.dat"},sensor_data);
     else begin
        $display ("WARNING: Unrecognized sensor image :'%s', using default 'NORM': input_data/sensor.dat",SENSOR_IMAGE_TYPE);
        $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);

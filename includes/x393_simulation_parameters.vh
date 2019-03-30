@@ -79,10 +79,10 @@
 //    parameter SENSOR_IMAGE_TYPE2 =       "NORM11", // 4",
 //    parameter SENSOR_IMAGE_TYPE3 =       "NORM12",
     
-    parameter SENSOR_IMAGE_TYPE0 =       "NORM13",
-    parameter SENSOR_IMAGE_TYPE1 =       "NORM13",
-    parameter SENSOR_IMAGE_TYPE2 =       "NORM14", // 4",
-    parameter SENSOR_IMAGE_TYPE3 =       "NORM15",
+    parameter SENSOR_IMAGE_TYPE0 =       "TEST01-1044X36", // "NORM13",
+    parameter SENSOR_IMAGE_TYPE1 =       "TEST01-1044X36", // "NORM13",
+    parameter SENSOR_IMAGE_TYPE2 =       "TEST01-1044X36", // "NORM14", // 4",
+    parameter SENSOR_IMAGE_TYPE3 =       "TEST01-1044X36", // "NORM15",
     
 
 
@@ -134,7 +134,7 @@
     parameter HISTOGRAM_START_PAGE =    20'h12345,
     parameter FRAME_WIDTH_ROUND_BITS =   9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
     
-    parameter WOI_WIDTH=                 64,
+    parameter WOI_WIDTH=                 1040, // 64,
     parameter WOI_HEIGHT=                32,
          
     parameter QUADRANTS_PXD_HACT_VACT =  6'h01, // 2 bits each: data-0, hact - 1, vact - 2 
