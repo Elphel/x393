@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 from __future__ import division
 from __future__ import print_function
 
@@ -47,7 +49,7 @@ except:
 try:
   outname = sys.argv[3]
 except IndexError:
-  outname = fname.replace(".tiff",".vh")  
+  outname = fname.replace(".tiff",".dat")  
 
 tif = Image.open(fname)
 

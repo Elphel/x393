@@ -79,17 +79,43 @@
 //    parameter SENSOR_IMAGE_TYPE2 =       "NORM11", // 4",
 //    parameter SENSOR_IMAGE_TYPE3 =       "NORM12",
     
-    parameter SENSOR_IMAGE_TYPE0 =       "TEST01-1044X36", // "NORM13",
-    parameter SENSOR_IMAGE_TYPE1 =       "TEST01-1044X36", // "NORM13",
-    parameter SENSOR_IMAGE_TYPE2 =       "TEST01-1044X36", // "NORM14", // 4",
-    parameter SENSOR_IMAGE_TYPE3 =       "TEST01-1044X36", // "NORM15",
+//    parameter SENSOR_IMAGE_TYPE0 =       "TEST01-1044X36", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE1 =       "TEST01-1044X36", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE2 =       "TEST01-1044X36", // "NORM14", // 4",
+//    parameter SENSOR_IMAGE_TYPE3 =       "TEST01-1044X36", // "NORM15",
     
+//    parameter SENSOR_IMAGE_TYPE0 =       "TEST01-260X36", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE1 =       "TEST01-260X36", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE2 =       "TEST01-260X36", // "NORM14", // 4",
+//    parameter SENSOR_IMAGE_TYPE3 =       "TEST01-260X36", // "NORM15",
 
 
-    parameter SIMULATE_CMPRS_CMODE0 =     CMPRS_CBIT_CMODE_JPEG18,
-    parameter SIMULATE_CMPRS_CMODE1 =     CMPRS_CBIT_CMODE_JPEG18,
-    parameter SIMULATE_CMPRS_CMODE2 =     CMPRS_CBIT_CMODE_JP4,
-    parameter SIMULATE_CMPRS_CMODE3 =     CMPRS_CBIT_CMODE_JP4,
+//    parameter SENSOR_IMAGE_TYPE0 =       "TEST01-260X68", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE1 =       "TEST01-260X68", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE2 =       "TEST01-260X68", // "NORM14", // 4",
+//    parameter SENSOR_IMAGE_TYPE3 =       "TEST01-260X68", // "NORM15",
+    
+//      parameter SENSOR_IMAGE_TYPE0 =       "260X260A", // "NORM13",
+//      parameter SENSOR_IMAGE_TYPE1 =       "260X260A", // "NORM13",
+//      parameter SENSOR_IMAGE_TYPE2 =       "260X260A", // "NORM14", // 4",
+//      parameter SENSOR_IMAGE_TYPE3 =       "260X260A", // "NORM15",
+
+      parameter SENSOR_IMAGE_TYPE0 =       "256X256A", // "NORM13",
+      parameter SENSOR_IMAGE_TYPE1 =       "256X256A", // "NORM13",
+      parameter SENSOR_IMAGE_TYPE2 =       "256X256A", // "NORM14", // 4",
+      parameter SENSOR_IMAGE_TYPE3 =       "256X256A", // "NORM15",
+
+
+//    parameter SENSOR_IMAGE_TYPE0 =       "512X512A", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE1 =       "512X512A", // "NORM13",
+//    parameter SENSOR_IMAGE_TYPE2 =       "512X512A", // "NORM14", // 4",
+//    parameter SENSOR_IMAGE_TYPE3 =       "512X512A", // "NORM15",
+
+//
+    parameter SIMULATE_CMPRS_CMODE0 =     CMPRS_CBIT_CMODE_JP4, // CMPRS_CBIT_CMODE_JPEG18,
+    parameter SIMULATE_CMPRS_CMODE1 =     CMPRS_CBIT_CMODE_JP4, // CMPRS_CBIT_CMODE_JPEG18,
+    parameter SIMULATE_CMPRS_CMODE2 =     CMPRS_CBIT_CMODE_JP4, // CMPRS_CBIT_CMODE_JPEG18, // CMPRS_CBIT_CMODE_JP4,
+    parameter SIMULATE_CMPRS_CMODE3 =     CMPRS_CBIT_CMODE_JP4, // CMPRS_CBIT_CMODE_JPEG18, // CMPRS_CBIT_CMODE_JP4,
 //    parameter SIMULATE_CMPRS_CMODE2 =     CMPRS_CBIT_CMODE_JPEG18,
 //    parameter SIMULATE_CMPRS_CMODE3 =     CMPRS_CBIT_CMODE_JPEG18,
 //        CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
@@ -134,8 +160,8 @@
     parameter HISTOGRAM_START_PAGE =    20'h12345,
     parameter FRAME_WIDTH_ROUND_BITS =   9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
     
-    parameter WOI_WIDTH=                 1040, // 64,
-    parameter WOI_HEIGHT=                32,
+    parameter WOI_WIDTH=                 256, // 512, // 256, //1040, // 64,
+    parameter WOI_HEIGHT=                256, // 512, // 256, // 64, // 32,
          
     parameter QUADRANTS_PXD_HACT_VACT =  6'h01, // 2 bits each: data-0, hact - 1, vact - 2 
                                                // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]

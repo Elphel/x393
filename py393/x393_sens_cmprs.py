@@ -155,7 +155,7 @@ class X393SensCmprs(object):
     x393Rtc =            None
     x393Membridge =      None
 
-    def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
+    def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None, nomargins = True): # False):
 #        global BUFFER_ADDRESS, BUFFER_LEN
         global BUFFER_ADDRESS, BUFFER_LEN, COMMAND_ADDRESS, DATAIN_ADDRESS, DATAOUT_ADDRESS
         global BUFFER_ADDRESS_H2D, BUFFER_LEN_H2D, BUFFER_ADDRESS_D2H, BUFFER_LEN_D2H, BUFFER_ADDRESS_BIDIR, BUFFER_LEN_BIDIR
@@ -173,6 +173,13 @@ class X393SensCmprs(object):
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
+                    if nomargins:
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 0 # 4
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 0
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["width"]=     vrlg.WOI_WIDTH + 0 #4
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 0
+                    
+                    
                     print ("Using simulation size sensor defaults ",SENSOR_DEFAULTS)
 
             except:
@@ -628,12 +635,15 @@ class X393SensCmprs(object):
 
     # moved before camsync to have a valid timestamo w/o special waiting
         if verbose >0 :
-            print ("===================== MEMORY_SENSOR =========================")
+            print ("===================== MEMORY_SENSOR =========================, mode= %d"%(cmode))
 
         window_height_memory = window_height
-        if cmode==vrlg.CMPRS_CBIT_CMODE_JP4:
+        if (cmode==vrlg.CMPRS_CBIT_CMODE_JP4) or (cmode==15): # vrlg.CMPRS_CBIT_CMODE_RAW):
             window_height_memory &= 0xfff0 # do not need extra margins
             num_burst_in_line &= 0xfffe    # make even (assuming left=0)
+            print ("===================== Mode is JP4 or raw =========================")
+        else:
+            print ("===================== Mode is neither JP4 nor raw =========================")
 
         self.x393Sensor.setup_sensor_memory (
             num_sensor =       num_sensor,              # input  [1:0] num_sensor;
