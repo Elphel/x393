@@ -595,7 +595,8 @@ module  mcntrl_tiled_linear_rw#(
                 row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
 */
             lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH] || (!linear_mode && (row_left[MAX_TILE_WIDTH:0] >= tile_cols)))?
-                                    (linear_mode ? (1<< NUM_XFER_BITS)  : tile_cols):
+//                                    (linear_mode ? (1<< NUM_XFER_BITS)  : tile_cols):
+                                    (linear_mode ? {1'b1,{NUM_XFER_BITS{1'b0}}} : tile_cols):
                                     row_left[MAX_TILE_WIDTH:0]; // 7 bits, max 'h40
         end
 
@@ -668,16 +669,16 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 // LINEAR matched
 // TILED and TILED_LIN only:        
         if (mrst) xfer_start_rd_r <= 0;
-        else      xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && !byte32;
+        else      xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && !byte32 && !linear_mode;
 
         if (mrst) xfer_start_wr_r <= 0;
-        else      xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && !byte32;
+        else      xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && !byte32 && !linear_mode;
 
         if (mrst) xfer_start32_rd_r <= 0;
-        else      xfer_start32_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && byte32;
+        else      xfer_start32_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && byte32 && !linear_mode;
 
         if (mrst) xfer_start32_wr_r <= 0;
-        else     xfer_start32_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && byte32;
+        else     xfer_start32_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && byte32 && !linear_mode;
         
         if (mrst) xfer_start_lin_rd_r <= 0;
         else      xfer_start_lin_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && linear_mode; 
