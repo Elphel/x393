@@ -418,14 +418,16 @@ module  x393_dut#(
   parameter PF_STRIPES=WOI_HEIGHT/PF_HEIGHT;
 `else  
   parameter PF_HEIGHT=0; // SuppressThisWarning VEditor - not used
-  parameter FULL_HEIGHT=WOI_HEIGHT+4;
   parameter PF_STRIPES=0; // SuppressThisWarning VEditor - not used
 `endif
+  parameter WOI_MARGINS = 0; // 4;
+
   parameter VIRTUAL_WIDTH=    FULL_WIDTH + HBLANK;
   parameter VIRTUAL_HEIGHT=   FULL_HEIGHT + BLANK_ROWS_BEFORE + BLANK_ROWS_AFTER;  //SuppressThisWarning Veditor UNUSED
   parameter TRIG_INTERFRAME=  100; /// extra 100 clock cycles between frames  //SuppressThisWarning Veditor UNUSED
   parameter TRIG_DELAY=      200; /// delay in sensor clock cycles // SuppressThisWarning VEditor - not used
-  parameter FULL_WIDTH=        WOI_WIDTH+4;
+  parameter FULL_WIDTH=  WOI_WIDTH +  WOI_MARGINS;
+  parameter FULL_HEIGHT= WOI_HEIGHT + WOI_MARGINS;
 //  localparam       SENSOR_MEMORY_WIDTH_BURSTS = (FULL_WIDTH + 15) >> 4;
 //  localparam       SENSOR_MEMORY_MASK = (1 << (FRAME_WIDTH_ROUND_BITS-4)) -1;
 //  localparam       SENSOR_MEMORY_FULL_WIDTH_BURSTS = (SENSOR_MEMORY_WIDTH_BURSTS + SENSOR_MEMORY_MASK) & (~SENSOR_MEMORY_MASK); 
@@ -670,22 +672,35 @@ module  x393_dut#(
 
 `else    
     //connect parallel12 sensor to sensor port 2 (all data rotated left by 1 bit)
-    assign sns2_dp[6:1] =  {PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_D[1], PX2_HACT};
-    assign sns2_dn[6:0] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_VACT, PX2_DCLK};
-    assign sns2_clkn =      PX2_D[11];  // inout CNVSYNC/TDI
-    assign sns2_clkp =      PX2_D[0];  // CNVCLK/TDO
+///    assign sns2_dp[6:1] =  {PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_D[1], PX2_HACT};
+///    assign sns2_dn[6:0] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_VACT, PX2_DCLK};
+///    assign sns2_clkn =      PX2_D[11];  // inout CNVSYNC/TDI
+///    assign sns2_clkp =      PX2_D[0];  // CNVCLK/TDO
+
+    assign sns2_dp[6:1] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_HACT};
+    assign sns2_dn[6:0] =  {PX2_D[11], PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_VACT, PX2_DCLK};
+    assign sns2_clkn =      PX2_D[0];  // inout CNVSYNC/TDI
+    assign sns2_clkp =      PX2_D[1];  // CNVCLK/TDO
     
     //connect parallel12 sensor to sensor port 3  (all data rotated left by 2 bits
-    assign sns3_dp[6:1] =  {PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_D[0], PX3_HACT};
-    assign sns3_dn[6:0] =  {PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_D[1], PX3_VACT, PX3_DCLK};
-    assign sns3_clkn =      PX3_D[10];  // inout CNVSYNC/TDI
-    assign sns3_clkp =      PX3_D[11];  // CNVCLK/TDO
+///    assign sns3_dp[6:1] =  {PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_D[0], PX3_HACT};
+///    assign sns3_dn[6:0] =  {PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_D[1], PX3_VACT, PX3_DCLK};
+///    assign sns3_clkn =      PX3_D[10];  // inout CNVSYNC/TDI
+///    assign sns3_clkp =      PX3_D[11];  // CNVCLK/TDO
+    assign sns3_dp[6:1] =  {PX3_D[10], PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_HACT};
+    assign sns3_dn[6:0] =  {PX3_D[11], PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_VACT, PX3_DCLK};
+    assign sns3_clkn =      PX3_D[0];  // inout CNVSYNC/TDI
+    assign sns3_clkp =      PX3_D[1];  // CNVCLK/TDO
     
     //connect parallel12 sensor to sensor port 4  (all data rotated left by 3 bits
-    assign sns4_dp[6:1] =  {PX4_D[5], PX4_D[3], PX4_D[1], PX4_D[11], PX4_D[9], PX4_HACT};
-    assign sns4_dn[6:0] =  {PX4_D[6], PX4_D[4], PX4_D[2], PX4_D[0], PX4_D[10], PX4_VACT, PX4_DCLK};
-    assign sns4_clkn =      PX4_D[7];  // inout CNVSYNC/TDI
-    assign sns4_clkp =      PX4_D[8];  // CNVCLK/TDO
+///    assign sns4_dp[6:1] =  {PX4_D[5], PX4_D[3], PX4_D[1], PX4_D[11], PX4_D[9], PX4_HACT};
+///    assign sns4_dn[6:0] =  {PX4_D[6], PX4_D[4], PX4_D[2], PX4_D[0], PX4_D[10], PX4_VACT, PX4_DCLK};
+///    assign sns4_clkn =      PX4_D[7];  // inout CNVSYNC/TDI
+///    assign sns4_clkp =      PX4_D[8];  // CNVCLK/TDO
+    assign sns4_dp[6:1] =  {PX4_D[10], PX4_D[8], PX4_D[6], PX4_D[4], PX4_D[2], PX4_HACT};
+    assign sns4_dn[6:0] =  {PX4_D[11], PX4_D[9], PX4_D[7], PX4_D[5], PX4_D[3], PX4_VACT, PX4_DCLK};
+    assign sns4_clkn =      PX4_D[0];  // inout CNVSYNC/TDI
+    assign sns4_clkp =      PX4_D[1];  // CNVCLK/TDO
 `endif
 `endif
 
@@ -1552,6 +1567,40 @@ simul_axi_hp_wr #(
         .clk_out    (PX4_MCLK) // output
     );
 
+
+
+    /* Instance template for module simul_lwir160x120_vospi */
+    wire lwir1_miso;
+    simul_lwir160x120_vospi #(
+        .DATA_FILE     ("/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat"),
+        .WINDOW_WIDTH  (160),
+        .WINDOW_HEIGHT (120),
+        .TELEMETRY     (2), // 1),
+        .FRAME_PERIOD  (946969),
+        .FRAME_DELAY   (100),
+        .MS_PERIOD     (25)  // 1us instead of 1 ms
+    ) simul_lwir160x120_vospi_i (
+        .mclk                       (x393_i.ps7_i.SAXIHP0ACLK), // PX1_MCLK),   // input temporarily made faster
+        .nrst                       (    PX1_MRST),   // input
+        .sck                        (    1'b0),       // input
+        .ncs                        (    1'b0),       // inout
+        .miso                       (    lwir1_miso), // output
+        .telemetry_rev              (  16'h7654),     // input[15:0] 
+        .telemetry_status           (  32'h137f1248), // input[31:0] 
+        .telemetry_srev             (64'h0123456789abcdef), // input[63:0] 
+        .telemetry_temp_counts      ( 16'd59000),     // input[15:0] 
+        .telemetry_temp_kelvin      ( 16'd29500),     // input[15:0] 
+        .telemetry_temp_last_kelvin ( 16'd29300),     // input[15:0] 
+        .telemetry_time_last_ms     (  32'h12345678), // input[31:0] 
+        .telemetry_agc_roi_top      (    16'd0),      // input[15:0] 
+        .telemetry_agc_roi_left     (    16'd0),      // input[15:0] 
+        .telemetry_agc_roi_bottom   (  16'd119),      // input[15:0] 
+        .telemetry_agc_roi_right    (  16'd159),      // input[15:0] 
+        .telemetry_agc_high         (16'd19200),      // input[15:0] 
+        .telemetry_agc_low          (  16'd200),      // input[15:0] 
+        .telemetry_video_format     (32'haaaa5555)    // input[31:0] 
+    );
+
     simul_sensor12bits #(
         .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE0),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
@@ -1572,7 +1621,8 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (0) // was 1 SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0), // was 1 SENSOR12BITS_NEW_BAYER)
+        .EXTRA_PERIOD(0)
     ) simul_sensor12bits_i (
         .MCLK  (PX1_MCLK), // input 
         .MRST  (PX1_MRST), // input 
@@ -1611,7 +1661,9 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (0) //SENSOR12BITS_NEW_BAYER) was 1
+        .new_bayer (0), //SENSOR12BITS_NEW_BAYER) was 1
+        .EXTRA_PERIOD (50)
+        
     ) simul_sensor12bits_2_i (
         .MCLK  (PX2_MCLK), // input
 `ifdef DISABLE_SENSOR_2
@@ -1653,7 +1705,8 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), // SENSOR12BITS_RAMP),
-        .new_bayer (0)  // was 1SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0),  // was 1SENSOR12BITS_NEW_BAYER)
+        .EXTRA_PERIOD(100)
     ) simul_sensor12bits_3_i (
         .MCLK  (PX3_MCLK), // input 
         .MRST  (PX3_MRST), // input 
@@ -1691,7 +1744,8 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0),// SENSOR12BITS_RAMP),
-        .new_bayer (0) // was 1SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0), // was 1SENSOR12BITS_NEW_BAYER)
+        .EXTRA_PERIOD(120)
     ) simul_sensor12bits_4_i (
         .MCLK  (PX4_MCLK), // input 
         .MRST  (PX4_MRST), // input 

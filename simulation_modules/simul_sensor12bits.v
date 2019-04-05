@@ -55,7 +55,8 @@ module   simul_sensor12bits # (
     parameter tDDO1 =       5,   //
     parameter trigdly =     8,   // delay between trigger input and start of output (VACT) in lines
     parameter ramp  =       1,   // 1 - ramp, 0 - random (now - sensor.dat)
-    parameter new_bayer =   0    // 0 - old (16x16), 1 - new (18x18)
+    parameter new_bayer =   0,   // 0 - old (16x16), 1 - new (18x18)
+    parameter EXTRA_PERIOD = 0   // add these clockc before VACT 
 ) (
     input         MCLK,   // Master clock
     input         MRST,   // Master Reset - active low
@@ -83,7 +84,7 @@ module   simul_sensor12bits # (
     localparam   s_lastline=  7;
     localparam   s_frame_done=8;
     
-    localparam   t_preVACT=  lline* trigdly;
+    localparam   t_preVACT=  lline* trigdly + EXTRA_PERIOD;
     localparam   t_firstline=nrowb*lline+1;   // 1664
     localparam   t_BPF=      nbpf;         // 16
     localparam   t_preHACT=   ngp1;         // 8
@@ -92,7 +93,9 @@ module   simul_sensor12bits # (
     localparam   t_lastline=   nrowa*lline+1;   // 1664
 
 //reg   [15:0]   sensor_data[0:4095]; // up to 64 x 64 pixels // SuppressThisWarning VEditor - Will be assigned by $readmem
-reg   [15:0]   sensor_data[0:65535]; // up to 1024 x 64 pixels // SuppressThisWarning VEditor - Will be assigned by $readmem
+///reg   [15:0]   sensor_data[0:65535]; // up to 1024 x 64 pixels // SuppressThisWarning VEditor - Will be assigned by $readmem
+reg   [15:0]   sensor_data[0: nrows * ncols -1]; // up to 1024 x 64 pixels // SuppressThisWarning VEditor - Will be assigned by $readmem
+
 //    $readmemh("sensor.dat",sensor_data);
 
 
@@ -192,6 +195,11 @@ initial begin
     else if (SENSOR_IMAGE_TYPE == "NORM15")    $readmemh({`ROOTPATH,"/input_data/sensor_15.dat"},sensor_data);
     else if (SENSOR_IMAGE_TYPE == "NORM16")    $readmemh({`ROOTPATH,"/input_data/sensor_16.dat"},sensor_data);
     else if (SENSOR_IMAGE_TYPE == "TEST01-1044X36") $readmemh({`ROOTPATH,"/input_data/test01-1044x36.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "TEST01-260X36")  $readmemh({`ROOTPATH,"/input_data/marching1_12b_260x36.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "TEST01-260X68")  $readmemh({`ROOTPATH,"/input_data/marching1_12b_260x68.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "260X260A")       $readmemh({`ROOTPATH,"/input_data/img260x260x12b.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "256X256A")       $readmemh({`ROOTPATH,"/input_data/img256x256-12b.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "512X512A")       $readmemh({`ROOTPATH,"/input_data/img516x516-12b.dat"},sensor_data);
     else begin
        $display ("WARNING: Unrecognized sensor image :'%s', using default 'NORM': input_data/sensor.dat",SENSOR_IMAGE_TYPE);
        $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);

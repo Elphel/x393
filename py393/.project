@@ -14,4 +14,11 @@
 	<natures>
 		<nature>org.python.pydev.pythonNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>vivado_logs/VivadoSynthesis.log</name>
+			<type>1</type>
+			<location>/data_ssd/nc393/elphel393/fpga-elphel/x393/py393/vivado_logs/VivadoSynthesis-20190404120819591.log</location>
+		</link>
+	</linkedResources>
 </projectDescription>

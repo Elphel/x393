@@ -49,6 +49,7 @@ x393_testbench03_01.sav
 simulation_data/*.dat
 simulation_data/*.jpeg
 #these two project files are now in .eclipse_project_setup directory
+py393/.project
 /.project
 /.pydevproject
 /.settings
