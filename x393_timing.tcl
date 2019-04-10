@@ -41,11 +41,23 @@ while { [gets $infile line] >= 0 } {
         break
     }
 }
+set LWIR 0
+seek $infile 0 start
+while { [gets $infile line] >= 0 } {
+    if { [regexp {(.*)`define(\s*)LWIRI} $line matched prematch] } {
+	if {[regexp "//" $prematch] != 0} { continue }
+	set LWIR 1
+	break
+    }
+}
+
 close $infile
-if { $HISPI} {
-    puts "using HISPI sensors"
+if       { $LWIR} {
+    puts "x393_timing.tcl: using LWIR sensors"
+} elseif { $HISPI} {
+    puts "x393_timing.tcl: using HISPI sensors"
 } else {
-    puts "using parallel sensors"
+    puts "x393_timing.tcl: using parallel sensors"
 }
 
 

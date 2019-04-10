@@ -2,7 +2,7 @@
 # Filename: x393_global.tcl
 # Date:2016-03-28
 # Author: Andrey Filippov
-# Description: Placementg constraints (selected by HISPI parameter in system_devines.vh)
+# Description: Placement constraints (selected by HISPI parameter in system_devines.vh)
 #
 # Copyright (c) 2016 Elphel, Inc.
 # x393_global.tcl is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 cd ~/vdt/x393
 set infile [open "system_defines.vh" r]
 set HISPI 0
+set LWIR 0
 while { [gets $infile line] >= 0 } {
     if { [regexp {(.*)`define(\s*)HISPI} $line matched prematch] } {
         if {[regexp "//" $prematch] != 0} { continue }
@@ -41,11 +42,23 @@ while { [gets $infile line] >= 0 } {
         break
     }
 }
+set LWIR 0
+seek $infile 0 start
+while { [gets $infile line] >= 0 } {
+    if { [regexp {(.*)`define(\s*)LWIRI} $line matched prematch] } {
+	if {[regexp "//" $prematch] != 0} { continue }
+	set LWIR 1
+	break
+    }
+}
+
 close $infile
-if { $HISPI} {
-    puts "using HISPI sensors"
+if       { $LWIR} {
+    puts "x393_global.tcl: using LWIR sensors"
+} elseif { $HISPI} {
+    puts "x393_global.tcl: using HISPI sensors"
 } else {
-    puts "using parallel sensors"
+    puts "x393_global.tcl: using parallel sensors"
 }
 
 # Global constraints

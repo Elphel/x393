@@ -41,11 +41,23 @@ while { [gets $infile line] >= 0 } {
         break
     }
 }
+set LWIR 0
+seek $infile 0 start
+while { [gets $infile line] >= 0 } {
+    if { [regexp {(.*)`define(\s*)LWIRI} $line matched prematch] } {
+	if {[regexp "//" $prematch] != 0} { continue }
+	set LWIR 1
+	break
+    }
+}
+
 close $infile
-if { $HISPI} {
-    puts "using HISPI sensors"
+if       { $LWIR} {
+    puts "x393_placement.tcl: using LWIR sensors"
+} elseif { $HISPI} {
+    puts "x393_placement.tcl: using HISPI sensors"
 } else {
-    puts "using parallel sensors"
+    puts "x393_placement.tcl: using parallel sensors"
 }
 #Placement constraints (I/O pads)
 set_property PACKAGE_PIN J4 [get_ports {SDRST}]
@@ -127,15 +139,32 @@ set_property PACKAGE_PIN W13  [get_ports {ffclk1n}]
 
 
 # ================= Sensor port 0 =================
-set_property PACKAGE_PIN T10  [get_ports {sns1_dp[0]}]
-set_property PACKAGE_PIN T9   [get_ports {sns1_dn[0]}]
-set_property PACKAGE_PIN U10  [get_ports {sns1_dp[1]}]
-set_property PACKAGE_PIN V10  [get_ports {sns1_dn[1]}]
-set_property PACKAGE_PIN V8   [get_ports {sns1_dp[2]}]
-set_property PACKAGE_PIN W8   [get_ports {sns1_dn[2]}]
-set_property PACKAGE_PIN W9   [get_ports {sns1_dp[3]}]
-set_property PACKAGE_PIN Y8   [get_ports {sns1_dn[3]}]
-if { $HISPI } {
+if { $LWIR } {
+  set_property PACKAGE_PIN T10  [get_ports {sns1_dp40[0]}]
+  set_property PACKAGE_PIN T9   [get_ports {sns1_dn40[0]}]
+  set_property PACKAGE_PIN U10  [get_ports {sns1_dp40[1]}]
+  set_property PACKAGE_PIN V10  [get_ports {sns1_dn40[1]}]
+  set_property PACKAGE_PIN V8   [get_ports {sns1_dp40[2]}]
+  set_property PACKAGE_PIN W8   [get_ports {sns1_dn40[2]}]
+  set_property PACKAGE_PIN W9   [get_ports {sns1_dp40[3]}]
+  set_property PACKAGE_PIN Y8   [get_ports {sns1_dn40[3]}]
+  set_property PACKAGE_PIN AB9  [get_ports {sns1_dp40[4]}]
+  set_property PACKAGE_PIN AB8  [get_ports {sns1_dn40[4]}]
+  set_property PACKAGE_PIN AB13 [get_ports {sns1_dp5}]
+  set_property PACKAGE_PIN AB12 [get_ports {sns1_dn5}]
+  set_property PACKAGE_PIN AA12 [get_ports {sns1_dp76[6]}]
+  set_property PACKAGE_PIN AA11 [get_ports {sns1_dn76[6]}]
+  set_property PACKAGE_PIN W11  [get_ports {sns1_dp76[7]}]
+  set_property PACKAGE_PIN W10  [get_ports {sns1_dn76[7]}]
+} elseif { $HISPI } {
+  set_property PACKAGE_PIN T10  [get_ports {sns1_dp[0]}]
+  set_property PACKAGE_PIN T9   [get_ports {sns1_dn[0]}]
+  set_property PACKAGE_PIN U10  [get_ports {sns1_dp[1]}]
+  set_property PACKAGE_PIN V10  [get_ports {sns1_dn[1]}]
+  set_property PACKAGE_PIN V8   [get_ports {sns1_dp[2]}]
+  set_property PACKAGE_PIN W8   [get_ports {sns1_dn[2]}]
+  set_property PACKAGE_PIN W9   [get_ports {sns1_dp[3]}]
+  set_property PACKAGE_PIN Y8   [get_ports {sns1_dn[3]}]
   set_property PACKAGE_PIN AB9  [get_ports {sns1_dp74[4]}]
   set_property PACKAGE_PIN AB8  [get_ports {sns1_dn74[4]}]
   set_property PACKAGE_PIN AB13 [get_ports {sns1_dp74[5]}]
@@ -145,6 +174,14 @@ if { $HISPI } {
   set_property PACKAGE_PIN W11  [get_ports {sns1_dp74[7]}]
   set_property PACKAGE_PIN W10  [get_ports {sns1_dn74[7]}]
 } else {
+  set_property PACKAGE_PIN T10  [get_ports {sns1_dp[0]}]
+  set_property PACKAGE_PIN T9   [get_ports {sns1_dn[0]}]
+  set_property PACKAGE_PIN U10  [get_ports {sns1_dp[1]}]
+  set_property PACKAGE_PIN V10  [get_ports {sns1_dn[1]}]
+  set_property PACKAGE_PIN V8   [get_ports {sns1_dp[2]}]
+  set_property PACKAGE_PIN W8   [get_ports {sns1_dn[2]}]
+  set_property PACKAGE_PIN W9   [get_ports {sns1_dp[3]}]
+  set_property PACKAGE_PIN Y8   [get_ports {sns1_dn[3]}]
   set_property PACKAGE_PIN AB9  [get_ports {sns1_dp[4]}]
   set_property PACKAGE_PIN AB8  [get_ports {sns1_dn[4]}]
   set_property PACKAGE_PIN AB13 [get_ports {sns1_dp[5]}]
@@ -163,15 +200,32 @@ set_property PACKAGE_PIN U8   [get_ports {sns1_pg}]
 
 
 # ================= Sensor port 1 =================
-set_property PACKAGE_PIN U15  [get_ports {sns2_dp[0]}]
-set_property PACKAGE_PIN U14   [get_ports {sns2_dn[0]}]
-set_property PACKAGE_PIN V15  [get_ports {sns2_dp[1]}]
-set_property PACKAGE_PIN W15  [get_ports {sns2_dn[1]}]
-set_property PACKAGE_PIN U13  [get_ports {sns2_dp[2]}]
-set_property PACKAGE_PIN V13  [get_ports {sns2_dn[2]}]
-set_property PACKAGE_PIN V12  [get_ports {sns2_dp[3]}]
-set_property PACKAGE_PIN V11  [get_ports {sns2_dn[3]}]
-if { $HISPI } {
+if { $LWIR } {
+  set_property PACKAGE_PIN U15  [get_ports {sns2_dp40[0]}]
+  set_property PACKAGE_PIN U14  [get_ports {sns2_dn40[0]}]
+  set_property PACKAGE_PIN V15  [get_ports {sns2_dp40[1]}]
+  set_property PACKAGE_PIN W15  [get_ports {sns2_dn40[1]}]
+  set_property PACKAGE_PIN U13  [get_ports {sns2_dp40[2]}]
+  set_property PACKAGE_PIN V13  [get_ports {sns2_dn40[2]}]
+  set_property PACKAGE_PIN V12  [get_ports {sns2_dp40[3]}]
+  set_property PACKAGE_PIN V11  [get_ports {sns2_dn40[3]}]
+  set_property PACKAGE_PIN AA17 [get_ports {sns2_dp40[4]}]
+  set_property PACKAGE_PIN AB17 [get_ports {sns2_dn40[4]}]
+  set_property PACKAGE_PIN AA15 [get_ports {sns2_dp5}]
+  set_property PACKAGE_PIN AB15 [get_ports {sns2_dn5}]
+  set_property PACKAGE_PIN AA14 [get_ports {sns2_dp76[6]}]
+  set_property PACKAGE_PIN AB14 [get_ports {sns2_dn76[6]}]
+  set_property PACKAGE_PIN Y14  [get_ports {sns2_dp76[7]}]
+  set_property PACKAGE_PIN Y13  [get_ports {sns2_dn76[7]}]
+} elseif { $HISPI } {
+  set_property PACKAGE_PIN U15  [get_ports {sns2_dp[0]}]
+  set_property PACKAGE_PIN U14  [get_ports {sns2_dn[0]}]
+  set_property PACKAGE_PIN V15  [get_ports {sns2_dp[1]}]
+  set_property PACKAGE_PIN W15  [get_ports {sns2_dn[1]}]
+  set_property PACKAGE_PIN U13  [get_ports {sns2_dp[2]}]
+  set_property PACKAGE_PIN V13  [get_ports {sns2_dn[2]}]
+  set_property PACKAGE_PIN V12  [get_ports {sns2_dp[3]}]
+  set_property PACKAGE_PIN V11  [get_ports {sns2_dn[3]}]
   set_property PACKAGE_PIN AA17 [get_ports {sns2_dp74[4]}]
   set_property PACKAGE_PIN AB17 [get_ports {sns2_dn74[4]}]
   set_property PACKAGE_PIN AA15 [get_ports {sns2_dp74[5]}]
@@ -181,6 +235,14 @@ if { $HISPI } {
   set_property PACKAGE_PIN Y14  [get_ports {sns2_dp74[7]}]
   set_property PACKAGE_PIN Y13  [get_ports {sns2_dn74[7]}]
 } else {
+  set_property PACKAGE_PIN U15  [get_ports {sns2_dp[0]}]
+  set_property PACKAGE_PIN U14  [get_ports {sns2_dn[0]}]
+  set_property PACKAGE_PIN V15  [get_ports {sns2_dp[1]}]
+  set_property PACKAGE_PIN W15  [get_ports {sns2_dn[1]}]
+  set_property PACKAGE_PIN U13  [get_ports {sns2_dp[2]}]
+  set_property PACKAGE_PIN V13  [get_ports {sns2_dn[2]}]
+  set_property PACKAGE_PIN V12  [get_ports {sns2_dp[3]}]
+  set_property PACKAGE_PIN V11  [get_ports {sns2_dn[3]}]
   set_property PACKAGE_PIN AA17 [get_ports {sns2_dp[4]}]
   set_property PACKAGE_PIN AB17 [get_ports {sns2_dn[4]}]
   set_property PACKAGE_PIN AA15 [get_ports {sns2_dp[5]}]
@@ -198,15 +260,32 @@ set_property PACKAGE_PIN V16  [get_ports {sns2_ctl}]
 set_property PACKAGE_PIN W16  [get_ports {sns2_pg}]
 
 # ================= Sensor port 2 =================
-set_property PACKAGE_PIN AA22 [get_ports {sns3_dp[0]}]
-set_property PACKAGE_PIN AB22 [get_ports {sns3_dn[0]}]
-set_property PACKAGE_PIN W21  [get_ports {sns3_dp[1]}]
-set_property PACKAGE_PIN Y22  [get_ports {sns3_dn[1]}]
-set_property PACKAGE_PIN V21  [get_ports {sns3_dp[2]}]
-set_property PACKAGE_PIN V22  [get_ports {sns3_dn[2]}]
-set_property PACKAGE_PIN W19  [get_ports {sns3_dp[3]}]
-set_property PACKAGE_PIN W20  [get_ports {sns3_dn[3]}]
-if { $HISPI } {
+if { $LWIR } {
+  set_property PACKAGE_PIN AA22 [get_ports {sns3_dp40[0]}]
+  set_property PACKAGE_PIN AB22 [get_ports {sns3_dn40[0]}]
+  set_property PACKAGE_PIN W21  [get_ports {sns3_dp40[1]}]
+  set_property PACKAGE_PIN Y22  [get_ports {sns3_dn40[1]}]
+  set_property PACKAGE_PIN V21  [get_ports {sns3_dp40[2]}]
+  set_property PACKAGE_PIN V22  [get_ports {sns3_dn40[2]}]
+  set_property PACKAGE_PIN W19  [get_ports {sns3_dp40[3]}]
+  set_property PACKAGE_PIN W20  [get_ports {sns3_dn40[3]}]
+  set_property PACKAGE_PIN N21  [get_ports {sns3_dp40[4]}]
+  set_property PACKAGE_PIN N22  [get_ports {sns3_dn40[4]}]
+  set_property PACKAGE_PIN R22  [get_ports {sns3_dp5}]
+  set_property PACKAGE_PIN T22  [get_ports {sns3_dn5}]
+  set_property PACKAGE_PIN P21  [get_ports {sns3_dp76[6]}]
+  set_property PACKAGE_PIN R21  [get_ports {sns3_dn76[6]}]
+  set_property PACKAGE_PIN T20  [get_ports {sns3_dp76[7]}]
+  set_property PACKAGE_PIN U20  [get_ports {sns3_dn76[7]}]
+} elseif { $HISPI } {
+  set_property PACKAGE_PIN AA22 [get_ports {sns3_dp[0]}]
+  set_property PACKAGE_PIN AB22 [get_ports {sns3_dn[0]}]
+  set_property PACKAGE_PIN W21  [get_ports {sns3_dp[1]}]
+  set_property PACKAGE_PIN Y22  [get_ports {sns3_dn[1]}]
+  set_property PACKAGE_PIN V21  [get_ports {sns3_dp[2]}]
+  set_property PACKAGE_PIN V22  [get_ports {sns3_dn[2]}]
+  set_property PACKAGE_PIN W19  [get_ports {sns3_dp[3]}]
+  set_property PACKAGE_PIN W20  [get_ports {sns3_dn[3]}]
   set_property PACKAGE_PIN N21  [get_ports {sns3_dp74[4]}]
   set_property PACKAGE_PIN N22  [get_ports {sns3_dn74[4]}]
   set_property PACKAGE_PIN R22  [get_ports {sns3_dp74[5]}]
@@ -216,6 +295,14 @@ if { $HISPI } {
   set_property PACKAGE_PIN T20  [get_ports {sns3_dp74[7]}]
   set_property PACKAGE_PIN U20  [get_ports {sns3_dn74[7]}]
 } else {
+  set_property PACKAGE_PIN AA22 [get_ports {sns3_dp[0]}]
+  set_property PACKAGE_PIN AB22 [get_ports {sns3_dn[0]}]
+  set_property PACKAGE_PIN W21  [get_ports {sns3_dp[1]}]
+  set_property PACKAGE_PIN Y22  [get_ports {sns3_dn[1]}]
+  set_property PACKAGE_PIN V21  [get_ports {sns3_dp[2]}]
+  set_property PACKAGE_PIN V22  [get_ports {sns3_dn[2]}]
+  set_property PACKAGE_PIN W19  [get_ports {sns3_dp[3]}]
+  set_property PACKAGE_PIN W20  [get_ports {sns3_dn[3]}]
   set_property PACKAGE_PIN N21  [get_ports {sns3_dp[4]}]
   set_property PACKAGE_PIN N22  [get_ports {sns3_dn[4]}]
   set_property PACKAGE_PIN R22  [get_ports {sns3_dp[5]}]
@@ -233,15 +320,32 @@ set_property PACKAGE_PIN AA20 [get_ports {sns3_ctl}]
 set_property PACKAGE_PIN AB20 [get_ports {sns3_pg}]
 
 # ================= Sensor port 3 =================
-set_property PACKAGE_PIN V17  [get_ports {sns4_dp[0]}]
-set_property PACKAGE_PIN W18  [get_ports {sns4_dn[0]}]
-set_property PACKAGE_PIN Y19  [get_ports {sns4_dp[1]}]
-set_property PACKAGE_PIN AA19 [get_ports {sns4_dn[1]}]
-set_property PACKAGE_PIN U19  [get_ports {sns4_dp[2]}]
-set_property PACKAGE_PIN V20  [get_ports {sns4_dn[2]}]
-set_property PACKAGE_PIN U18  [get_ports {sns4_dp[3]}]
-set_property PACKAGE_PIN V18  [get_ports {sns4_dn[3]}]
-if { $HISPI } {
+if { $LWIR } {
+  set_property PACKAGE_PIN V17  [get_ports {sns4_dp40[0]}]
+  set_property PACKAGE_PIN W18  [get_ports {sns4_dn40[0]}]
+  set_property PACKAGE_PIN Y19  [get_ports {sns4_dp40[1]}]
+  set_property PACKAGE_PIN AA19 [get_ports {sns4_dn40[1]}]
+  set_property PACKAGE_PIN U19  [get_ports {sns4_dp40[2]}]
+  set_property PACKAGE_PIN V20  [get_ports {sns4_dn40[2]}]
+  set_property PACKAGE_PIN U18  [get_ports {sns4_dp40[3]}]
+  set_property PACKAGE_PIN V18  [get_ports {sns4_dn40[3]}]
+  set_property PACKAGE_PIN P18  [get_ports {sns4_dp40[4]}]
+  set_property PACKAGE_PIN P19  [get_ports {sns4_dn40[4]}]
+  set_property PACKAGE_PIN N17  [get_ports {sns4_dp5}]
+  set_property PACKAGE_PIN N18  [get_ports {sns4_dn5}]
+  set_property PACKAGE_PIN N20  [get_ports {sns4_dp76[6]}]
+  set_property PACKAGE_PIN P20  [get_ports {sns4_dn76[6]}]
+  set_property PACKAGE_PIN R17  [get_ports {sns4_dp76[7]}]
+  set_property PACKAGE_PIN R18  [get_ports {sns4_dn76[7]}]
+} elseif { $HISPI } {
+  set_property PACKAGE_PIN V17  [get_ports {sns4_dp[0]}]
+  set_property PACKAGE_PIN W18  [get_ports {sns4_dn[0]}]
+  set_property PACKAGE_PIN Y19  [get_ports {sns4_dp[1]}]
+  set_property PACKAGE_PIN AA19 [get_ports {sns4_dn[1]}]
+  set_property PACKAGE_PIN U19  [get_ports {sns4_dp[2]}]
+  set_property PACKAGE_PIN V20  [get_ports {sns4_dn[2]}]
+  set_property PACKAGE_PIN U18  [get_ports {sns4_dp[3]}]
+  set_property PACKAGE_PIN V18  [get_ports {sns4_dn[3]}]
   set_property PACKAGE_PIN P18  [get_ports {sns4_dp74[4]}]
   set_property PACKAGE_PIN P19  [get_ports {sns4_dn74[4]}]
   set_property PACKAGE_PIN N17  [get_ports {sns4_dp74[5]}]
@@ -251,6 +355,14 @@ if { $HISPI } {
   set_property PACKAGE_PIN R17  [get_ports {sns4_dp74[7]}]
   set_property PACKAGE_PIN R18  [get_ports {sns4_dn74[7]}]
 } else {
+  set_property PACKAGE_PIN V17  [get_ports {sns4_dp[0]}]
+  set_property PACKAGE_PIN W18  [get_ports {sns4_dn[0]}]
+  set_property PACKAGE_PIN Y19  [get_ports {sns4_dp[1]}]
+  set_property PACKAGE_PIN AA19 [get_ports {sns4_dn[1]}]
+  set_property PACKAGE_PIN U19  [get_ports {sns4_dp[2]}]
+  set_property PACKAGE_PIN V20  [get_ports {sns4_dn[2]}]
+  set_property PACKAGE_PIN U18  [get_ports {sns4_dp[3]}]
+  set_property PACKAGE_PIN V18  [get_ports {sns4_dn[3]}]
   set_property PACKAGE_PIN P18  [get_ports {sns4_dp[4]}]
   set_property PACKAGE_PIN P19  [get_ports {sns4_dn[4]}]
   set_property PACKAGE_PIN N17  [get_ports {sns4_dp[5]}]

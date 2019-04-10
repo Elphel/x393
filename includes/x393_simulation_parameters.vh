@@ -54,6 +54,38 @@
 `endif    
     parameter       FCLK1_PERIOD =  0.0,
     
+`ifdef LWIR
+    parameter       LWIR_DATA_FILE1  = "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",
+    parameter       LWIR_DATA_FILE2  = "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",
+    parameter       LWIR_DATA_FILE3  = "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",
+    parameter       LWIR_DATA_FILE4  = "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",
+    parameter       LWIR_WINDOW_WIDTH  =160,
+    parameter       LWIR_WINDOW_HEIGHT =120,
+    parameter       LWIR_TELEMETRY     =  2,
+    parameter       LWIR_FRAME_PERIOD  =946969,
+    parameter       LWIR_FRAME_DELAY   =100,
+    parameter       LWIR_MS_PERIOD     = 25,  // 1us instead of 1 ms
+    
+    parameter       LWIR_TELEMETRY_REV =                  16'h7654,     // input[15:0] 
+    parameter       LWIR_TELEMETRY_STATUS =           32'h137f1248, // input[31:0] 
+    parameter       LWIR_TELEMETRY_SREV =     64'h0123456789abcdef, // input[63:0] 
+    parameter       LWIR_TELEMETRY_TEMP_COUTS =          16'd59000,     // input[15:0] 
+    parameter       LWIR_TELEMETRY_TEMP_KELVIN =         16'd29500,     // input[15:0] 
+    parameter       LWIR_TELEMETRY_TEMP_LAST_KELVIN =    16'd29300,     // input[15:0] 
+    parameter       LWIR_TELEMETRY_TIME_LAST_MS =     32'h12345678, // input[31:0] 
+    parameter       LWIR_TELEMETRY_AGC_ROI_TOP =             16'd0,      // input[15:0] 
+    parameter       LWIR_TELEMETRY_AGC_ROI_LEFT =            16'd0,      // input[15:0] 
+    parameter       LWIR_TELEMETRY_AGC_ROI_BOTTOM =        16'd119,      // input[15:0] 
+    parameter       LWIR_TELEMETRY_AGC_ROI_RIGHT =         16'd159,      // input[15:0] 
+    parameter       LWIR_TELEMETRY_AGC_HIGH =            16'd19200,      // input[15:0] 
+    parameter       LWIR_TELEMETRY_AGC_LOW =               16'd200,      // input[15:0] 
+    parameter       LWIR_TELEMETRY_VIDEO_FORMAT =     32'haaaa5555,    // input[31:0] 
+    
+    parameter       LWIR_GPIO_IN =                              4'b0000,
+    
+`endif    
+    
+    
 //    parameter SENSOR12BITS_LLINE   =   192,   //   1664;//   line duration in clocks
 //    parameter SENSOR12BITS_NCOLS   =    66,   //58; //56; // 129; //128;   //1288;
 //    parameter SENSOR12BITS_NROWS   =    18,   // 16;   //   1032;
