@@ -200,7 +200,6 @@ module  sens_parallel12 #(
 //    wire [18:0] status;
 //    wire [22:0] status;
     wire [25:0] status; // added byte-wide xfpgatdo
-    
     wire        cmd_we;
     wire  [2:0] cmd_a;
     wire [31:0] cmd_data;
