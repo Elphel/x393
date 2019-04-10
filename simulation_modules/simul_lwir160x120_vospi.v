@@ -42,16 +42,31 @@ module  simul_lwir160x120_vospi # (
     parameter DATA_FILE =         "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",  //
     parameter WINDOW_WIDTH    =    160,  //
     parameter WINDOW_HEIGHT   =    120,  //
+    parameter LWIR_GPIO_IN    = 4'b0000,
+    
     parameter TELEMETRY       =      1,  // 0 - disabled, 1 - as header, 2 - as footer
     parameter FRAME_PERIOD    = 946969,  // 26.4 fps @25 MHz
     parameter FRAME_DELAY     =    100,  // mclk period to start first frame 1
     parameter MS_PERIOD       =     25   // ahould actually be 25000  
 )(
     input          mclk,
-    input          nrst,
-    input          sck,
-    input          ncs,
-    output         miso,
+    input          mrst,  // active low 
+    input          pwdn,  // active low
+    input          spi_clk,
+    input          spi_cs,
+    output         spi_miso,
+    input          spi_mosi,
+    inout          gpio0,
+    inout          gpio1,
+    inout          gpio2,
+    inout          gpio3, // may be used as segment sync (ready)
+    input          i2c_scl,
+    inout          i2c_sda,
+    output         mipi_dp,   // not implemented
+    output         mipi_dn,   // not implemented
+    output         mipi_clkp, // not implemented
+    output         mipi_clkn, // not implemented
+    
     // telemetry data
     input   [15:0] telemetry_rev,
     input   [31:0] telemetry_status,
@@ -80,7 +95,7 @@ module  simul_lwir160x120_vospi # (
     localparam FRAMES =           2; // 2 frames in a ping-pong buffer 
     localparam FRAME_WORDS =     FRAME_SEGMENTS * (SEGMENT_PACKETS + ((TELEMETRY>0)?1 : 0)) * PACKET_WORDS;
     
-    wire mrst = !nrst;
+    wire rst = !mrst;
     
     reg  [OUT_BITS-1:0] sensor_data[0 : WINDOW_WIDTH * WINDOW_HEIGHT - 1]; // SuppressThisWarning VEditor - Will be assigned by $readmem
     reg  [OUT_BITS-1:0] packed_data[0: FRAMES * FRAME_WORDS -1];
@@ -133,8 +148,18 @@ module  simul_lwir160x120_vospi # (
 //    wire            [ 2:0] copy_segment;
 
 //946,969 '0xe7319'
-
-//      assign copy_done =           copy_run && copy_crc &&((TELEMETRY==0) ? (copy_packet== (FRAME_PACKETS -1)) : (FRAME_PACKETS + 3));
+      assign mipi_dp = 'bz;
+      assign mipi_dn = 'bz;
+      assign mipi_clkp = 'bz;
+      assign mipi_clkn = 'bz;
+      
+      assign gpio0 = LWIR_GPIO_IN[0]?'bz: 0;
+      assign gpio1 = LWIR_GPIO_IN[1]?'bz: 0;
+      assign gpio2 = LWIR_GPIO_IN[2]?'bz: 0;
+      assign gpio3 = LWIR_GPIO_IN[3]?'bz: 0;
+      assign i2c_sda = 'bz;
+      
+      
       assign copy_done =           copy_run && copy_crc && (copy_packet== (FRAME_PACKETS_FULL -1));
       
       assign copy_packet_full =    (copy_packet < FRAME_PACKETS)?(copy_packet + ((TELEMETRY == 1) ? 4 : 0)):(copy_packet - ((TELEMETRY == 1)?FRAME_PACKETS: 0)) ;
@@ -170,26 +195,26 @@ initial begin
 $readmemh(DATA_FILE,sensor_data,0);
 end
 always @ (posedge mclk) begin
-    if (mrst || (ms_cntr == 0)) ms_cntr <= MS_PERIOD -1;
+    if (rst || (ms_cntr == 0)) ms_cntr <= MS_PERIOD -1;
     else                        ms_cntr <=  ms_cntr - 1;
 
-    if      (mrst)           time_ms <= 0;
+    if      (rst)           time_ms <= 0;
     else if ((ms_cntr == 0)) time_ms <=  time_ms + 1;
 
     //restarting frames
-    if      (mrst)        frame_dly_cntr <= FRAME_DELAY;
+    if      (rst)        frame_dly_cntr <= FRAME_DELAY;
     else if (frame_start) frame_dly_cntr <= FRAME_PERIOD;
     else                  frame_dly_cntr <= frame_dly_cntr - 1;
     
-    frame_start <= !mrst && (frame_dly_cntr == 0);
+    frame_start <= !rst && (frame_dly_cntr == 0);
     
-    if      (mrst)        frame_num <= 0;
+    if      (rst)        frame_num <= 0;
     else if (frame_start) frame_num <=  frame_num + 1;
     
-    if      (mrst)        copy_page <= 0;
+    if      (rst)        copy_page <= 0;
     else if (frame_start) copy_page <= !copy_page;
 
-    if      (mrst || copy_done) copy_run <= 0;
+    if      (rst || copy_done) copy_run <= 0;
     else if (frame_start)       copy_run <= 1;
     
     copy_crc <= copy_word == (PACKET_WORDS - 1); 
@@ -223,7 +248,6 @@ always @ (posedge mclk) begin
 end
 
 
-    /* Instance template for module crc16_x16x12x5x0 */
     crc16_x16x12x5x0 crc16_x16x12x5x0_i (
         .clk    (mclk), // input
         .srst   (!copy_run || copy_crc), // input
@@ -234,7 +258,6 @@ end
     );
 
 
-    /* Instance template for module simul_lwir160x120_telemetry */
     simul_lwir160x120_telemetry simul_lwir160x120_telemetry_i (
         .clk                       (mclk),                       // input
         .en                        (frame_start),                // input
