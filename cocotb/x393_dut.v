@@ -485,6 +485,74 @@ module  x393_dut#(
     wire       PX2_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
     wire       PX3_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
     wire       PX4_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
+    
+// for LWIR - 
+    wire       LWIR1_SPI_MISO;     
+    wire       LWIR1_SPI_MOSI;
+    wire       LWIR1_SPI_CS;
+    wire       LWIR1_SPI_CLK;
+    wire       LWIR1_GPIO0;     // not implemented
+    wire       LWIR1_GPIO1;     // not implemented
+    wire       LWIR1_GPIO2;     // not implemented
+    wire       LWIR1_GPIO3;     // may be used as VSYNC (segment ready)
+    wire       LWIR1_MCLK;      // 25 MHz
+    wire       LWIR1_MRST;      // active low
+    wire       LWIR1_PWDN;      // active low power down
+    wire       LWIR1_MIPI_DP;   // not implemented
+    wire       LWIR1_MIPI_DN;   // not implemented
+    wire       LWIR1_MIPI_CLKP; // not implemented
+    wire       LWIR1_MIPI_CLKN; // not implemented
+         
+    wire       LWIR2_SPI_MISO;     
+    wire       LWIR2_SPI_MOSI;
+    wire       LWIR2_SPI_CS;
+    wire       LWIR2_SPI_CLK;
+    wire       LWIR2_GPIO0;     // not implemented
+    wire       LWIR2_GPIO1;     // not implemented
+    wire       LWIR2_GPIO2;     // not implemented
+    wire       LWIR2_GPIO3;     // may be used as VSYNC (segment ready)
+    wire       LWIR2_MCLK;      // 25 MHz
+    wire       LWIR2_MRST;      // active low
+    wire       LWIR2_PWDN;      // active low power down
+    wire       LWIR2_MIPI_DP;   // not implemented
+    wire       LWIR2_MIPI_DN;   // not implemented
+    wire       LWIR2_MIPI_CLKP; // not implemented
+    wire       LWIR2_MIPI_CLKN; // not implemented
+         
+    wire       LWIR3_SPI_MISO;     
+    wire       LWIR3_SPI_MOSI;
+    wire       LWIR3_SPI_CS;
+    wire       LWIR3_SPI_CLK;
+    wire       LWIR3_GPIO0;     // not implemented
+    wire       LWIR3_GPIO1;     // not implemented
+    wire       LWIR3_GPIO2;     // not implemented
+    wire       LWIR3_GPIO3;     // may be used as VSYNC (segment ready)
+    wire       LWIR3_MCLK;      // 25 MHz
+    wire       LWIR3_MRST;      // active low
+    wire       LWIR3_PWDN;      // active low power down
+    wire       LWIR3_MIPI_DP;   // not implemented
+    wire       LWIR3_MIPI_DN;   // not implemented
+    wire       LWIR3_MIPI_CLKP; // not implemented
+    wire       LWIR3_MIPI_CLKN; // not implemented
+         
+    wire       LWIR4_SPI_MISO;     
+    wire       LWIR4_SPI_MOSI;
+    wire       LWIR4_SPI_CS;
+    wire       LWIR4_SPI_CLK;
+    wire       LWIR4_GPIO0;     // not implemented
+    wire       LWIR4_GPIO1;     // not implemented
+    wire       LWIR4_GPIO2;     // not implemented
+    wire       LWIR4_GPIO3;     // may be used as VSYNC (segment ready)
+    wire       LWIR4_MCLK;      // 25 MHz
+    wire       LWIR4_MRST;      // active low
+    wire       LWIR4_PWDN;      // active low power down
+    wire       LWIR4_MIPI_DP;   // not implemented
+    wire       LWIR4_MIPI_DN;   // not implemented
+    wire       LWIR4_MIPI_CLKP; // not implemented
+    wire       LWIR4_MIPI_CLKN; // not implemented
+         
+    
+    
 
 // Sensor signals - as on FPGA pads
     wire [ 7:0] sns1_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
@@ -627,6 +695,88 @@ module  x393_dut#(
     assign PX4_MRST =      sns4_dp[7]; // from FPGA to sensor
     assign PX4_ARST =      sns4_dn[7]; // same as GP[3]
     assign PX4_ARO =       sns4_dn[5]; // same as GP[1]
+`elsif LWIR
+// connect LWIR sensor to x393
+    assign LWIR1_SPI_MOSI = sns1_dn[0];
+    assign LWIR1_SPI_CS   = sns1_dp[1];
+    assign LWIR1_SPI_CLK  = sns1_dn[1];
+    assign LWIR1_MCLK  = sns1_dp[6];
+    assign LWIR1_MRST  = sns1_dp[7];
+    assign LWIR1_PWDN  = sns1_dn[7];
+    assign LWIR1_GPIO0 = LWIR_GPIO_IN[0]? sns1_dn[3] : 'bz;
+    assign LWIR1_GPIO1 = LWIR_GPIO_IN[1]? sns1_dp[3] : 'bz;
+    assign LWIR1_GPIO2 = LWIR_GPIO_IN[2]? sns1_dn[4] : 'bz;
+    assign LWIR1_GPIO3 = LWIR_GPIO_IN[3]? sns1_dp[4] : 'bz;
+    assign sns1_dp[0] = LWIR1_SPI_MISO;
+    assign sns1_dn[3] = LWIR_GPIO_IN[0]? 'bz : LWIR1_GPIO0;
+    assign sns1_dp[3] = LWIR_GPIO_IN[1]? 'bz : LWIR1_GPIO1;
+    assign sns1_dn[4] = LWIR_GPIO_IN[2]? 'bz : LWIR1_GPIO2;
+    assign sns1_dp[4] = LWIR_GPIO_IN[3]? 'bz : LWIR1_GPIO3;
+    assign sns1_dn[5] = LWIR1_MIPI_DN;
+    assign sns1_dp[5] = LWIR1_MIPI_DP;
+    assign sns1_clkn  = LWIR1_MIPI_CLKN;
+    assign sns1_clkp  = LWIR1_MIPI_CLKP;
+    
+    assign LWIR2_SPI_MOSI = sns2_dn[0];
+    assign LWIR2_SPI_CS   = sns2_dp[1];
+    assign LWIR2_SPI_CLK  = sns2_dn[1];
+    assign LWIR2_MCLK  = sns2_dp[6];
+    assign LWIR2_MRST  = sns2_dp[7];
+    assign LWIR2_PWDN  = sns2_dn[7];
+    assign LWIR2_GPIO0 = LWIR_GPIO_IN[0]? sns2_dn[3] : 'bz;
+    assign LWIR2_GPIO1 = LWIR_GPIO_IN[1]? sns2_dp[3] : 'bz;
+    assign LWIR2_GPIO2 = LWIR_GPIO_IN[2]? sns2_dn[4] : 'bz;
+    assign LWIR2_GPIO3 = LWIR_GPIO_IN[3]? sns2_dp[4] : 'bz;
+    assign sns2_dp[0] = LWIR2_SPI_MISO;
+    assign sns2_dn[3] = LWIR_GPIO_IN[0]? 'bz : LWIR2_GPIO0;
+    assign sns2_dp[3] = LWIR_GPIO_IN[1]? 'bz : LWIR2_GPIO1;
+    assign sns2_dn[4] = LWIR_GPIO_IN[2]? 'bz : LWIR2_GPIO2;
+    assign sns2_dp[4] = LWIR_GPIO_IN[3]? 'bz : LWIR2_GPIO3;
+    assign sns2_dn[5] = LWIR2_MIPI_DN;
+    assign sns2_dp[5] = LWIR2_MIPI_DP;
+    assign sns2_clkn  = LWIR2_MIPI_CLKN;
+    assign sns2_clkp  = LWIR2_MIPI_CLKP;
+    
+    assign LWIR3_SPI_MOSI = sns3_dn[0];
+    assign LWIR3_SPI_CS   = sns3_dp[1];
+    assign LWIR3_SPI_CLK  = sns3_dn[1];
+    assign LWIR3_MCLK  = sns3_dp[6];
+    assign LWIR3_MRST  = sns3_dp[7];
+    assign LWIR3_PWDN  = sns3_dn[7];
+    assign LWIR3_GPIO0 = LWIR_GPIO_IN[0]? sns3_dn[3] : 'bz;
+    assign LWIR3_GPIO1 = LWIR_GPIO_IN[1]? sns3_dp[3] : 'bz;
+    assign LWIR3_GPIO2 = LWIR_GPIO_IN[2]? sns3_dn[4] : 'bz;
+    assign LWIR3_GPIO3 = LWIR_GPIO_IN[3]? sns3_dp[4] : 'bz;
+    assign sns3_dp[0] = LWIR3_SPI_MISO;
+    assign sns3_dn[3] = LWIR_GPIO_IN[0]? 'bz : LWIR3_GPIO0;
+    assign sns3_dp[3] = LWIR_GPIO_IN[1]? 'bz : LWIR3_GPIO1;
+    assign sns3_dn[4] = LWIR_GPIO_IN[2]? 'bz : LWIR3_GPIO2;
+    assign sns3_dp[4] = LWIR_GPIO_IN[3]? 'bz : LWIR3_GPIO3;
+    assign sns3_dn[5] = LWIR3_MIPI_DN;
+    assign sns3_dp[5] = LWIR3_MIPI_DP;
+    assign sns3_clkn  = LWIR3_MIPI_CLKN;
+    assign sns3_clkp  = LWIR3_MIPI_CLKP;
+    
+    assign LWIR4_SPI_MOSI = sns4_dn[0];
+    assign LWIR4_SPI_CS   = sns4_dp[1];
+    assign LWIR4_SPI_CLK  = sns4_dn[1];
+    assign LWIR4_MCLK  = sns4_dp[6];
+    assign LWIR4_MRST  = sns4_dp[7];
+    assign LWIR4_PWDN  = sns4_dn[7];
+    assign LWIR4_GPIO0 = LWIR_GPIO_IN[0]? sns4_dn[3] : 'bz;
+    assign LWIR4_GPIO1 = LWIR_GPIO_IN[1]? sns4_dp[3] : 'bz;
+    assign LWIR4_GPIO2 = LWIR_GPIO_IN[2]? sns4_dn[4] : 'bz;
+    assign LWIR4_GPIO3 = LWIR_GPIO_IN[3]? sns4_dp[4] : 'bz;
+    assign sns4_dp[0] = LWIR4_SPI_MISO;
+    assign sns4_dn[3] = LWIR_GPIO_IN[0]? 'bz : LWIR4_GPIO0;
+    assign sns4_dp[3] = LWIR_GPIO_IN[1]? 'bz : LWIR4_GPIO1;
+    assign sns4_dn[4] = LWIR_GPIO_IN[2]? 'bz : LWIR4_GPIO2;
+    assign sns4_dp[4] = LWIR_GPIO_IN[3]? 'bz : LWIR4_GPIO3;
+    assign sns4_dn[5] = LWIR4_MIPI_DN;
+    assign sns4_dp[5] = LWIR4_MIPI_DP;
+    assign sns4_clkn  = LWIR4_MIPI_CLKN;
+    assign sns4_clkp  = LWIR4_MIPI_CLKP;
+
 `else
     //connect parallel12 sensor to sensor port 1
     assign sns1_dp[6:1] =  {PX1_D[10], PX1_D[8], PX1_D[6], PX1_D[4], PX1_D[2], PX1_HACT};
@@ -943,6 +1093,13 @@ module  x393_dut#(
         .sns1_dn   (sns1_dn[3:0]),    // inout[3:0]
         .sns1_dp74 (sns1_dp[7:4]),    // inout[3:0]
         .sns1_dn74 (sns1_dn[7:4]),    // inout[3:0]
+`elsif LWIR
+        .sns1_dp40 (sns1_dp[4:0]),    // input[4:0] 
+        .sns1_dn40 (sns1_dn[4:0]),    // input[4:0] 
+        .sns1_dp5  (sns1_dp[5]),      // inout differential
+        .sns1_dn5  (sns1_dn[5]),      // inout differential
+        .sns1_dp76 (sns1_dp[7:6]),    // inout[7:6] 
+        .sns1_dn76 (sns1_dn[7:6]),    // inout[7:6] 
 `else    
         .sns1_dp   (sns1_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
         .sns1_dn   (sns1_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
@@ -959,6 +1116,13 @@ module  x393_dut#(
         .sns2_dn   (sns2_dn[3:0]),    // inout[3:0]
         .sns2_dp74 (sns2_dp[7:4]),    // inout[3:0]
         .sns2_dn74 (sns2_dn[7:4]),    // inout[3:0]
+`elsif LWIR
+        .sns2_dp40 (sns2_dp[4:0]),    // input[4:0] 
+        .sns2_dn40 (sns2_dn[4:0]),    // input[4:0] 
+        .sns2_dp5  (sns2_dp[5]),      // inout differential
+        .sns2_dn5  (sns2_dn[5]),      // inout differential
+        .sns2_dp76 (sns2_dp[7:6]),    // inout[7:6] 
+        .sns2_dn76 (sns2_dn[7:6]),    // inout[7:6] 
 `else    
 //        .sns2_dp   (sns1_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
 //        .sns2_dn   (sns1_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
@@ -977,6 +1141,13 @@ module  x393_dut#(
         .sns3_dn   (sns3_dn[3:0]),    // inout[3:0]
         .sns3_dp74 (sns3_dp[7:4]),    // inout[3:0]
         .sns3_dn74 (sns3_dn[7:4]),    // inout[3:0]
+`elsif LWIR
+        .sns3_dp40 (sns3_dp[4:0]),    // input[4:0] 
+        .sns3_dn40 (sns3_dn[4:0]),    // input[4:0] 
+        .sns3_dp5  (sns3_dp[5]),      // inout differential
+        .sns3_dn5  (sns3_dn[5]),      // inout differential
+        .sns3_dp76 (sns3_dp[7:6]),    // inout[7:6] 
+        .sns3_dn76 (sns3_dn[7:6]),    // inout[7:6] 
 `else    
         .sns3_dp   (sns3_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
         .sns3_dn   (sns3_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
@@ -993,6 +1164,13 @@ module  x393_dut#(
         .sns4_dn   (sns4_dn[3:0]),    // inout[3:0]
         .sns4_dp74 (sns4_dp[7:4]),    // inout[3:0]
         .sns4_dn74 (sns4_dn[7:4]),    // inout[3:0]
+`elsif LWIR
+        .sns4_dp40 (sns4_dp[4:0]),    // input[4:0] 
+        .sns4_dn40 (sns4_dn[4:0]),    // input[4:0] 
+        .sns4_dp5  (sns4_dp[5]),      // inout differential
+        .sns4_dn5  (sns4_dn[5]),      // inout differential
+        .sns4_dp76 (sns4_dp[7:6]),    // inout[7:6] 
+        .sns4_dn76 (sns4_dn[7:6]),    // inout[7:6] 
 `else    
         .sns4_dp   (sns4_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
         .sns4_dn   (sns4_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
@@ -1581,10 +1759,23 @@ simul_axi_hp_wr #(
         .MS_PERIOD     (25)  // 1us instead of 1 ms
     ) simul_lwir160x120_vospi_i (
         .mclk                       (x393_i.ps7_i.SAXIHP0ACLK), // PX1_MCLK),   // input temporarily made faster
-        .nrst                       (    PX1_MRST),   // input
-        .sck                        (    1'b0),       // input
-        .ncs                        (    1'b0),       // inout
-        .miso                       (    lwir1_miso), // output
+        .mrst                       (    PX1_MRST),   // input
+        .pwdn                       (1'b1),           // input
+        .spi_clk                    (    1'b0),       // input
+        .spi_cs                     (    1'b0),       // inout
+        .spi_miso                   (    lwir1_miso), // output
+        .spi_mosi                   (    1'bz),       // input
+        .gpio0                      (),               // inout
+        .gpio1                      (),               // inout
+        .gpio2                      (),               // inout
+        .gpio3                      (),               // inout
+        .i2c_scl                    (),               // input
+        .i2c_sda                    (),               // inout
+        .mipi_dp                    (),               // output
+        .mipi_dn                    (),               // output
+        .mipi_clkp                  (),               // output
+        .mipi_clkn                  (),               // output
+        
         .telemetry_rev              (  16'h7654),     // input[15:0] 
         .telemetry_status           (  32'h137f1248), // input[31:0] 
         .telemetry_srev             (64'h0123456789abcdef), // input[63:0] 
@@ -1600,6 +1791,186 @@ simul_axi_hp_wr #(
         .telemetry_agc_low          (  16'd200),      // input[15:0] 
         .telemetry_video_format     (32'haaaa5555)    // input[31:0] 
     );
+
+`ifdef LWIR
+    simul_lwir160x120_vospi #(
+        .DATA_FILE                  (LWIR_DATA_FILE1),
+        .WINDOW_WIDTH               (LWIR_WINDOW_WIDTH),
+        .WINDOW_HEIGHT              (LWIR_WINDOW_HEIGHT),
+        .LWIR_GPIO_IN               (LWIR_GPIO_IN),
+        .TELEMETRY                  (LWIR_TELEMETRY), // 1),
+        .FRAME_PERIOD               (LWIR_FRAME_PERIOD),
+        .FRAME_DELAY                (LWIR_FRAME_DELAY),
+        .MS_PERIOD                  (LWIR_MS_PERIOD)  // 1us instead of 1 ms
+    ) simul_lwir160x120_vospi1_i (
+        .mclk                       (LWIR1_MCLK),                     // input
+        .mrst                       (LWIR1_MRST),                     // input
+        .pwdn                       (LWIR1_PWDN),                     // input
+        .spi_clk                    (LWIR1_SPI_CLK),                  // input
+        .spi_cs                     (LWIR1_SPI_CS),                   // inout
+        .spi_miso                   (LWIR1_SPI_MISO) ,                // output
+        .spi_mosi                   (LWIR1_SPI_MOSI),                 // input
+        .gpio0                      (LWIR1_GPIO0),                    // inout
+        .gpio1                      (LWIR1_GPIO1),                    // inout
+        .gpio2                      (LWIR1_GPIO2),                    // inout
+        .gpio3                      (LWIR1_GPIO3),                    // inout
+        .i2c_scl                    (sns1_scl),                       // input
+        .i2c_sda                    (sns1_sda),                       // inout
+        .mipi_dp                    (LWIR1_MIPI_DP),                  // output
+        .mipi_dn                    (LWIR1_MIPI_DN),                  // output
+        .mipi_clkp                  (LWIR1_MIPI_CLKP),                // output
+        .mipi_clkn                  (LWIR1_MIPI_CLKN),                // output
+        .telemetry_rev              (LWIR_TELEMETRY_REV),             // input[15:0] 
+        .telemetry_status           (LWIR_TELEMETRY_STATUS),          // input[31:0] 
+        .telemetry_srev             (LWIR_TELEMETRY_SREV),            // input[63:0] 
+        .telemetry_temp_counts      (LWIR_TELEMETRY_TEMP_COUTS),      // input[15:0] 
+        .telemetry_temp_kelvin      (LWIR_TELEMETRY_TEMP_KELVIN),     // input[15:0] 
+        .telemetry_temp_last_kelvin (LWIR_TELEMETRY_TEMP_LAST_KELVIN),// input[15:0] 
+        .telemetry_time_last_ms     (LWIR_TELEMETRY_TIME_LAST_MS),    // input[31:0] 
+        .telemetry_agc_roi_top      (LWIR_TELEMETRY_AGC_ROI_TOP),     // input[15:0] 
+        .telemetry_agc_roi_left     (LWIR_TELEMETRY_AGC_ROI_LEFT),    // input[15:0] 
+        .telemetry_agc_roi_bottom   (LWIR_TELEMETRY_AGC_ROI_BOTTOM),  // input[15:0] 
+        .telemetry_agc_roi_right    (LWIR_TELEMETRY_AGC_ROI_RIGHT),   // input[15:0] 
+        .telemetry_agc_high         (LWIR_TELEMETRY_AGC_HIGH),        // input[15:0] 
+        .telemetry_agc_low          (LWIR_TELEMETRY_AGC_LOW),         // input[15:0] 
+        .telemetry_video_format     (LWIR_TELEMETRY_VIDEO_FORMAT)     // input[31:0] 
+    );
+
+    simul_lwir160x120_vospi #(
+        .DATA_FILE                  (LWIR_DATA_FILE2),
+        .WINDOW_WIDTH               (LWIR_WINDOW_WIDTH),
+        .WINDOW_HEIGHT              (LWIR_WINDOW_HEIGHT),
+        .LWIR_GPIO_IN               (LWIR_GPIO_IN),
+        .TELEMETRY                  (LWIR_TELEMETRY), // 1),
+        .FRAME_PERIOD               (LWIR_FRAME_PERIOD),
+        .FRAME_DELAY                (LWIR_FRAME_DELAY),
+        .MS_PERIOD                  (LWIR_MS_PERIOD)  // 1us instead of 1 ms
+    ) simul_lwir160x120_vospi2_i (
+        .mclk                       (LWIR2_MCLK),                     // input
+        .mrst                       (LWIR2_MRST),                     // input
+        .pwdn                       (LWIR2_PWDN),                     // input
+        .spi_clk                    (LWIR2_SPI_CLK),                  // input
+        .spi_cs                     (LWIR2_SPI_CS),                   // inout
+        .spi_miso                   (LWIR2_SPI_MISO) ,                // output
+        .spi_mosi                   (LWIR2_SPI_MOSI),                 // input
+        .gpio0                      (LWIR2_GPIO0),                    // inout
+        .gpio1                      (LWIR2_GPIO1),                    // inout
+        .gpio2                      (LWIR2_GPIO2),                    // inout
+        .gpio3                      (LWIR2_GPIO3),                    // inout
+        .i2c_scl                    (sns2_scl),                       // input
+        .i2c_sda                    (sns2_sda),                       // inout
+        .mipi_dp                    (LWIR2_MIPI_DP),                  // output
+        .mipi_dn                    (LWIR2_MIPI_DN),                  // output
+        .mipi_clkp                  (LWIR2_MIPI_CLKP),                // output
+        .mipi_clkn                  (LWIR2_MIPI_CLKN),                // output
+        .telemetry_rev              (LWIR_TELEMETRY_REV),             // input[15:0] 
+        .telemetry_status           (LWIR_TELEMETRY_STATUS),          // input[31:0] 
+        .telemetry_srev             (LWIR_TELEMETRY_SREV),            // input[63:0] 
+        .telemetry_temp_counts      (LWIR_TELEMETRY_TEMP_COUTS),      // input[15:0] 
+        .telemetry_temp_kelvin      (LWIR_TELEMETRY_TEMP_KELVIN),     // input[15:0] 
+        .telemetry_temp_last_kelvin (LWIR_TELEMETRY_TEMP_LAST_KELVIN),// input[15:0] 
+        .telemetry_time_last_ms     (LWIR_TELEMETRY_TIME_LAST_MS),    // input[31:0] 
+        .telemetry_agc_roi_top      (LWIR_TELEMETRY_AGC_ROI_TOP),     // input[15:0] 
+        .telemetry_agc_roi_left     (LWIR_TELEMETRY_AGC_ROI_LEFT),    // input[15:0] 
+        .telemetry_agc_roi_bottom   (LWIR_TELEMETRY_AGC_ROI_BOTTOM),  // input[15:0] 
+        .telemetry_agc_roi_right    (LWIR_TELEMETRY_AGC_ROI_RIGHT),   // input[15:0] 
+        .telemetry_agc_high         (LWIR_TELEMETRY_AGC_HIGH),        // input[15:0] 
+        .telemetry_agc_low          (LWIR_TELEMETRY_AGC_LOW),         // input[15:0] 
+        .telemetry_video_format     (LWIR_TELEMETRY_VIDEO_FORMAT)     // input[31:0] 
+    );
+
+    simul_lwir160x120_vospi #(
+        .DATA_FILE                  (LWIR_DATA_FILE3),
+        .WINDOW_WIDTH               (LWIR_WINDOW_WIDTH),
+        .WINDOW_HEIGHT              (LWIR_WINDOW_HEIGHT),
+        .TELEMETRY                  (LWIR_TELEMETRY), // 1),
+        .LWIR_GPIO_IN               (LWIR_GPIO_IN),
+        .FRAME_PERIOD               (LWIR_FRAME_PERIOD),
+        .FRAME_DELAY                (LWIR_FRAME_DELAY),
+        .MS_PERIOD                  (LWIR_MS_PERIOD)  // 1us instead of 1 ms
+    ) simul_lwir160x120_vospi3_i (
+        .mclk                       (LWIR3_MCLK),                     // input
+        .mrst                       (LWIR3_MRST),                     // input
+        .pwdn                       (LWIR3_PWDN),                     // input
+        .spi_clk                    (LWIR3_SPI_CLK),                  // input
+        .spi_cs                     (LWIR3_SPI_CS),                   // inout
+        .spi_miso                   (LWIR3_SPI_MISO) ,                // output
+        .spi_mosi                   (LWIR3_SPI_MOSI),                 // input
+        .gpio0                      (LWIR3_GPIO0),                    // inout
+        .gpio1                      (LWIR3_GPIO1),                    // inout
+        .gpio2                      (LWIR3_GPIO2),                    // inout
+        .gpio3                      (LWIR3_GPIO3),                    // inout
+        .i2c_scl                    (sns3_scl),                       // input
+        .i2c_sda                    (sns3_sda),                       // inout
+        .mipi_dp                    (LWIR3_MIPI_DP),                  // output
+        .mipi_dn                    (LWIR3_MIPI_DN),                  // output
+        .mipi_clkp                  (LWIR3_MIPI_CLKP),                // output
+        .mipi_clkn                  (LWIR3_MIPI_CLKN),                // output
+        .telemetry_rev              (LWIR_TELEMETRY_REV),             // input[15:0] 
+        .telemetry_status           (LWIR_TELEMETRY_STATUS),          // input[31:0] 
+        .telemetry_srev             (LWIR_TELEMETRY_SREV),            // input[63:0] 
+        .telemetry_temp_counts      (LWIR_TELEMETRY_TEMP_COUTS),      // input[15:0] 
+        .telemetry_temp_kelvin      (LWIR_TELEMETRY_TEMP_KELVIN),     // input[15:0] 
+        .telemetry_temp_last_kelvin (LWIR_TELEMETRY_TEMP_LAST_KELVIN),// input[15:0] 
+        .telemetry_time_last_ms     (LWIR_TELEMETRY_TIME_LAST_MS),    // input[31:0] 
+        .telemetry_agc_roi_top      (LWIR_TELEMETRY_AGC_ROI_TOP),     // input[15:0] 
+        .telemetry_agc_roi_left     (LWIR_TELEMETRY_AGC_ROI_LEFT),    // input[15:0] 
+        .telemetry_agc_roi_bottom   (LWIR_TELEMETRY_AGC_ROI_BOTTOM),  // input[15:0] 
+        .telemetry_agc_roi_right    (LWIR_TELEMETRY_AGC_ROI_RIGHT),   // input[15:0] 
+        .telemetry_agc_high         (LWIR_TELEMETRY_AGC_HIGH),        // input[15:0] 
+        .telemetry_agc_low          (LWIR_TELEMETRY_AGC_LOW),         // input[15:0] 
+        .telemetry_video_format     (LWIR_TELEMETRY_VIDEO_FORMAT)     // input[31:0] 
+    );
+
+    simul_lwir160x120_vospi #(
+        .DATA_FILE                  (LWIR_DATA_FILE4),
+        .WINDOW_WIDTH               (LWIR_WINDOW_WIDTH),
+        .WINDOW_HEIGHT              (LWIR_WINDOW_HEIGHT),
+        .LWIR_GPIO_IN               (LWIR_GPIO_IN),
+        .TELEMETRY                  (LWIR_TELEMETRY), // 1),
+        .FRAME_PERIOD               (LWIR_FRAME_PERIOD),
+        .FRAME_DELAY                (LWIR_FRAME_DELAY),
+        .MS_PERIOD                  (LWIR_MS_PERIOD)  // 1us instead of 1 ms
+    ) simul_lwir160x120_vospi4_i (
+        .mclk                       (LWIR4_MCLK),                     // input
+        .mrst                       (LWIR4_MRST),                     // input
+        .pwdn                       (LWIR4_PWDN),                     // input
+        .spi_clk                    (LWIR4_SPI_CLK),                  // input
+        .spi_cs                     (LWIR4_SPI_CS),                   // inout
+        .spi_miso                   (LWIR4_SPI_MISO) ,                // output
+        .spi_mosi                   (LWIR4_SPI_MOSI),                 // input
+        .gpio0                      (LWIR4_GPIO0),                    // inout
+        .gpio1                      (LWIR4_GPIO1),                    // inout
+        .gpio2                      (LWIR4_GPIO2),                    // inout
+        .gpio3                      (LWIR4_GPIO3),                    // inout
+        .i2c_scl                    (sns4_scl),                       // input
+        .i2c_sda                    (sns4_sda),                       // inout
+        .mipi_dp                    (LWIR4_MIPI_DP),                  // output
+        .mipi_dn                    (LWIR4_MIPI_DN),                  // output
+        .mipi_clkp                  (LWIR4_MIPI_CLKN),                // output
+        .mipi_clkn                  (LWIR4_MIPI_CLKP),                // output
+        .telemetry_rev              (LWIR_TELEMETRY_REV),             // input[15:0] 
+        .telemetry_status           (LWIR_TELEMETRY_STATUS),          // input[31:0] 
+        .telemetry_srev             (LWIR_TELEMETRY_SREV),            // input[63:0] 
+        .telemetry_temp_counts      (LWIR_TELEMETRY_TEMP_COUTS),      // input[15:0] 
+        .telemetry_temp_kelvin      (LWIR_TELEMETRY_TEMP_KELVIN),     // input[15:0] 
+        .telemetry_temp_last_kelvin (LWIR_TELEMETRY_TEMP_LAST_KELVIN),// input[15:0] 
+        .telemetry_time_last_ms     (LWIR_TELEMETRY_TIME_LAST_MS),    // input[31:0] 
+        .telemetry_agc_roi_top      (LWIR_TELEMETRY_AGC_ROI_TOP),     // input[15:0] 
+        .telemetry_agc_roi_left     (LWIR_TELEMETRY_AGC_ROI_LEFT),    // input[15:0] 
+        .telemetry_agc_roi_bottom   (LWIR_TELEMETRY_AGC_ROI_BOTTOM),  // input[15:0] 
+        .telemetry_agc_roi_right    (LWIR_TELEMETRY_AGC_ROI_RIGHT),   // input[15:0] 
+        .telemetry_agc_high         (LWIR_TELEMETRY_AGC_HIGH),        // input[15:0] 
+        .telemetry_agc_low          (LWIR_TELEMETRY_AGC_LOW),         // input[15:0] 
+        .telemetry_video_format     (LWIR_TELEMETRY_VIDEO_FORMAT)     // input[31:0] 
+    );
+
+
+
+`endif
+
+
+
 
     simul_sensor12bits #(
         .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE0),

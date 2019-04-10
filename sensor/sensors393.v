@@ -363,6 +363,15 @@ module  sensors393 #(
     inout  [15:0] sns_dn74, // SuppressThisWarning all - unused yet
     input   [3:0] sns_clkp, // SuppressThisWarning all - input-only in HiSPi mode
     input   [3:0] sns_clkn, // SuppressThisWarning all - input-only in HiSPi mode
+`elsif LWIR
+    input  [19:0] sns_dp40,
+    input  [19:0] sns_dn40,
+    inout  [ 3:0] sns_dp5, // diff MIPI signals (not yet implemented)
+    inout  [ 3:0] sns_dn5, // diff MIPI signals (not yet implemented)
+    inout  [ 7:0] sns_dp76,
+    inout  [ 7:0] sns_dn76,
+    input  [ 3:0] sns_clkp,
+    input  [ 3:0] sns_clkn,
 `else
     inout  [31:0] sns_dp,
     inout  [31:0] sns_dn,
@@ -704,6 +713,15 @@ module  sensors393 #(
                 .sns_dn       (sns_dn[i * 4 +: 4]),    // input[3:0]
                 .sns_dp74     (sns_dp74[i * 4 +: 4]),  // input[3:0] 
                 .sns_dn74     (sns_dn74[i * 4 +: 4]),  // input[3:0] 
+                .sns_clkp     (sns_clkp[i]),           // input
+                .sns_clkn     (sns_clkn[i]),           // input
+`elsif LWIR                
+                .sns_dp40     (sns_dp40[i * 5 +: 5]),  // input[4:0] 
+                .sns_dn40     (sns_dn40[i * 5 +: 5]),  // input[4:0] 
+                .sns_dp5      (sns_dp5[i]),            // inout
+                .sns_dn5      (sns_dn5[i]),            // inout
+                .sns_dp76     (sns_dp76[i * 2 +: 2]),  // inout[7:6] 
+                .sns_dn76     (sns_dn76[i * 2 +: 2]),  // inout[7:6] 
                 .sns_clkp     (sns_clkp[i]),           // input
                 .sns_clkn     (sns_clkn[i]),           // input
 `else                

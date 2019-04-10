@@ -191,7 +191,8 @@ module  sensor_channel#(
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
 `endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
-`ifdef MON_HISPI
+`ifdef HISPI     
+  `ifdef MON_HISPI
         parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
         parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
         parameter SENSOR_TIMING_BITS =               24,   // increment to the next sensor
@@ -199,6 +200,7 @@ module  sensor_channel#(
         parameter SENSOR_TIMING_LANE =               14,   // 15:14 - select lane
         parameter SENSOR_TIMING_FROM =               12,   // select from 0 - sof, 1 - sol, 2 - eof, 3 eol
         parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - sol, 2 - eof, 3 eol
+  `endif
 `endif            
       
         // 4 of 8-bit delays per register
@@ -226,10 +228,12 @@ module  sensor_channel#(
     parameter NUM_FRAME_BITS =        4,
     
 `ifndef HISPI
+  `ifndef LWIR
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
     parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
+  `endif  
 `endif    
     
     // sens_parallel12 other parameters
@@ -314,6 +318,7 @@ module  sensor_channel#(
     input                       pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
 `endif    
     input                       mrst,      // @posedge mclk, sync reset
+    
     input                       prst,      // @posedge pclk, sync reset
     
     // I/O pads, pin names match circuit diagram
@@ -324,6 +329,16 @@ module  sensor_channel#(
     inout                 [7:4] sns_dn74,
     input                       sns_clkp,
     input                       sns_clkn,
+`elsif LWIR
+    input                [ 4:0] sns_dp40,
+    input                [ 4:0] sns_dn40,
+    inout                       sns_dp5, // diff MIPI signals (not yet implemented)
+    inout                       sns_dn5, // diff MIPI signals (not yet implemented)
+    inout                [ 7:6] sns_dp76,
+    inout                [ 7:6] sns_dn76,
+    input                       sns_clkp,
+    input                       sns_clkn,
+    
 `else
     inout                 [7:0] sns_dp,
     inout                 [7:0] sns_dn,
@@ -393,8 +408,10 @@ module  sensor_channel#(
 
 //        parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
 //        parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
-`ifdef MON_HISPI    
+`ifdef HISPI
+  `ifdef MON_HISPI    
     localparam SENSOR_TIMING_STATUS_REG = (SENSOR_TIMING_STATUS_REG_BASE + SENSOR_NUMBER * SENSOR_TIMING_STATUS_REG_INC);
+  `endif
 `endif    
     localparam SENS_SYNC_ADDR =     SENSOR_BASE_ADDR + SENS_SYNC_RADDR;
 //    parameter SENSOR_BASE_ADDR =    'h300; // sensor registers base address
@@ -421,14 +438,20 @@ module  sensor_channel#(
     wire                      sens_phys_status_rq;
     wire                      sens_phys_status_start;
     
-`ifndef HISPI        
+`ifndef HISPI
+  `ifndef LWIR        
     wire                      ipclk;   // Use in FIFO
     wire               [11:0] pxd_to_fifo;
     wire                      vact_to_fifo;    // frame active @posedge  ipclk
     wire                      hact_to_fifo;    // line active @posedge  ipclk
+  `endif
 `endif    
     // data from FIFO
+`ifdef LWIR
+    wire               [15:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
+`else    
     wire               [11:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
+`endif    
     wire                      hact;    // line active @posedge  ipclk
     wire                      sof; // start of frame
     wire                      eof; // end of frame
@@ -478,13 +501,19 @@ module  sensor_channel#(
     reg                       dav_r;       
     wire               [15:0] dout_w;
     wire                      dav_w;
+//`ifndef LWIR    
     wire                      trig;
+//`endif
+    wire                      prsts;  // @pclk - includes sensor reset and sensor PLL reset
     reg                       sof_out_r;       
     reg                       eof_out_r;       
-    wire                      prsts;  // @pclk - includes sensor reset and sensor PLL reset
     
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
+`ifdef LWIR    
+    assign lens_pxd_in = pxd[15:0];
+`else
     assign lens_pxd_in = {pxd[11:0],4'b0};
+`endif    
     assign lens_hact_in = hact;
     assign lens_sof_in =  sof_out_sync; // sof;
     assign lens_eof_in =  eof;
@@ -532,6 +561,8 @@ module  sensor_channel#(
         else if (sof)   vact_cntr <= vact_cntr + 1;
         
     end
+`elsif LWIR
+// Something here?    
 `else    
     always @(posedge ipclk) begin
         vact_to_fifo_r <= vact_to_fifo;
@@ -567,6 +598,8 @@ module  sensor_channel#(
         .rd_data   ({
         lens_pxd_in, gamma_pxd_in[15:0],
 `ifdef HISPI
+        12'b0,
+`elsif LWIR
         12'b0,
 `else        
         pxd_to_fifo[11:0],
@@ -705,6 +738,8 @@ module  sensor_channel#(
 //    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
 //    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, debug_hist_mclk[0], alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
 `ifndef HISPI    
+    localparam STATUS_ALIVE_WIDTH = 8;
+  `ifndef LWIR    
     reg  hact_r; // hact delayed by 1 cycle to generate start pulse
     reg dout_valid_d_pclk; //@ pclk - delayed by 1 clk from dout_valid to detect edge
     reg last_in_line_d_pclk; //@ pclk - delayed by 1 clk from last_in_line to detect edge
@@ -712,15 +747,11 @@ module  sensor_channel#(
     reg hist_gr0_r;
     wire sol_mclk;
     wire sof_mclk;
-//    wire eof_mclk;
     wire alive_hist0_rq = hist_rq[0] && !hist_rq0_r;
     wire alive_hist0_gr = hist_gr[0] && !hist_gr0_r;
-    // sof_out_mclk - already exists
     wire dout_valid_1cyc_mclk;
     wire last_in_line_1cyc_mclk;
-//    wire [3:0] debug_hist_mclk;
     wire irst; // @ posedge ipclk
-    localparam STATUS_ALIVE_WIDTH = 8;
     wire [STATUS_ALIVE_WIDTH - 1 : 0] status_alive;
     assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq,
                             sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
@@ -779,9 +810,10 @@ module  sensor_channel#(
             .out_pulse   (last_in_line_1cyc_mclk),               // output
             .busy() // output
         );
-    
+  `endif    
 `endif    
 
+`ifndef LWIR  
         pulse_cross_clock pulse_cross_clock_eof_mclk_i (
             .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
             .src_clk     (pclk),                  // input
@@ -790,7 +822,7 @@ module  sensor_channel#(
             .out_pulse   (eof_mclk),              // output
             .busy() // output
         );
-    
+`endif    
 
 
 `ifdef HISPI
@@ -898,7 +930,90 @@ module  sensor_channel#(
             .sof              (sof),                    // output
             .eof              (eof)                     // output
         );
-
+`elsif LWIR
+    sens_lepton3 #(
+            .SENSIO_ADDR           (SENSIO_ADDR),
+            .SENSIO_ADDR_MASK      (SENSIO_ADDR_MASK),
+            .SENSIO_CTRL           (SENSIO_CTRL),
+            .SENSIO_STATUS         (SENSIO_STATUS),
+            .SENSIO_JTAG           (SENSIO_JTAG),
+            .SENSIO_WIDTH          (SENSIO_WIDTH),
+            .SENSIO_DELAYS         (SENSIO_DELAYS),
+            .SENSIO_STATUS_REG     (SENSIO_STATUS_REG),
+            .SENS_JTAG_PGMEN       (SENS_JTAG_PGMEN),
+            .SENS_JTAG_PROG        (SENS_JTAG_PROG),
+            .SENS_JTAG_TCK         (SENS_JTAG_TCK),
+            .SENS_JTAG_TMS         (SENS_JTAG_TMS),
+            .SENS_JTAG_TDI         (SENS_JTAG_TDI),
+            .SENS_CTRL_MRST        (SENS_CTRL_MRST),
+            .SENS_CTRL_ARST        (SENS_CTRL_ARST),
+            .SENS_CTRL_ARO         (SENS_CTRL_ARO),
+            .SENS_CTRL_RST_MMCM    (SENS_CTRL_RST_MMCM),
+            .SENS_CTRL_EXT_CLK     (SENS_CTRL_EXT_CLK),
+            .SENS_CTRL_LD_DLY      (SENS_CTRL_LD_DLY),
+            .SENS_CTRL_QUADRANTS   (SENS_CTRL_QUADRANTS),
+            .SENS_CTRL_ODD         (SENS_CTRL_ODD),
+            .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
+            .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
+            .IODELAY_GRP           (IODELAY_GRP),
+            .IDELAY_VALUE          (IDELAY_VALUE),
+            .PXD_DRIVE             (PXD_DRIVE),
+            .PXD_IOSTANDARD        (PXD_IOSTANDARD),
+            .PXD_SLEW              (PXD_SLEW),
+            .SENS_REFCLK_FREQUENCY (SENS_REFCLK_FREQUENCY),
+            .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
+            .SENS_PHASE_WIDTH      (SENS_PHASE_WIDTH),
+            .SENS_BANDWIDTH        (SENS_BANDWIDTH),
+            .CLKIN_PERIOD_SENSOR   (CLKIN_PERIOD_SENSOR),
+            .CLKFBOUT_MULT_SENSOR  (CLKFBOUT_MULT_SENSOR),
+            .CLKFBOUT_PHASE_SENSOR (CLKFBOUT_PHASE_SENSOR),
+            .IPCLK_PHASE           (IPCLK_PHASE),
+            .IPCLK2X_PHASE         (IPCLK2X_PHASE),
+            .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
+            .BUF_IPCLK             (BUF_IPCLK),
+            .BUF_IPCLK2X           (BUF_IPCLK2X),
+            .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),
+            .SENS_REF_JITTER1      (SENS_REF_JITTER1),
+            .SENS_REF_JITTER2      (SENS_REF_JITTER2),
+            .SENS_SS_EN            (SENS_SS_EN),
+            .SENS_SS_MODE          (SENS_SS_MODE),
+            .SENS_SS_MOD_PERIOD    (SENS_SS_MOD_PERIOD),
+            .STATUS_ALIVE_WIDTH    (STATUS_ALIVE_WIDTH)
+    ) sens_lepton3_i (
+            .mrst                 (mrst),                   // input
+            .mclk                 (mclk),                   // input
+            .cmd_ad               (cmd_ad),                 // input[7:0] 
+            .cmd_stb              (cmd_stb),                // input
+            .status_ad            (sens_phys_status_ad),   // output[7:0] 
+            .status_rq            (sens_phys_status_rq),   // output
+            .status_start         (sens_phys_status_start), // input
+            .prst                 (prst), // input
+            .prsts                (prsts), // output
+            .pclk                 (pclk), // input
+            .sns_mclk(), // input
+            
+            .spi_miso             (sns_dp40[0]), // inout
+            .spi_mosi             (sns_dn40[0]), // inout
+            .spi_cs               (sns_dp40[1]), // inout
+            .spi_clk              (sns_dn40[1]), // inout
+            .gpio                 ({sns_dp40[4], sns_dn40[4], sns_dp40[3], sns_dn40[3]}), // inout [3:0]
+            .lwir_mclk            (sns_dp76[6]), // inout
+            .lwir_mrst            (sns_dp76[7]), // inout
+            .lwir_pwdn            (sns_dn76[7]), // inout
+            .mipi_dp              (sns_dp5),     // inout
+            .mipi_dn              (sns_dn5),     // inout
+            .mipi_clkp            (sns_clkp),    // inout
+            .mipi_clkn            (sns_clkn),    // inout
+            .senspgm              (sns_pg),      // inout // detect sesnor (pin7 grounded)
+            .sns_ctl              (sns_ctl),     // not used at all
+            .pxd                  (pxd[15:0]),   // output[15:0] 
+            .hact                 (hact),        // output
+            .sof                  (sof),         // output
+            .eof                  (eof)          // output
+    );
+    // sns_dn76[6] - not used
+    // sns_dn40[2] - not used
+    // sns_dp40[2] - not used
 `else    
         sens_parallel12 #(
             .SENSIO_ADDR           (SENSIO_ADDR),
@@ -1006,6 +1121,8 @@ module  sensor_channel#(
             .eof         (eof)           // output @posedge pclk
         );
 `endif
+
+//`ifndef LWIR
     sens_sync #(
         .SENS_SYNC_ADDR       (SENS_SYNC_ADDR),
         .SENS_SYNC_MASK       (SENS_SYNC_MASK),
@@ -1035,6 +1152,7 @@ module  sensor_channel#(
         .cmd_ad       (cmd_ad),        // input[7:0] 
         .cmd_stb      (cmd_stb)        // input
     );
+//`endif
 
     lens_flat393 #(
         .SENS_LENS_ADDR            (SENS_LENS_ADDR),
@@ -1065,7 +1183,6 @@ module  sensor_channel#(
         .SENS_LENS_A_WIDTH         (19),
         .SENS_LENS_B_WIDTH         (21)
     ) lens_flat393_i (
-//        .prst       (prst),          // input
         .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
         .pclk       (pclk),          // input
         .mrst       (mrst),          // input
@@ -1104,11 +1221,9 @@ module  sensor_channel#(
         .SENS_GAMMA_MODE_REPET_SET  (SENS_GAMMA_MODE_REPET_SET),
         .SENS_GAMMA_MODE_TRIG       (SENS_GAMMA_MODE_TRIG)
     ) sens_gamma_i (
-//        .rst         (rst),            // input
         .pclk        (pclk),           // input
-        .mrst        (mrst),          // input
-//        .prst        (prst),          // input
-        .prst        (prsts),         // input extended to include sensor reset and rst_mmcm
+        .mrst        (mrst),           // input
+        .prst        (prsts),          // input extended to include sensor reset and rst_mmcm
         .pxd_in      (gamma_pxd_in),   // input[15:0] 
         .hact_in     (gamma_hact_in),  // input
         .sof_in      (gamma_sof_in),   // input

@@ -87,7 +87,60 @@ module  x393 #(
     inout                        sns4_sda,
     inout                        sns4_ctl,
     inout                        sns4_pg,
-`else
+`elsif LWIR
+    input                  [4:0] sns1_dp40,
+    input                  [4:0] sns1_dn40,
+    inout                        sns1_dp5, // diff MIPI signals (not yet implemented)
+    inout                        sns1_dn5, // diff MIPI signals (not yet implemented)
+    inout                  [7:6] sns1_dp76,
+    inout                  [7:6] sns1_dn76,
+    input                        sns1_clkp,
+    input                        sns1_clkn,
+    inout                        sns1_scl,
+    inout                        sns1_sda,
+    inout                        sns1_ctl,
+    inout                        sns1_pg,
+
+    input                  [4:0] sns2_dp40,
+    input                  [4:0] sns2_dn40,
+    inout                        sns2_dp5, // diff MIPI signals (not yet implemented)
+    inout                        sns2_dn5, // diff MIPI signals (not yet implemented)
+    inout                  [7:6] sns2_dp76,
+    inout                  [7:6] sns2_dn76,
+    input                        sns2_clkp,
+    input                        sns2_clkn,
+    inout                        sns2_scl,
+    inout                        sns2_sda,
+    inout                        sns2_ctl,
+    inout                        sns2_pg,
+
+    input                  [4:0] sns3_dp40,
+    input                  [4:0] sns3_dn40,
+    inout                        sns3_dp5, // diff MIPI signals (not yet implemented)
+    inout                        sns3_dn5, // diff MIPI signals (not yet implemented)
+    inout                  [7:6] sns3_dp76,
+    inout                  [7:6] sns3_dn76,
+    input                        sns3_clkp,
+    input                        sns3_clkn,
+    inout                        sns3_scl,
+    inout                        sns3_sda,
+    inout                        sns3_ctl,
+    inout                        sns3_pg,
+
+    input                  [4:0] sns4_dp40,
+    input                  [4:0] sns4_dn40,
+    inout                        sns4_dp5, // diff MIPI signals (not yet implemented)
+    inout                        sns4_dn5, // diff MIPI signals (not yet implemented)
+    inout                  [7:6] sns4_dp76,
+    inout                  [7:6] sns4_dn76,
+    input                        sns4_clkp,
+    input                        sns4_clkn,
+    inout                        sns4_scl,
+    inout                        sns4_sda,
+    inout                        sns4_ctl,
+    inout                        sns4_pg,
+    
+`else // parallel
     inout                  [7:0] sns1_dp,
     inout                  [7:0] sns1_dn,
     inout                        sns1_clkp,
@@ -1883,22 +1936,26 @@ assign axi_grst = axi_rst_pre;
         .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // input[3:0] 
         .sns_dp74          ({sns4_dp74, sns3_dp74, sns2_dp74, sns1_dp74}),     // inout[7:4] @SuppressThisWarning VEditor vdt-bug
         .sns_dn74          ({sns4_dn74, sns3_dn74, sns2_dn74, sns1_dn74}),     // inout[7:4] @SuppressThisWarning VEditor vdt-bug
+`elsif LWIR
+        .sns_dp40          ({sns4_dp40, sns3_dp40, sns2_dp40, sns1_dp40}), // input[19:0] 
+        .sns_dn40          ({sns4_dn40, sns3_dn40, sns2_dn40, sns1_dn40}), // input[19:0] 
+        .sns_dp5           ({sns4_dp5,  sns3_dp5,  sns2_dp5,  sns1_dp5 }), // inout[3:0] 
+        .sns_dn5           ({sns4_dn5,  sns3_dn5,  sns2_dn5,  sns1_dn5 }), // inout[3:0] 
+        .sns_dp76          ({sns4_dp76[7:6], sns3_dp76[7:6], sns2_dp76[7:6], sns1_dp76[7:6]}), // inout[7:0] 
+        .sns_dn76          ({sns4_dn76[7:6], sns3_dn76[7:6], sns2_dn76[7:6], sns1_dn76[7:6]}), // inout[7:0] 
+
+`else
+        .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // inout[7:0] 
+        .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // inout[7:0] 
+`endif
+// sensor common i/O ports
         .sns_clkp          ({sns4_clkp, sns3_clkp, sns2_clkp, sns1_clkp}),     // input
         .sns_clkn          ({sns4_clkn, sns3_clkn, sns2_clkn, sns1_clkn}),     // input
         .sns_scl           ({sns4_scl, sns3_scl, sns2_scl, sns1_scl}),         // inout
         .sns_sda           ({sns4_sda, sns3_sda, sns2_sda, sns1_sda}),         // inout
         .sns_ctl           ({sns4_ctl, sns3_ctl, sns2_ctl, sns1_ctl}),         // inout
         .sns_pg            ({sns4_pg, sns3_pg, sns2_pg, sns1_pg}),             // inout
-`else
-        .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // inout[7:0] 
-        .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // inout[7:0] 
-        .sns_clkp          ({sns4_clkp, sns3_clkp, sns2_clkp, sns1_clkp}),     // inout
-        .sns_clkn          ({sns4_clkn, sns3_clkn, sns2_clkn, sns1_clkn}),     // inout
-        .sns_scl           ({sns4_scl, sns3_scl, sns2_scl, sns1_scl}),         // inout
-        .sns_sda           ({sns4_sda, sns3_sda, sns2_sda, sns1_sda}),         // inout
-        .sns_ctl           ({sns4_ctl, sns3_ctl, sns2_ctl, sns1_ctl}),         // inout
-        .sns_pg            ({sns4_pg, sns3_pg, sns2_pg, sns1_pg}),             // inout
-`endif
+
         .frame_run_mclk     (sens_frame_run),      // input [3:0] - enable sensor data to memory buffer
         .rpage_set          (sens_rpage_set),      // input
         .rpage_next         (sens_rpage_next),     // input
