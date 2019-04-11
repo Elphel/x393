@@ -78,7 +78,6 @@ module  sens_lepton3 #(
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
     
     parameter SENS_PHASE_WIDTH=               8,      // number of bits for te phase counter (depends on divisors)
-//    parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =                "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
     parameter CLKIN_PERIOD_SENSOR =   10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
@@ -96,7 +95,39 @@ module  sens_lepton3 #(
     parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =     10000,        // integer 4000-40000 - SS modulation period in ns
-    parameter STATUS_ALIVE_WIDTH =     4
+    parameter STATUS_ALIVE_WIDTH =     4,
+    
+    // mode bits
+    parameter VOSPI_EN =              0,
+    parameter VOSPI_EN_BITS =         2,
+    parameter VOSPI_SEGM0_OK =        2,
+    parameter VOSPI_SEGM0_OK_BITS =   2,
+    parameter VOSPI_OUT_EN =          4,
+    parameter VOSPI_OUT_EN_BITS =     2,
+    parameter VOSPI_OUT_EN_SINGL =    6,
+    parameter VOSPI_RESET_CRC =       7,
+    parameter VOSPI_MRST =            8,
+    parameter VOSPI_MRST_BITS =       2,
+    parameter VOSPI_PWDN =           10,
+    parameter VOSPI_PWDN_BITS =       2,
+    parameter VOSPI_MCLK =           12,
+    parameter VOSPI_MCLK_BITS =       2,
+    parameter VOSPI_SPI_CLK =        14,
+    parameter VOSPI_SPI_CLK_BITS =    2,
+    parameter VOSPI_GPIO =           16,
+    parameter VOSPI_GPIO_BITS =       8,
+    parameter VOSPI_FAKE_OUT =       24, // to keep hardware
+    parameter VOSPI_MOSI =           25, // pot used
+    parameter VOSPI_PACKET_WORDS =    80,
+    parameter VOSPI_NO_INVALID =       1, // do not output invalid packets data
+    parameter VOSPI_PACKETS_PER_LINE = 2,
+    parameter VOSPI_SEGMENT_FIRST =    1,
+    parameter VOSPI_SEGMENT_LAST =     4,
+    parameter VOSPI_PACKET_FIRST =     0,
+    parameter VOSPI_PACKET_LAST =     60,
+    parameter VOSPI_PACKET_TTT =      20,  // line number where segment number is provided
+    parameter VOSPI_SOF_TO_HACT =      2,  // clock cycles from SOF to HACT
+    parameter VOSPI_HACT_TO_HACT_EOF = 2  // minimal clock cycles from HACT to HACT or to EOF
 )(
     // programming interface
     input         mrst,         // @posedge mclk, sync reset
@@ -108,7 +139,7 @@ module  sens_lepton3 #(
     input         status_start, // Acknowledge of the first status packet byte (address)
 
     input         prst,
-    output        prsts,  // @pclk - includes sensor reset and sensor PLL reset
+    output        prsts,        // @pclk - includes sensor reset and sensor PLL reset
 
     input         pclk,         // global clock input, SPI rate (10-20 MHz) - defines internal pixel rate
     input         sns_mclk,     // 25Mz for the sensor 
@@ -138,34 +169,115 @@ module  sens_lepton3 #(
     output        sof,  // @pclk
     output        eof   // @pclk
 );
+    localparam VOSPI_STATUS_BITS = 14;
+// Status data (6 bits + 4)
+    wire [VOSPI_STATUS_BITS-1:0] status;
+    wire                  [ 3:0] segment_id;
+    wire                         crc_err_w;  // single-cycle CRC error
+    reg                          crc_err_r;  // at least one CRC error happened since reset
+    wire                         in_busy;
+    wire                         out_busy;
+    wire                  [ 3:0] gpio_in;    // none currently used
+    wire                         fake_in;
 
-    wire fake_out;
-    wire fake_in;
-    
-    wire [25:0] status; // added byte-wide xfpgatdo
+    assign status = {
+       fake_in,
+       crc_err_r,
+       out_busy,
+       in_busy,
+       gpio_in     [3:0],
+       segment_id  [3:0],      
+       out_busy | in_busy, senspgm_int
+    };
+/*    
+                     xfpgatdo_byte[7:0],
+                     vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
+                     clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
+                     ps_rdy, ps_out,
+                     xfpgatdo, senspgmin}; // go to bits 24, 25 when read
+*/
+
+// mode register (4 bits + 8 + 1)
+/*
+ bits 0,1: 0: nop
+           1 - nreset=0 disable
+           2 - nreset,  disable
+           3 - nreset,  enable
+      2,3: 0,1 - nop
+           2 - disable invalid segments
+           3 - enabl;e invalid segments
+      4,5: 0,1 - nop
+           2 - disable out_en
+           3 - enabl;e out_en
+      6:   0 - nop,
+           1 - single frame out_en
+      7:   reset CRC error
+      8,9: 0,1 - nop
+           2 - lwir_mrst <= 0 (active reset)
+           3 - lwir_mrst <= 1 (inactive)
+    10,11: 0,1 - nop
+           2 - lwir_pwdn <= 0 (active, disable sensor)
+           3 - lwir_pwdn <= 1 (inactive)
+    12,13: 0,1 - nop
+           2 - disable sns_mclk (25 MHz clock to sensor)
+           3 - enable sns_mclk
+    14,15: 0,1 - nop
+           2 - disable spi_clk (stop between CS acvtive)
+           3 - enabl;e spi_clk (continuously run evenwhen CS is acvtive)
+    16-23: GPIO[3:0] - use gpio_bit() and generate 
+    24 - fake_out
+    25 - spi_mosi_int
+*/
+
+// then re-sync to pclk (and to sns_mclk)
+    reg         spi_nrst_mclk;
+    reg         spi_en_mclk;
+    reg         segm0_ok_mclk; // from mode register?
+    reg         out_en_mclk;   // single paulse - single frame, level - continuous
+    wire        out_en_single_mclk;
+    wire        crc_reset_mclk;
+    reg         lwir_mrst_mclk;
+    reg         lwir_pwdn_mclk;
+    reg         sns_mclk_en_mclk;
+    reg         spi_clk_en_mclk;
+    wire [ 3:0] gpio_out;     // only [3] may be used 
+    wire [ 3:0] gpio_en;      // none currently used
+
+// resynced  to pclk
+    reg  [ 1:0] spi_nrst_pclk;     // reset spi and frame immediately (will need to reset sensor too)
+    reg  [ 1:0] spi_en_pclk;       // enable spi communications
+    reg  [ 1:0] segm0_ok_pclk;     // allow illegal segments
+    reg  [ 1:0] out_en_pclk;
+    reg  [ 1:0] lwir_mrst_pclk;
+    reg  [ 1:0] lwir_pwdn_pclk;
+//    reg  [ 1:0] sns_mclk_en_pclk;
+    reg  [ 1:0] spi_clk_en_pclk;
+    wire        out_en_single_pclk;
+    wire        crc_reset_pclk;
+
+
+    wire        fake_out;
+    wire        spi_mosi_int; // not used
+
+    reg         out_en_r;   // single paulse - single frame, level - continuous
+
     
     wire        cmd_we;
     wire  [2:0] cmd_a;
     wire [31:0] cmd_data;
     reg  [31:0] data_r;
+    reg         set_ctrl_r;
+    reg         set_status_r;
     
-    wire        spi_clk_en_mclk;
-    wire        sns_mclk_en_mclk;
-    
-    reg  [ 1:0] spi_clk_en_pclk;
     reg  [ 1:0] sns_mclk_en_lwir_mclk;
+    wire        spi_clken; // from lower module, clock will be combined
+    
     
     wire        spi_miso_int;
     wire        spi_cs_int;
-    wire        spi_mosi_int;
-    wire [ 3:0] gpio_in;     // only [3] may be used 
-    wire [ 3:0] gpio_out;    // none currently used
-    wire [ 3:0] gpio_en = 0; // none currently used
-    wire        lwir_mrst_int;
-    wire        lwir_pwdn_int;
     wire        senspgm_int;
     wire        sns_ctl_int;
-    // not implemented in the sesnor, put dummy input buffer5s
+    // not implemented in the sensor, put dummy input buffer5s
     wire        mipi_dp_int;
     wire        mipi_dn_int;
     wire        mipi_clkp_int;
@@ -173,28 +285,87 @@ module  sens_lepton3 #(
     
     
 // temporary?
-    assign fake_in = senspgm_int ^ sns_ctl_int ^ mipi_dp_int ^ mipi_dn_int ^ mipi_clkp_int ^ mipi_clkn_int;
-//    assign fake_out = data_r[31];
-    assign status[25] = fake_in;
+    assign fake_in = sns_ctl_int ^ mipi_dp_int ^ mipi_dn_int ^ mipi_clkp_int ^ mipi_clkn_int;
 
-// bit assignment will change    
-    assign spi_clk_en_mclk =  data_r[2];
-    assign sns_mclk_en_mclk = data_r[3];
+    assign out_en_single_mclk = set_ctrl_r && data_r[VOSPI_OUT_EN_SINGL] && !mrst;
+    assign crc_reset_mclk   =   set_ctrl_r && data_r[VOSPI_RESET_CRC] && !mrst;
+    assign fake_out =           set_ctrl_r && data_r[VOSPI_FAKE_OUT];
+    assign spi_mosi_int =       set_ctrl_r && data_r[VOSPI_MOSI]; // not used
 
-
+    assign prsts = prst | lwir_mrst_pclk[1];
+    
     always @(posedge mclk) begin
         if      (mrst)     data_r <= 0;
         else if (cmd_we)   data_r <= cmd_data;
-    end    
-
-    always @(posedge pclk) begin
-        spi_clk_en_pclk[1:0] <= {spi_clk_en_pclk[0],spi_clk_en_mclk}; 
+        
+        if (mrst)          set_status_r <=0;
+        else               set_status_r <= cmd_we && (cmd_a== SENSIO_STATUS);                             
+        
+        if (mrst) set_ctrl_r <=0;
+        else               set_ctrl_r <=   cmd_we && (cmd_a== SENSIO_CTRL);
+        
+        if      (mrst)                                             spi_nrst_mclk <= 0;
+        else if (set_ctrl_r && |data_r[VOSPI_EN +: VOSPI_EN_BITS]) spi_nrst_mclk <= data_r[VOSPI_EN + 1]; 
+        
+        if      (mrst)                                             spi_en_mclk <= 0;
+        else if (set_ctrl_r && |data_r[VOSPI_EN +: VOSPI_EN_BITS]) spi_en_mclk <= &data_r[VOSPI_EN +: 2]; 
+                                     
+        if      (mrst)                                                           segm0_ok_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_SEGM0_OK + VOSPI_SEGM0_OK_BITS - 1]) segm0_ok_mclk <= data_r[VOSPI_SEGM0_OK]; 
+        
+        if      (mrst)                                                           out_en_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_OUT_EN + VOSPI_OUT_EN_BITS - 1])     out_en_mclk <= data_r[VOSPI_OUT_EN]; 
+        
+        if      (mrst)                                                           lwir_mrst_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_MRST +  VOSPI_MRST_BITS - 1])        lwir_mrst_mclk <= data_r[VOSPI_MRST]; 
+        
+        if      (mrst)                                                           lwir_pwdn_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_PWDN + VOSPI_PWDN_BITS - 1])         lwir_pwdn_mclk <= data_r[VOSPI_PWDN]; 
+        
+        if      (mrst)                                                           sns_mclk_en_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_MCLK + VOSPI_MCLK_BITS - 1])         sns_mclk_en_mclk <= data_r[VOSPI_MCLK]; 
+        
+        if      (mrst)                                                           spi_clk_en_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_SPI_CLK + VOSPI_SPI_CLK_BITS - 1])   spi_clk_en_mclk <= data_r[VOSPI_SPI_CLK]; 
+    end 
+    // resync to pclk    
+    always @ (posedge pclk) begin
+        spi_nrst_pclk[1:0] <=    {spi_nrst_pclk[0],    spi_nrst_mclk};
+        spi_en_pclk[1:0] <=      {spi_en_pclk[0],      spi_en_mclk};
+        segm0_ok_pclk[1:0] <=    {segm0_ok_pclk[0],    segm0_ok_mclk};
+        out_en_pclk[1:0] <=      {out_en_pclk[0],      out_en_mclk};
+        lwir_mrst_pclk[1:0] <=   {lwir_mrst_pclk[0],   lwir_mrst_mclk};
+        lwir_pwdn_pclk[1:0] <=   {lwir_pwdn_pclk[0],   lwir_pwdn_mclk};
+        spi_clk_en_pclk[1:0] <=  {spi_clk_en_pclk[0],  spi_clk_en_mclk}; 
+        
+        out_en_r <=               out_en_single_pclk | out_en_pclk[1];
+        
+        if (prst || crc_reset_pclk) crc_err_r <= 0;
+        else if (crc_err_w)         crc_err_r <= 1;
+        
     end
 
     always @(posedge sns_mclk) begin
         sns_mclk_en_lwir_mclk[1:0] <= {sns_mclk_en_lwir_mclk[0],sns_mclk_en_mclk}; 
     end
 
+     pulse_cross_clock pulse_cross_clock_out_en_single_i (
+        .rst         (mrst),                     // input
+        .src_clk     (mclk),                     // input
+        .dst_clk     (pclk),                     // input
+        .in_pulse    (out_en_single_mclk),  // input
+        .out_pulse   (out_en_single_pclk),              // output
+        .busy() // output
+    );
+
+     pulse_cross_clock pulse_cross_clock_crc_reset_i (
+        .rst         (mrst),                     // input
+        .src_clk     (mclk),                     // input
+        .dst_clk     (pclk),                     // input
+        .in_pulse    (crc_reset_mclk),           // input
+        .out_pulse   (crc_reset_pclk),           // output
+        .busy() // output
+    );
 
 // implement I/O ports, including fake ones, to be able to assign them I/O pads    
     // generate clocka to sesnor output, controlled by control word bits
@@ -206,13 +377,13 @@ module  sens_lepton3 #(
         .INIT         (1'b0),
         .SRTYPE       ("SYNC")
     ) spi_clk_i (
-        .clk   (pclk),               // input
-        .ce    (spi_clk_en_pclk[1]), // input
-        .rst   (prst),               // input
-        .set   (1'b0),               // input
-        .din   (2'b01),              // input[1:0] 
-        .tin   (1'b0),               // input
-        .dq    (spi_clk)             // output
+        .clk   (pclk),                           // input
+        .ce    (spi_clk_en_pclk[1] | spi_clken), // input
+        .rst   (prst),                           // input
+        .set   (1'b0),                           // input
+        .din   (2'b01),                          // input[1:0] 
+        .tin   (1'b0),                           // input
+        .dq    (spi_clk)                         // output
     );
     // sensor master clock (25MHz)
     oddr_ss #(
@@ -266,10 +437,19 @@ module  sens_lepton3 #(
         .I  (spi_cs_int),           // input
         .T  (1'b0)                  // input - always on
     );
-    
+
     generate // gpio[3:0]
         genvar i;
-        for (i=0; i < 4; i=i+1) begin: gpio_block
+        for (i=0; i < (VOSPI_GPIO_BITS / 2); i=i+1) begin: gpio_block
+            gpio_bit gpio_bit_i (
+                .clk     (mclk),                          // input
+                .srst    (mrst),                          // input
+                .we      (set_ctrl_r),                    // input
+                .d_in    (data_r[VOSPI_GPIO + 2*i +: 2]), // input[1:0] 
+                .d_out   (gpio_out[i]),                   // output
+                .en_out  (gpio_en[i])                     // output
+            );
+        
             iobuf #(
                 .DRIVE        (PXD_DRIVE),
                 .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
@@ -284,17 +464,18 @@ module  sens_lepton3 #(
         
         end
     endgenerate
-    
+
+// for debug/test alive   
     iobuf #( // lwir_mrst
         .DRIVE        (PXD_DRIVE),
         .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW)
     ) lwir_mrst_i (
-        .O  (),                // output - currently not used
-        .IO (lwir_mrst),       // inout I/O pad
-        .I  (lwir_mrst_int),   // input
-        .T  (1'b0)             // input - always on
+        .O  (),                  // output - currently not used
+        .IO (lwir_mrst),         // inout I/O pad
+        .I  (lwir_mrst_pclk[0]), // input
+        .T  (1'b0)               // input - always on
     );
 
     iobuf #( // lwir_pwdn
@@ -303,10 +484,10 @@ module  sens_lepton3 #(
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW)
     ) lwir_pwdn_i (
-        .O  (),                // output - currently not used
-        .IO (lwir_pwdn),       // inout I/O pad
-        .I  (lwir_pwdn_int),   // input
-        .T  (1'b0)             // input - always on
+        .O  (),                  // output - currently not used
+        .IO (lwir_pwdn),         // inout I/O pad
+        .I  (lwir_pwdn_pclk[0]), // input
+        .T  (1'b0)               // input - always on
     );
     
 // MIPI - anyway it is not implemented, IOSTANDARD not known, put just single-ended input buffers    
@@ -382,6 +563,68 @@ module  sens_lepton3 #(
         .T  (1'b1)                 // input - always off
     );
 
+    
+    wire        segment_done; 
+    wire        discard_segment;
+    reg         start_segment;
+    reg  [ 3:0] exp_segment;
+    reg         spi_en_d;
+    // first frame has to be good (only segments only 1..4), next can continue with 0-s     
+    reg         segm0_ok_r;
+    
+    always @(posedge pclk) begin
+//        spi_en_d <= spi_nrst_pclk[1];
+        spi_en_d <= spi_en_pclk[1];
+        
+        
+        if      (!spi_en_d)                        exp_segment <= VOSPI_SEGMENT_FIRST;
+        else if (segment_done && !discard_segment) exp_segment <= (exp_segment == VOSPI_SEGMENT_LAST) ?
+                                                                   VOSPI_SEGMENT_FIRST :
+                                                                   (exp_segment + 1);
+        if      (!spi_en_d)                                                               segm0_ok_r <= 0;
+        else if (segment_done && !discard_segment && (exp_segment == VOSPI_SEGMENT_LAST)) segm0_ok_r <= segm0_ok_pclk[1];
+        
+        start_segment <= spi_en_d && !in_busy && !start_segment;
+        
+        
+    end
+            
+    
+    
+    vospi_segment_61 #(
+        .VOSPI_PACKET_WORDS     (VOSPI_PACKET_WORDS),     // 80
+        .VOSPI_NO_INVALID       (VOSPI_NO_INVALID),       //  1
+        .VOSPI_PACKETS_PER_LINE (VOSPI_PACKETS_PER_LINE), //  2
+        .VOSPI_SEGMENT_FIRST    (VOSPI_SEGMENT_FIRST),    //  1
+        .VOSPI_SEGMENT_LAST     (VOSPI_SEGMENT_LAST),     //  4
+        .VOSPI_PACKET_FIRST     (VOSPI_PACKET_FIRST),     //  0
+        .VOSPI_PACKET_LAST      (VOSPI_PACKET_LAST),      // 60
+        .VOSPI_PACKET_TTT       (VOSPI_PACKET_TTT),       // 20
+        .VOSPI_SOF_TO_HACT      (VOSPI_SOF_TO_HACT),      //  2
+        .VOSPI_HACT_TO_HACT_EOF (VOSPI_HACT_TO_HACT_EOF)  //  2
+    ) vospi_segment_61_i (
+        .rst             (!spi_nrst_pclk[1]),   // input
+        .clk             (pclk),             // input
+        .start           (start_segment),    // input
+        .exp_segment     (exp_segment),      // input[3:0] 
+        .segm0_ok        (segm0_ok_r),       // input
+        .out_en          (out_en_r),         // input
+        .spi_clken       (spi_clken),        // output
+        .spi_cs          (spi_cs_int),       // output
+        .miso            (spi_miso_int),     // input
+        .in_busy         (in_busy),          // output
+        .out_busy        (out_busy),         // output
+        .segment_done    (segment_done),     // output reg 
+        .discard_segment (discard_segment),  // output
+        .dout            (pxd),              // output[15:0] 
+        .hact            (hact),             // output
+        .sof             (sof),              // output
+        .eof             (eof),              // output
+        .crc_err         (crc_err_w),        // output
+        .id              (segment_id)        // output[3:0] 
+    );
+
+
     cmd_deser #(
         .ADDR        (SENSIO_ADDR),
         .ADDR_MASK   (SENSIO_ADDR_MASK),
@@ -391,7 +634,7 @@ module  sens_lepton3 #(
     ) cmd_deser_sens_io_i (
         .rst         (1'b0),     // rst), // input
         .clk         (mclk),     // input
-        .srst        (mrst), // input
+        .srst        (mrst),     // input
         .ad          (cmd_ad),   // input[7:0] 
         .stb         (cmd_stb),  // input
         .addr        (cmd_a),    // output[15:0] 
@@ -401,7 +644,7 @@ module  sens_lepton3 #(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-        .PAYLOAD_BITS(26) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(VOSPI_STATUS_BITS) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),         // rst), // input
         .clk        (mclk),         // input
@@ -415,7 +658,8 @@ module  sens_lepton3 #(
     );
     
  
-// for debug/test alive   
+// for debug/test alive kept for debug if it will be needed
+/*   
     pulse_cross_clock pulse_cross_clock_vact_a_mclk_i (
         .rst         (irst),                     // input
         .src_clk     (ipclk),                    // input
@@ -442,7 +686,7 @@ module  sens_lepton3 #(
         .out_pulse   (hact_a_mclk),              // output
         .busy() // output
     );
-
+*/
 
 endmodule
 

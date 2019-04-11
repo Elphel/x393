@@ -40,6 +40,7 @@
 
 module  vospi_segment_61#(
     parameter VOSPI_PACKET_WORDS =    80,
+    parameter VOSPI_NO_INVALID =       1, // do not output invalid packets data
     parameter VOSPI_PACKETS_PER_LINE = 2,
     parameter VOSPI_SEGMENT_FIRST =    1,
     parameter VOSPI_SEGMENT_LAST =     4,
@@ -52,23 +53,26 @@ module  vospi_segment_61#(
 )(
     input         rst,
     input         clk,
-    input         start,         // start reading segment
-    input  [3:0]  exp_segment,   // expected segment (1,2,3,4)
-    input         segm0_ok,      // OK to read segment 0 instead of the current ( exp_segment still has to be 1..4)
-    input         out_en,        // enable frame output generation (will finish current frame if disabled, single-pulse
-                                 // runs a single frame
+    input         start,           // start reading segment
+    input  [3:0]  exp_segment,     // expected segment (1,2,3,4)
+    input         segm0_ok,        // OK to read segment 0 instead of the current ( exp_segment still has to be 1..4)
+    input         out_en,          // enable frame output generation (will finish current frame if disabled, single-pulse
+                                   // runs a single frame
     // SPI signals
-    output        spi_clken,     // enable clock on spi_clk
-    output        spi_cs,        // active low
-    input         miso,          // input from the sensor
+    output        spi_clken,       // enable clock on spi_clk
+    output        spi_cs,          // active low
+    input         miso,            // input from the sensor
     
-    output [15:0] dout,          // 16-bit data received
-    output        hact,          // data valid 
-    output        sof,           // start of frame
-    output        eof,           // end of frame
-    output        crc_err,       // crc error happened for any packet (valid at eos)
-    output  [3:0] id             // segment number  (valid at eos)
-
+    output        in_busy,         // waiting for or receiving a segment
+    output        out_busy,
+    output reg    segment_done,    // finished receiving segment (good or bad). next after busy off
+    output        discard_segment, // segment was disc arded  
+    output [15:0] dout,            // 16-bit data received
+    output        hact,            // data valid 
+    output        sof,             // start of frame
+    output        eof,             // end of frame
+    output        crc_err,         // crc error happened for any packet (valid at eos)
+    output  [3:0] id               // segment number  (valid at eos)
 );
     localparam VOSPI_PACKETS_FRAME = (VOSPI_SEGMENT_LAST - VOSPI_SEGMENT_FIRST + 1) *
                                      (VOSPI_PACKET_LAST - VOSPI_PACKET_FIRST + 1);
@@ -86,10 +90,10 @@ module  vospi_segment_61#(
     reg   [ 7:0] full_packet;          // current full packet number in a fragment
     reg   [ 7:0] full_packet_verified; // next packet verified (will not be discarded later)
     reg          full_packet_frame;    // lsb of the input frame  // not needed?
-    reg          discard_set;          // start discard_segment
+    reg          discard_set;          // start discard_segment_r
     wire         segment_good_w;       // recognized expected segment, OK to read FIFO
     reg          segment_good;         // recognized expected segment, OK to read FIFO
-    reg          discard_segment;      // read and discard the rest of the current segment
+    reg          discard_segment_r;    // read and discard the rest of the current segment
     reg          running_good;         // passed packet 20
     wire         packet_done;          // read full packet
     wire         packet_busy;          // receiving SPI packet (same as spi_clken, !spi_cs)
@@ -101,12 +105,12 @@ module  vospi_segment_61#(
     wire         is_last_segment_w;
     reg          start_d;
     wire         segment_stb;
-    reg          crc_err_r;
+//  reg          crc_err_r;
     wire         packet_crc_err;
     reg          packet_start;
     wire         we; // write data to buffer
-    wire         segment_done;
-    reg          segment_busy;
+    wire         segment_done_w;
+    reg          segment_busy_r;
     reg          segment_running; // may be discarded
     reg    [3:0] segment_id_r;
     wire         frame_in_done;
@@ -116,11 +120,16 @@ module  vospi_segment_61#(
     assign is_last_segment_w =  (exp_segment == VOSPI_SEGMENT_LAST);
     assign segment_good_w =     (packet_id[15:12] == exp_segment) || ((packet_id[15:12] == 0) && segm0_ok);
     assign segment_stb =        id_stb && (packet_id[11:0] == VOSPI_PACKET_TTT);
-    assign we =                 segment_running && !discard_segment && packet_dv;
-    assign crc_err =            crc_err_r;
-    assign segment_done =       segment_running && packet_done && (packet_id[11:0] == VOSPI_PACKET_LAST) ;
+    assign we =                 segment_running && !discard_segment_r && packet_dv;
+    assign crc_err =            packet_done && packet_crc_err; // crc_err_r;
+    assign segment_done_w =     segment_running && packet_done && (packet_id[11:0] == VOSPI_PACKET_LAST) ;
     assign id =                 segment_id_r;
-    assign frame_in_done =      segment_done && last_segment_in;
+    assign frame_in_done =      segment_done_w && last_segment_in;
+    
+    assign in_busy=             segment_busy_r;       // waiting for or receiving a segment
+    assign discard_segment=     discard_segment_r;    // segment was disc arded  
+    
+    
     // To Buffer
     always @ (posedge clk) begin
 //        if      (rst)   first_segment_in <= 0;
@@ -131,14 +140,14 @@ module  vospi_segment_61#(
         
         start_d <= start;
         
-        discard_set <=  segment_running && !discard_segment && segment_stb && !segment_good_w;
+        discard_set <=  segment_running && !discard_segment_r && segment_stb && !segment_good_w;
         
-        segment_good <= segment_running && !discard_segment && segment_stb && segment_good_w;
+        segment_good <= segment_running && !discard_segment_r && segment_stb && segment_good_w;
         
-        if (segment_running && !discard_segment && segment_stb) segment_id_r <= packet_id[15:12];
+        if (segment_running && !discard_segment_r && segment_stb) segment_id_r <= packet_id[15:12];
         
-        if      (start)        discard_segment <= 0;
-        else if (discard_set)  discard_segment <= 1;
+        if      (start)        discard_segment_r <= 0;
+        else if (discard_set)  discard_segment_r <= 1;
         
         if      (start)        running_good <= 0;
         else if (segment_good) running_good <= 1;
@@ -150,28 +159,30 @@ module  vospi_segment_61#(
         if (start_d) segment_start_packet <= full_packet;
         if (start_d) segment_start_waddr <=  waddr;
 
-        if (rst || (start && is_first_segment_w)) full_packet <= 0;
-        else if (discard_set)                     full_packet <= segment_start_packet;
-        else if (!discard_segment && packet_done) full_packet <= full_packet + 1;
+        if (rst || (start && is_first_segment_w))   full_packet <= 0;
+        else if (discard_set)                       full_packet <= segment_start_packet;
+        else if (!discard_segment_r && packet_done) full_packet <= full_packet + 1;
         
-        if      (rst || start)                    crc_err_r <= 0;
-        else if (packet_done && packet_crc_err)   crc_err_r <= 0;
+//        if      (rst || start)                    crc_err_r <= 0;
+//        else if (packet_done && packet_crc_err)   crc_err_r <= 0;
         
-        if      (rst)           segment_busy <= 0;
-        else if (start)         segment_busy <= 1'b1;
-        else if (segment_done)  segment_busy <= 1'b0;
+        if      (rst)            segment_busy_r <= 0;
+        else if (start)          segment_busy_r <= 1'b1;
+        else if (segment_done_w) segment_busy_r <= 1'b0;
         
-        if      (!segment_busy || start)                           segment_running <= 0;
+        segment_done <= segment_done_w; // module output reg
+        
+        if      (!segment_busy_r || start)                           segment_running <= 0;
         else if (id_stb && (packet_id[11:0] == VOSPI_PACKET_FIRST)) segment_running <= 1;
         
-        packet_start <= !rst && !packet_busy && segment_busy;
+        packet_start <= !rst && !packet_busy && segment_busy_r;
         
-        if      (rst)           waddr <= 0;
-        else if (discard_set)   waddr <= segment_start_waddr;
-        else if (we)            waddr <= waddr + 1;
+        if      (rst)            waddr <= 0;
+        else if (discard_set)    waddr <= segment_start_waddr;
+        else if (we)             waddr <= waddr + 1;
         
-        if      (rst)           full_packet_frame <= 0; // not needed?
-        else if (frame_in_done) full_packet_frame <=~full_packet_frame;
+        if      (rst)            full_packet_frame <= 0; // not needed?
+        else if (frame_in_done)  full_packet_frame <=~full_packet_frame;
     end
 // From buffer, generating frame
     reg          out_request;
@@ -209,6 +220,7 @@ module  vospi_segment_61#(
     assign hact =              hact_r[2];
     assign eof =               eof_r[2];
     assign sof =               sof_r;
+    assign out_busy =          out_request | out_frame;
     
     always @ (posedge clk) begin
         if (rst) hact_r <= 0;
@@ -250,8 +262,8 @@ module  vospi_segment_61#(
     end
     
     vospi_packet_80 #(
-        .VOSPI_PACKET_WORDS(80),
-        .VOSPI_NO_INVALID(1)
+        .VOSPI_PACKET_WORDS  (VOSPI_PACKET_WORDS), // 80,
+        .VOSPI_NO_INVALID    (VOSPI_NO_INVALID)    // 1
     ) vospi_packet_80_i (
         .rst            (rst),            // input
         .clk            (clk),            // input

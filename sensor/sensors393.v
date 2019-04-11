@@ -223,12 +223,44 @@ module  sensors393 #(
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",
     parameter SENSI2C_SLEW =             "SLOW",
     
-`ifndef HISPI
+`ifdef HISPI
+`elsif LWIR
+    parameter VOSPI_EN =                 0,
+    parameter VOSPI_EN_BITS =            2,
+    parameter VOSPI_SEGM0_OK =           2,
+    parameter VOSPI_SEGM0_OK_BITS =      2,
+    parameter VOSPI_OUT_EN =             4,
+    parameter VOSPI_OUT_EN_BITS =        2,
+    parameter VOSPI_OUT_EN_SINGL =       6,
+    parameter VOSPI_RESET_CRC =          7,
+    parameter VOSPI_MRST =               8,
+    parameter VOSPI_MRST_BITS =          2,
+    parameter VOSPI_PWDN =              10,
+    parameter VOSPI_PWDN_BITS =          2,
+    parameter VOSPI_MCLK =              12,
+    parameter VOSPI_MCLK_BITS =          2,
+    parameter VOSPI_SPI_CLK =           14,
+    parameter VOSPI_SPI_CLK_BITS =       2,
+    parameter VOSPI_GPIO =              16,
+    parameter VOSPI_GPIO_BITS =          8,
+    parameter VOSPI_FAKE_OUT =          24, // to keep hardware
+    parameter VOSPI_MOSI =              25, // not used
+    parameter VOSPI_PACKET_WORDS =      80,
+    parameter VOSPI_NO_INVALID =         1, // do not output invalid packets data
+    parameter VOSPI_PACKETS_PER_LINE =   2,
+    parameter VOSPI_SEGMENT_FIRST =      1,
+    parameter VOSPI_SEGMENT_LAST =       4,
+    parameter VOSPI_PACKET_FIRST =       0,
+    parameter VOSPI_PACKET_LAST =       60,
+    parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
+    parameter VOSPI_SOF_TO_HACT =        2,  // clock cycles from SOF to HACT
+    parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
+`else
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
     parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
-`endif    
+`endif
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
       parameter HIST_SAXI_MODE_WIDTH =   8,
@@ -644,7 +676,40 @@ module  sensors393 #(
                 .SENSI2C_IOSTANDARD            (SENSI2C_IOSTANDARD),
                 .SENSI2C_SLEW                  (SENSI2C_SLEW),
                 .NUM_FRAME_BITS                (NUM_FRAME_BITS),
-`ifndef HISPI
+`ifdef HISPI
+`elsif LWIR
+                .VOSPI_EN                      (VOSPI_EN), //                 0,
+                .VOSPI_EN_BITS                 (VOSPI_EN_BITS), //            2,
+                .VOSPI_SEGM0_OK                (VOSPI_SEGM0_OK), //           2,
+                .VOSPI_SEGM0_OK_BITS           (VOSPI_SEGM0_OK_BITS), //      2,
+                .VOSPI_OUT_EN                  (VOSPI_OUT_EN), //             4,
+                .VOSPI_OUT_EN_BITS             (VOSPI_OUT_EN_BITS), //        2,
+                .VOSPI_OUT_EN_SINGL            (VOSPI_OUT_EN_SINGL), //       6,
+                .VOSPI_RESET_CRC               (VOSPI_RESET_CRC), //          7,
+                .VOSPI_MRST                    (VOSPI_MRST), //               8,
+                .VOSPI_MRST_BITS               (VOSPI_MRST_BITS), //          2,
+                .VOSPI_PWDN                    (VOSPI_PWDN), //              10,
+                .VOSPI_PWDN_BITS               (VOSPI_PWDN_BITS), //          2,
+                .VOSPI_MCLK                    (VOSPI_MCLK), //              12,
+                .VOSPI_MCLK_BITS               (VOSPI_MCLK_BITS), //          2,
+                .VOSPI_SPI_CLK                 (VOSPI_SPI_CLK), //           14,
+                .VOSPI_SPI_CLK_BITS            (VOSPI_SPI_CLK_BITS), //       2,
+                .VOSPI_GPIO                    (VOSPI_GPIO), //              16,
+                .VOSPI_GPIO_BITS               (VOSPI_GPIO_BITS), //          8,
+                .VOSPI_FAKE_OUT                (VOSPI_FAKE_OUT), //          24, // to keep hardware
+                .VOSPI_MOSI                    (VOSPI_MOSI), //              25, // not used
+                .VOSPI_PACKET_WORDS            (VOSPI_PACKET_WORDS),//       80,
+                .VOSPI_NO_INVALID              (VOSPI_NO_INVALID), //         1,
+                .VOSPI_PACKETS_PER_LINE        (VOSPI_PACKETS_PER_LINE), //   2,
+                .VOSPI_SEGMENT_FIRST           (VOSPI_SEGMENT_FIRST), //      1,
+                .VOSPI_SEGMENT_LAST            (VOSPI_SEGMENT_LAST), //       4,
+                .VOSPI_PACKET_FIRST            (VOSPI_PACKET_FIRST), //       0,
+                .VOSPI_PACKET_LAST             (VOSPI_PACKET_LAST), //       60,
+                .VOSPI_PACKET_TTT              (VOSPI_PACKET_TTT), //        20,
+                .VOSPI_SOF_TO_HACT             (VOSPI_SOF_TO_HACT), //        2,
+                .VOSPI_HACT_TO_HACT_EOF        (VOSPI_HACT_TO_HACT_EOF), //   2,
+                
+`else
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),
                 .SENSOR_FIFO_2DEPTH            (SENSOR_FIFO_2DEPTH),
                 .SENSOR_FIFO_DELAY             (SENSOR_FIFO_DELAY),

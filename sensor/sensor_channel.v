@@ -227,14 +227,44 @@ module  sensor_channel#(
     
     parameter NUM_FRAME_BITS =        4,
     
-`ifndef HISPI
-  `ifndef LWIR
+`ifdef HISPI
+`elsif LWIR
+    parameter VOSPI_EN =                 0,
+    parameter VOSPI_EN_BITS =            2,
+    parameter VOSPI_SEGM0_OK =           2,
+    parameter VOSPI_SEGM0_OK_BITS =      2,
+    parameter VOSPI_OUT_EN =             4,
+    parameter VOSPI_OUT_EN_BITS =        2,
+    parameter VOSPI_OUT_EN_SINGL =       6,
+    parameter VOSPI_RESET_CRC =          7,
+    parameter VOSPI_MRST =               8,
+    parameter VOSPI_MRST_BITS =          2,
+    parameter VOSPI_PWDN =              10,
+    parameter VOSPI_PWDN_BITS =          2,
+    parameter VOSPI_MCLK =              12,
+    parameter VOSPI_MCLK_BITS =          2,
+    parameter VOSPI_SPI_CLK =           14,
+    parameter VOSPI_SPI_CLK_BITS =       2,
+    parameter VOSPI_GPIO =              16,
+    parameter VOSPI_GPIO_BITS =          8,
+    parameter VOSPI_FAKE_OUT =          24, // to keep hardware
+    parameter VOSPI_MOSI =              25, // not used
+    parameter VOSPI_PACKET_WORDS =      80,
+    parameter VOSPI_NO_INVALID =         1, // do not output invalid packets data
+    parameter VOSPI_PACKETS_PER_LINE =   2,
+    parameter VOSPI_SEGMENT_FIRST =      1,
+    parameter VOSPI_SEGMENT_LAST =       4,
+    parameter VOSPI_PACKET_FIRST =       0,
+    parameter VOSPI_PACKET_LAST =       60,
+    parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
+    parameter VOSPI_SOF_TO_HACT =        2,  // clock cycles from SOF to HACT
+    parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
+`else
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
     parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
-  `endif  
-`endif    
+`endif
     
     // sens_parallel12 other parameters
     
@@ -501,9 +531,12 @@ module  sensor_channel#(
     reg                       dav_r;       
     wire               [15:0] dout_w;
     wire                      dav_w;
-//`ifndef LWIR    
-    wire                      trig;
-//`endif
+`ifdef LWIR    
+    wire                      trig; // SuppressThisWarning VEditor - (yet) unused
+`else
+    wire                      trig; 
+`endif
+
     wire                      prsts;  // @pclk - includes sensor reset and sensor PLL reset
     reg                       sof_out_r;       
     reg                       eof_out_r;       
@@ -536,14 +569,24 @@ module  sensor_channel#(
     
 `ifdef DEBUG_RING
     `ifdef HISPI
+    `elsif LWIR
+    
     `else
         reg vact_to_fifo_r;    
     `endif
-    reg hact_to_fifo_r;
-    reg [15:0] debug_line_cntr;
-    reg [15:0] debug_lines;
-    reg [15:0] hact_cntr;
-    reg [15:0] vact_cntr;
+     `ifdef LWIR    
+//         reg        hact_to_fifo_r;
+         reg [15:0] debug_line_cntr = 0;
+         reg [15:0] debug_lines =     0;
+         reg [15:0] hact_cntr =       0;
+//         reg [15:0] vact_cntr;
+     `else
+         reg        hact_to_fifo_r;
+         reg [15:0] debug_line_cntr;
+         reg [15:0] debug_lines;
+         reg [15:0] hact_cntr;
+         reg [15:0] vact_cntr;
+     `endif
 `ifdef HISPI
     always @(posedge pclk) begin
 //        vact_to_fifo_r <= vact_to_fifo;
@@ -813,7 +856,7 @@ module  sensor_channel#(
   `endif    
 `endif    
 
-`ifndef LWIR  
+//`ifndef LWIR  
         pulse_cross_clock pulse_cross_clock_eof_mclk_i (
             .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
             .src_clk     (pclk),                  // input
@@ -822,7 +865,7 @@ module  sensor_channel#(
             .out_pulse   (eof_mclk),              // output
             .busy() // output
         );
-`endif    
+//`endif    
 
 
 `ifdef HISPI
@@ -955,30 +998,60 @@ module  sensor_channel#(
             .SENS_CTRL_ODD         (SENS_CTRL_ODD),
             .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
             .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
-            .IODELAY_GRP           (IODELAY_GRP),
-            .IDELAY_VALUE          (IDELAY_VALUE),
-            .PXD_DRIVE             (PXD_DRIVE),
-            .PXD_IOSTANDARD        (PXD_IOSTANDARD),
-            .PXD_SLEW              (PXD_SLEW),
-            .SENS_REFCLK_FREQUENCY (SENS_REFCLK_FREQUENCY),
+            .IODELAY_GRP            (IODELAY_GRP),
+            .IDELAY_VALUE           (IDELAY_VALUE),
+            .PXD_DRIVE              (PXD_DRIVE),
+            .PXD_IOSTANDARD         (PXD_IOSTANDARD),
+            .PXD_SLEW               (PXD_SLEW),
+            .SENS_REFCLK_FREQUENCY  (SENS_REFCLK_FREQUENCY),
             .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
-            .SENS_PHASE_WIDTH      (SENS_PHASE_WIDTH),
-            .SENS_BANDWIDTH        (SENS_BANDWIDTH),
-            .CLKIN_PERIOD_SENSOR   (CLKIN_PERIOD_SENSOR),
-            .CLKFBOUT_MULT_SENSOR  (CLKFBOUT_MULT_SENSOR),
-            .CLKFBOUT_PHASE_SENSOR (CLKFBOUT_PHASE_SENSOR),
-            .IPCLK_PHASE           (IPCLK_PHASE),
-            .IPCLK2X_PHASE         (IPCLK2X_PHASE),
-            .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
-            .BUF_IPCLK             (BUF_IPCLK),
-            .BUF_IPCLK2X           (BUF_IPCLK2X),
-            .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),
-            .SENS_REF_JITTER1      (SENS_REF_JITTER1),
-            .SENS_REF_JITTER2      (SENS_REF_JITTER2),
-            .SENS_SS_EN            (SENS_SS_EN),
-            .SENS_SS_MODE          (SENS_SS_MODE),
-            .SENS_SS_MOD_PERIOD    (SENS_SS_MOD_PERIOD),
-            .STATUS_ALIVE_WIDTH    (STATUS_ALIVE_WIDTH)
+            .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
+            .SENS_BANDWIDTH         (SENS_BANDWIDTH),
+            .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
+            .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
+            .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
+            .IPCLK_PHASE            (IPCLK_PHASE),
+            .IPCLK2X_PHASE          (IPCLK2X_PHASE),
+            .PXD_IBUF_LOW_PWR       (PXD_IBUF_LOW_PWR),
+            .BUF_IPCLK              (BUF_IPCLK),
+            .BUF_IPCLK2X            (BUF_IPCLK2X),
+            .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),
+            .SENS_REF_JITTER1       (SENS_REF_JITTER1),
+            .SENS_REF_JITTER2       (SENS_REF_JITTER2),
+            .SENS_SS_EN             (SENS_SS_EN),
+            .SENS_SS_MODE           (SENS_SS_MODE),
+            .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
+            .STATUS_ALIVE_WIDTH     (STATUS_ALIVE_WIDTH),
+            .VOSPI_EN               (VOSPI_EN), //                 0,
+            .VOSPI_EN_BITS          (VOSPI_EN_BITS), //            2,
+            .VOSPI_SEGM0_OK         (VOSPI_SEGM0_OK), //           2,
+            .VOSPI_SEGM0_OK_BITS    (VOSPI_SEGM0_OK_BITS), //      2,
+            .VOSPI_OUT_EN           (VOSPI_OUT_EN), //             4,
+            .VOSPI_OUT_EN_BITS      (VOSPI_OUT_EN_BITS), //        2,
+            .VOSPI_OUT_EN_SINGL     (VOSPI_OUT_EN_SINGL), //       6,
+            .VOSPI_RESET_CRC        (VOSPI_RESET_CRC), //          7,
+            .VOSPI_MRST             (VOSPI_MRST), //               8,
+            .VOSPI_MRST_BITS        (VOSPI_MRST_BITS), //          2,
+            .VOSPI_PWDN             (VOSPI_PWDN), //              10,
+            .VOSPI_PWDN_BITS        (VOSPI_PWDN_BITS), //          2,
+            .VOSPI_MCLK             (VOSPI_MCLK), //              12,
+            .VOSPI_MCLK_BITS        (VOSPI_MCLK_BITS), //          2,
+            .VOSPI_SPI_CLK          (VOSPI_SPI_CLK), //           14,
+            .VOSPI_SPI_CLK_BITS     (VOSPI_SPI_CLK_BITS), //       2,
+            .VOSPI_GPIO             (VOSPI_GPIO), //              16,
+            .VOSPI_GPIO_BITS        (VOSPI_GPIO_BITS), //          8,
+            .VOSPI_FAKE_OUT         (VOSPI_FAKE_OUT), //          24, // to keep hardware
+            .VOSPI_MOSI             (VOSPI_MOSI), //              25, // pot used
+            .VOSPI_PACKET_WORDS     (VOSPI_PACKET_WORDS),//       80,
+            .VOSPI_NO_INVALID       (VOSPI_NO_INVALID), //         1,
+            .VOSPI_PACKETS_PER_LINE (VOSPI_PACKETS_PER_LINE), //   2,
+            .VOSPI_SEGMENT_FIRST    (VOSPI_SEGMENT_FIRST), //      1,
+            .VOSPI_SEGMENT_LAST     (VOSPI_SEGMENT_LAST), //       4,
+            .VOSPI_PACKET_FIRST     (VOSPI_PACKET_FIRST), //       0,
+            .VOSPI_PACKET_LAST      (VOSPI_PACKET_LAST), //       60,
+            .VOSPI_PACKET_TTT       (VOSPI_PACKET_TTT), //        20,
+            .VOSPI_SOF_TO_HACT      (VOSPI_SOF_TO_HACT), //        2,
+            .VOSPI_HACT_TO_HACT_EOF (VOSPI_HACT_TO_HACT_EOF) //   2,
     ) sens_lepton3_i (
             .mrst                 (mrst),                   // input
             .mclk                 (mclk),                   // input

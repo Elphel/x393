@@ -35,6 +35,9 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
+ 
+    // All paremeters should be defined for all defines values - needed to export to C
+ 
     parameter MCONTR_WR_MASK =          'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
     parameter MCONTR_RD_MASK =          'h3c00, // AXI read address mask to generate busy
 
@@ -152,14 +155,14 @@
     parameter SLEW_CLK =        "SLOW",
     parameter IBUF_LOW_PWR =    "TRUE",
 `ifdef use200Mhz
-    parameter real REFCLK_FREQUENCY = 200.0, // 300.0,
+    parameter real REFCLK_FREQUENCY = 200.0, // 300.0, 
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD =        20, // 10, //ns >1.25, 600<Fvco<1200 // Hardware 150MHz , change to             | 6.667
-`ifdef MCLK_VCO_MULT
-    parameter CLKFBOUT_MULT =       `MCLK_VCO_MULT ,
-`else
-    parameter CLKFBOUT_MULT =       16,   // 8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 16
-`endif
+    `ifdef MCLK_VCO_MULT
+       parameter CLKFBOUT_MULT =       `MCLK_VCO_MULT ,
+    `else
+       parameter CLKFBOUT_MULT =       16,   // 8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 16
+   `endif
 `else
     parameter real REFCLK_FREQUENCY = 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
@@ -533,7 +536,40 @@
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",
     parameter SENSI2C_SLEW =             "SLOW",
 
-//`ifndef HISPI
+//`ifdef HISPI
+//`elsif LWIR
+    parameter VOSPI_EN =                 0,
+    parameter VOSPI_EN_BITS =            2,
+    parameter VOSPI_SEGM0_OK =           2,
+    parameter VOSPI_SEGM0_OK_BITS =      2,
+    parameter VOSPI_OUT_EN =             4,
+    parameter VOSPI_OUT_EN_BITS =        2,
+    parameter VOSPI_OUT_EN_SINGL =       6,
+    parameter VOSPI_RESET_CRC =          7,
+    parameter VOSPI_MRST =               8,
+    parameter VOSPI_MRST_BITS =          2,
+    parameter VOSPI_PWDN =              10,
+    parameter VOSPI_PWDN_BITS =          2,
+    parameter VOSPI_MCLK =              12,
+    parameter VOSPI_MCLK_BITS =          2,
+    parameter VOSPI_SPI_CLK =           14,
+    parameter VOSPI_SPI_CLK_BITS =       2,
+    parameter VOSPI_GPIO =              16,
+    parameter VOSPI_GPIO_BITS =          8,
+    parameter VOSPI_FAKE_OUT =          24, // to keep hardware
+    parameter VOSPI_MOSI =              25, // not used
+    parameter VOSPI_PACKET_WORDS =      80,
+    parameter VOSPI_NO_INVALID =         1, // do not output invalid packets data
+    parameter VOSPI_PACKETS_PER_LINE =   2,
+    parameter VOSPI_SEGMENT_FIRST =      1,
+    parameter VOSPI_SEGMENT_LAST =       4,
+    parameter VOSPI_PACKET_FIRST =       0,
+    parameter VOSPI_PACKET_LAST =       60,
+    parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
+    parameter VOSPI_SOF_TO_HACT =        2,  // clock cycles from SOF to HACT
+    parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
+    
+//`else
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
@@ -926,7 +962,8 @@
         parameter MULTICLK_DIV_XCLK =     12, // 100 MHz for compressor
         parameter MULTICLK_DIV_XCLK2X =    6, // 200 MHz for compressor (when MULTICLK_DIV_XCLK uses 100 MHz)
 `else
-        parameter MULTICLK_DIV_XCLK =          5, // 240 MHz for compressor (12 for 100 MHz)
+        parameter MULTICLK_DIV_XCLK =      5, // 240 MHz for compressor (12 for 100 MHz)
+        parameter MULTICLK_DIV_XCLK2X =    6, // unused value
 `endif
     parameter MULTICLK_DIV_SYNC =         12, // 100 MHz for inter-camera synchronization and time keeping
 // Additional parameters for multi-clock PLL (phases and buffer types)

@@ -1834,7 +1834,41 @@ assign axi_grst = axi_rst_pre;
         .SENSI2C_IBUF_LOW_PWR       (SENSI2C_IBUF_LOW_PWR),
         .SENSI2C_IOSTANDARD         (SENSI2C_IOSTANDARD),
         .SENSI2C_SLEW               (SENSI2C_SLEW),
-`ifndef HISPI
+`ifdef HISPI
+`elsif LWIR
+        .VOSPI_EN                   (VOSPI_EN), //                 0,
+        .VOSPI_EN_BITS              (VOSPI_EN_BITS), //            2,
+        .VOSPI_SEGM0_OK             (VOSPI_SEGM0_OK), //           2,
+        .VOSPI_SEGM0_OK_BITS        (VOSPI_SEGM0_OK_BITS), //      2,
+        .VOSPI_OUT_EN               (VOSPI_OUT_EN), //             4,
+        .VOSPI_OUT_EN_BITS          (VOSPI_OUT_EN_BITS), //        2,
+        .VOSPI_OUT_EN_SINGL         (VOSPI_OUT_EN_SINGL), //       6,
+        .VOSPI_RESET_CRC            (VOSPI_RESET_CRC), //          7,
+        .VOSPI_MRST                 (VOSPI_MRST), //               8,
+        .VOSPI_MRST_BITS            (VOSPI_MRST_BITS), //          2,
+        .VOSPI_PWDN                 (VOSPI_PWDN), //              10,
+        .VOSPI_PWDN_BITS            (VOSPI_PWDN_BITS), //          2,
+        .VOSPI_MCLK                 (VOSPI_MCLK), //              12,
+        .VOSPI_MCLK_BITS            (VOSPI_MCLK_BITS), //          2,
+        .VOSPI_SPI_CLK              (VOSPI_SPI_CLK), //           14,
+        .VOSPI_SPI_CLK_BITS         (VOSPI_SPI_CLK_BITS), //       2,
+        .VOSPI_GPIO                 (VOSPI_GPIO), //              16,
+        .VOSPI_GPIO_BITS            (VOSPI_GPIO_BITS), //          8,
+        .VOSPI_FAKE_OUT             (VOSPI_FAKE_OUT), //          24, // to keep hardware
+        .VOSPI_MOSI                 (VOSPI_MOSI), //              25, // not used
+        .VOSPI_PACKET_WORDS         (VOSPI_PACKET_WORDS),//       80,
+        .VOSPI_NO_INVALID           (VOSPI_NO_INVALID), //         1,
+        .VOSPI_PACKETS_PER_LINE     (VOSPI_PACKETS_PER_LINE), //   2,
+        .VOSPI_SEGMENT_FIRST        (VOSPI_SEGMENT_FIRST), //      1,
+        .VOSPI_SEGMENT_LAST         (VOSPI_SEGMENT_LAST), //       4,
+        .VOSPI_PACKET_FIRST         (VOSPI_PACKET_FIRST), //       0,
+        .VOSPI_PACKET_LAST          (VOSPI_PACKET_LAST), //       60,
+        .VOSPI_PACKET_TTT           (VOSPI_PACKET_TTT), //        20,
+        .VOSPI_SOF_TO_HACT          (VOSPI_SOF_TO_HACT), //        2,
+        .VOSPI_HACT_TO_HACT_EOF     (VOSPI_HACT_TO_HACT_EOF), //   2,
+        
+`else
+
         .SENSOR_DATA_WIDTH          (SENSOR_DATA_WIDTH),
         .SENSOR_FIFO_2DEPTH         (SENSOR_FIFO_2DEPTH),
         .SENSOR_FIFO_DELAY         (SENSOR_FIFO_DELAY),

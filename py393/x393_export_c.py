@@ -322,7 +322,9 @@ class X393ExportC(object):
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "Sensor/multiplexer I/O pins status",
-                                 data =      [self._enc_status_sens_io(),self._enc_status_sens_io_hispi()],
+                                 data =      [self._enc_status_sens_io(),
+                                              self._enc_status_sens_io_hispi(),
+                                              self._enc_status_sens_io_vospi()],
                                  name =      "x393_status_sens_io",  typ="ro",
                                  frmt_spcs = frmt_spcs)
 
@@ -431,7 +433,8 @@ class X393ExportC(object):
         
         stypedefs += self.get_typedef32(comment =   "Sensor port I/O control",
                                  data =      [self._enc_sensio_ctrl_par12(),
-                                              self._enc_sensio_ctrl_hispi()],
+                                              self._enc_sensio_ctrl_hispi(),
+                                              self._enc_sensio_ctrl_vospi()],
                                  name =      "x393_sensio_ctl",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Programming interface for multiplexer FPGA",
@@ -1853,7 +1856,7 @@ class X393ExportC(object):
         dw.append(("hact_ext_alive",        14, 1,0,  "HACT signal from the sensor is toggling (N/A for HiSPI)"))
         dw.append(("vact_alive",            15, 1,0,  "VACT signal from the sensor is toggling (N/A for HiSPI)"))
         dw.append(("xfpgatdo_byte",         16, 8,0,  "Multiplexer FPGA TDO output"))
-        dw.append(("senspgmin",             24, 1,0,  "senspgm pin state"))
+        dw.append(("senspgmin",             24, 1,0,  "senspgm pin state (0 means non-FPGA SFE is present)"))
         dw.append(("xfpgatdo",              25, 1,0,  "Multiplexer FPGA TDO output"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
         return dw
@@ -1876,10 +1879,25 @@ class X393ExportC(object):
 #        dw.append(("rel_sol",               18, 3,0,  "When SOL active on the last lane @ipclk, latches all other lanes SOL"))
 #        dw.append(("vact_alive",            15, 1,0,  "VACT signal from the sensor is toggling (N/A for HiSPI)"))
 #        dw.append(("xfpgatdo_byte",         16, 8,0,  "Multiplexer FPGA TDO output"))
-        dw.append(("senspgmin",             24, 1,0,  "senspgm pin state"))
+        dw.append(("senspgmin",             24, 1,0,  "senspgm pin state (0 means non-FPGA SFE is present)"))
         dw.append(("xfpgatdo",              25, 1,0,  "Multiplexer FPGA TDO output"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
         return dw
+
+    def _enc_status_sens_io_vospi(self):
+        dw=[]
+        dw.append(("segment_id",             0, 4,0,  "ID of the last received segment: 1-4 for the good frame, 0 - for ITAR-skipped frames"))
+        dw.append(("gpio_in",                4, 4,0,  "Input from GPIO0-GPIO3, only GPIO3 may be used as segment ready"))
+        dw.append(("in_busy",                8, 1,0,  "Frame segments are waited for or received to FIFO"))
+        dw.append(("out_busy",               9, 1,0,  "received frame is being transferred to video memory"))
+        dw.append(("crc_err",               10, 1,0,  "At least 1 CRC error happened since reset by command bit"))
+        dw.append(("fake in",               11, 1,0,  "Just to keep hardware"))
+        dw.append(("senspgmin",             24, 1,0,  "senspgm pin state (0 means non-FPGA SFE is present)"))
+        dw.append(("busy",                  25, 1,0,  "in_busy OR out_busy"))
+        dw.append(("seq_num",               26, 6,0,  "Sequence number"))
+        return dw
+
+
 
     def _enc_status_sens_i2c(self):
         dw=[]
@@ -2105,6 +2123,31 @@ class X393ExportC(object):
         dw.append(("gp0_set",      vrlg.SENS_CTRL_GP0 + 2,      1,   0,  "Set GP0 to 'gp0' value"))
         dw.append(("gp1",          vrlg.SENS_CTRL_GP1,          2,   0 , "GP1 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
         dw.append(("gp1_set",      vrlg.SENS_CTRL_GP1 + 2,      1,   0,  "Set GP1 to 'gp1' value"))
+        return dw
+    
+    def _enc_sensio_ctrl_vospi(self):
+        dw=[]
+        dw.append(("spi_en",       vrlg.VOSPI_EN,               2,   0,  "SPI Reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable"))
+        dw.append(("segm_zero",    vrlg.VOSPI_SEGM0_OK,         1,   0,  "OK to input segment 0 (invalid, valid are 1,2,3,4)"))
+        dw.append(("segm_zero_set",vrlg.VOSPI_SEGM0_OK + 1,     1,   0,  "Enable setting of segm_zero"))
+        dw.append(("out_en",       vrlg.VOSPI_OUT_EN,           1,   0,  "Enable output sensor data to memory"))
+        dw.append(("out_en_set",   vrlg.VOSPI_OUT_EN + 1,       1,   0,  "Set enable sensor data to memory"))
+        dw.append(("out_single",   vrlg.VOSPI_OUT_EN_SINGL,     1,   0,  "Enable single sensor frame to memory"))
+        dw.append(("reset_crc",    vrlg.VOSPI_RESET_CRC,        1,   0,  "Reset CRC error status bit"))
+        dw.append(("rst",          vrlg.VOSPI_MRST,             1,   0,  "RESET signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("rst_set",      vrlg.VOSPI_MRST + 1,         1,   0,  "When set to 1, RESET is set  to the 'rst' field value"))
+        dw.append(("pwdn",         vrlg.VOSPI_PWDN,             1,   0,  "POWER DOWN signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("pwdn_set",     vrlg.VOSPI_PWDN + 1,         1,   0,  "When set to 1, POWER DOWN is set  to the 'pwdn' field value"))
+        dw.append(("mclk",         vrlg.VOSPI_MCLK,             1,   0,  "Enable master clock (25MHz) to sensor"))
+        dw.append(("mclk_set",     vrlg.VOSPI_MCLK + 1,         1,   0,  "When set to 1, MCLK enable  is set  to the 'mclk' field value"))
+        dw.append(("spi_clk",      vrlg.VOSPI_SPI_CLK,          1,   0,  "Enable continuous SPI clock (0 - only when SPI CS is active)"))
+        dw.append(("spi_clk_set",  vrlg.VOSPI_SPI_CLK + 1,      1,   0,  "When set to 1, SPI CLK enable  is set  to the 'spi_clk' field value"))
+        dw.append(("gpio0",        vrlg.VOSPI_GPIO  ,  2,   0, "Output control for GPIO0: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
+        dw.append(("gpio1",        vrlg.VOSPI_GPIO+2,  2,   0, "Output control for GPIO1: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
+        dw.append(("gpio2",        vrlg.VOSPI_GPIO+4,  2,   0, "Output control for GPIO2: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
+        dw.append(("gpio3",        vrlg.VOSPI_GPIO+6,  2,   0, "Output control for GPIO3: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
+        dw.append(("fake",         vrlg.VOSPI_FAKE_OUT,         1,   0,  "Just to keep I/O ports from optimization"))
+        dw.append(("mosi",         vrlg.VOSPI_MOSI,             1,   0,  "Just to keep I/O ports from optimization"))
         return dw
     
     def _enc_sensio_jtag(self):

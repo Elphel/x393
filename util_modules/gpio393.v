@@ -221,27 +221,3 @@ module  gpio393  #(
     
     
 endmodule
-
-module gpio_bit (
-//    input         rst,          // global reset
-    input         clk,          // system clock
-    input         srst,         // @posedge clk - sync reset
-    input         we,
-    input   [1:0] d_in,         // input bits
-    output        d_out,        // output data
-    output        en_out);      // enable output
-    
-    reg d_r = 0;
-    reg en_r = 0;
-    
-    assign d_out = d_r;
-    assign en_out = en_r;
-    always @ (posedge clk) begin
-        if (srst)               d_r <= 0;
-        else if (we && (|d_in)) d_r <= !d_in[0];
-
-        if (srst)               en_r <= 0;
-        else if (we && (|d_in)) en_r <= !(&d_in);
-    end 
-    
-endmodule
