@@ -2127,6 +2127,12 @@ class X393ExportC(object):
     
     def _enc_sensio_ctrl_vospi(self):
         dw=[]
+        dw.append(("mrst",         vrlg.VOSPI_MRST,             1,   0,  "RESET signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("mrst_set",     vrlg.VOSPI_MRST + 1,         1,   0,  "When set to 1, RESET is set  to the 'rst' field value"))
+        dw.append(("pwdn",         vrlg.VOSPI_PWDN,             1,   0,  "POWER DOWN signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("pwdn_set",     vrlg.VOSPI_PWDN + 1,         1,   0,  "When set to 1, POWER DOWN is set  to the 'pwdn' field value"))
+        dw.append(("mclk",         vrlg.VOSPI_MCLK,             1,   0,  "Enable master clock (25MHz) to sensor"))
+        dw.append(("mclk_set",     vrlg.VOSPI_MCLK + 1,         1,   0,  "When set to 1, MCLK enable  is set  to the 'mclk' field value"))
         dw.append(("spi_en",       vrlg.VOSPI_EN,               2,   0,  "SPI Reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable"))
         dw.append(("segm_zero",    vrlg.VOSPI_SEGM0_OK,         1,   0,  "OK to input segment 0 (invalid, valid are 1,2,3,4)"))
         dw.append(("segm_zero_set",vrlg.VOSPI_SEGM0_OK + 1,     1,   0,  "Enable setting of segm_zero"))
@@ -2134,12 +2140,6 @@ class X393ExportC(object):
         dw.append(("out_en_set",   vrlg.VOSPI_OUT_EN + 1,       1,   0,  "Set enable sensor data to memory"))
         dw.append(("out_single",   vrlg.VOSPI_OUT_EN_SINGL,     1,   0,  "Enable single sensor frame to memory"))
         dw.append(("reset_crc",    vrlg.VOSPI_RESET_CRC,        1,   0,  "Reset CRC error status bit"))
-        dw.append(("rst",          vrlg.VOSPI_MRST,             1,   0,  "RESET signal level to the sensor (0 - low(active), 1 - high (inactive)"))
-        dw.append(("rst_set",      vrlg.VOSPI_MRST + 1,         1,   0,  "When set to 1, RESET is set  to the 'rst' field value"))
-        dw.append(("pwdn",         vrlg.VOSPI_PWDN,             1,   0,  "POWER DOWN signal level to the sensor (0 - low(active), 1 - high (inactive)"))
-        dw.append(("pwdn_set",     vrlg.VOSPI_PWDN + 1,         1,   0,  "When set to 1, POWER DOWN is set  to the 'pwdn' field value"))
-        dw.append(("mclk",         vrlg.VOSPI_MCLK,             1,   0,  "Enable master clock (25MHz) to sensor"))
-        dw.append(("mclk_set",     vrlg.VOSPI_MCLK + 1,         1,   0,  "When set to 1, MCLK enable  is set  to the 'mclk' field value"))
         dw.append(("spi_clk",      vrlg.VOSPI_SPI_CLK,          1,   0,  "Enable continuous SPI clock (0 - only when SPI CS is active)"))
         dw.append(("spi_clk_set",  vrlg.VOSPI_SPI_CLK + 1,      1,   0,  "When set to 1, SPI CLK enable  is set  to the 'spi_clk' field value"))
         dw.append(("gpio0",        vrlg.VOSPI_GPIO  ,  2,   0, "Output control for GPIO0: 0 - nop, 1 - set low, 2 - set high, 3 - input"))

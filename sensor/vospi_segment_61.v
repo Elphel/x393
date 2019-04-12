@@ -49,6 +49,7 @@ module  vospi_segment_61#(
     parameter VOSPI_PACKET_TTT =      20,  // line number where segment number is provided
     parameter VOSPI_SOF_TO_HACT =      2,  // clock cycles from SOF to HACT
     parameter VOSPI_HACT_TO_HACT_EOF = 2  // minimal clock cycles from HACT to HACT or to EOF
+    
 //    parameter VOSPI_HACT_TO_EOF =      2   // clock cycles from HACT to EOF
 )(
     input         rst,

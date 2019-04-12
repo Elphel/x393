@@ -98,24 +98,26 @@ module  sens_lepton3 #(
     parameter STATUS_ALIVE_WIDTH =     4,
     
     // mode bits
-    parameter VOSPI_EN =              0,
-    parameter VOSPI_EN_BITS =         2,
-    parameter VOSPI_SEGM0_OK =        2,
-    parameter VOSPI_SEGM0_OK_BITS =   2,
-    parameter VOSPI_OUT_EN =          4,
-    parameter VOSPI_OUT_EN_BITS =     2,
-    parameter VOSPI_OUT_EN_SINGL =    6,
-    parameter VOSPI_RESET_CRC =       7,
-    parameter VOSPI_MRST =            8,
+    parameter VOSPI_MRST =            0,
     parameter VOSPI_MRST_BITS =       2,
-    parameter VOSPI_PWDN =           10,
+    parameter VOSPI_PWDN =            2,
     parameter VOSPI_PWDN_BITS =       2,
-    parameter VOSPI_MCLK =           12,
+    parameter VOSPI_MCLK =            4,
     parameter VOSPI_MCLK_BITS =       2,
+    parameter VOSPI_EN =              6,
+    parameter VOSPI_EN_BITS =         2,
+    parameter VOSPI_SEGM0_OK =        8,
+    parameter VOSPI_SEGM0_OK_BITS =   2,
+    parameter VOSPI_OUT_EN =         10,
+    parameter VOSPI_OUT_EN_BITS =     2,
+    parameter VOSPI_OUT_EN_SINGL =   12,
+    parameter VOSPI_RESET_CRC =      13,
     parameter VOSPI_SPI_CLK =        14,
     parameter VOSPI_SPI_CLK_BITS =    2,
     parameter VOSPI_GPIO =           16,
     parameter VOSPI_GPIO_BITS =       8,
+    
+    
     parameter VOSPI_FAKE_OUT =       24, // to keep hardware
     parameter VOSPI_MOSI =           25, // pot used
     parameter VOSPI_PACKET_WORDS =    80,
@@ -127,7 +129,8 @@ module  sens_lepton3 #(
     parameter VOSPI_PACKET_LAST =     60,
     parameter VOSPI_PACKET_TTT =      20,  // line number where segment number is provided
     parameter VOSPI_SOF_TO_HACT =      2,  // clock cycles from SOF to HACT
-    parameter VOSPI_HACT_TO_HACT_EOF = 2  // minimal clock cycles from HACT to HACT or to EOF
+    parameter VOSPI_HACT_TO_HACT_EOF = 2,  // minimal clock cycles from HACT to HACT or to EOF
+    parameter VOSPI_MCLK_HALFDIV =     4   // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock
 )(
     // programming interface
     input         mrst,         // @posedge mclk, sync reset
@@ -142,7 +145,7 @@ module  sens_lepton3 #(
     output        prsts,        // @pclk - includes sensor reset and sensor PLL reset
 
     input         pclk,         // global clock input, SPI rate (10-20 MHz) - defines internal pixel rate
-    input         sns_mclk,     // 25Mz for the sensor 
+//    input         sns_mclk,     // 25Mz for the sensor 
 
 // sensor pads excluding i2c    
     inout         spi_miso,     // input
@@ -189,45 +192,6 @@ module  sens_lepton3 #(
        segment_id  [3:0],      
        out_busy | in_busy, senspgm_int
     };
-/*    
-                     xfpgatdo_byte[7:0],
-                     vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
-                     clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
-                     ps_rdy, ps_out,
-                     xfpgatdo, senspgmin}; // go to bits 24, 25 when read
-*/
-
-// mode register (4 bits + 8 + 1)
-/*
- bits 0,1: 0: nop
-           1 - nreset=0 disable
-           2 - nreset,  disable
-           3 - nreset,  enable
-      2,3: 0,1 - nop
-           2 - disable invalid segments
-           3 - enabl;e invalid segments
-      4,5: 0,1 - nop
-           2 - disable out_en
-           3 - enabl;e out_en
-      6:   0 - nop,
-           1 - single frame out_en
-      7:   reset CRC error
-      8,9: 0,1 - nop
-           2 - lwir_mrst <= 0 (active reset)
-           3 - lwir_mrst <= 1 (inactive)
-    10,11: 0,1 - nop
-           2 - lwir_pwdn <= 0 (active, disable sensor)
-           3 - lwir_pwdn <= 1 (inactive)
-    12,13: 0,1 - nop
-           2 - disable sns_mclk (25 MHz clock to sensor)
-           3 - enable sns_mclk
-    14,15: 0,1 - nop
-           2 - disable spi_clk (stop between CS acvtive)
-           3 - enabl;e spi_clk (continuously run evenwhen CS is acvtive)
-    16-23: GPIO[3:0] - use gpio_bit() and generate 
-    24 - fake_out
-    25 - spi_mosi_int
-*/
 
 // then re-sync to pclk (and to sns_mclk)
     reg         spi_nrst_mclk;
@@ -269,7 +233,10 @@ module  sens_lepton3 #(
     reg         set_ctrl_r;
     reg         set_status_r;
     
-    reg  [ 1:0] sns_mclk_en_lwir_mclk;
+//    reg  [ 1:0] sns_mclk_en_lwir_mclk;
+    reg         sns_mclk_r;
+    reg  [3:0]  sns_mclk_cntr;
+    
     wire        spi_clken; // from lower module, clock will be combined
     
     
@@ -344,10 +311,19 @@ module  sens_lepton3 #(
         else if (crc_err_w)         crc_err_r <= 1;
         
     end
-
-    always @(posedge sns_mclk) begin
-        sns_mclk_en_lwir_mclk[1:0] <= {sns_mclk_en_lwir_mclk[0],sns_mclk_en_mclk}; 
+    
+    always @(posedge mclk) begin
+        if      (mrst)                           sns_mclk_r <= 0;
+        else if (sns_mclk_cntr == 0)             sns_mclk_r <= sns_mclk_en_mclk && !sns_mclk_r;
+        
+        if      (mrst || (sns_mclk_cntr == 0))   sns_mclk_cntr <= VOSPI_MCLK_HALFDIV - 1;
+        else if (sns_mclk_en_mclk || sns_mclk_r) sns_mclk_cntr <= sns_mclk_cntr  - 1;
     end
+    
+
+//    always @(posedge sns_mclk) begin
+//        sns_mclk_en_lwir_mclk[1:0] <= {sns_mclk_en_lwir_mclk[0],sns_mclk_en_mclk}; 
+//    end
 
      pulse_cross_clock pulse_cross_clock_out_en_single_i (
         .rst         (mrst),                     // input
@@ -386,6 +362,19 @@ module  sens_lepton3 #(
         .dq    (spi_clk)                         // output
     );
     // sensor master clock (25MHz)
+    iobuf #( // lwir_mclk
+        .DRIVE        (PXD_DRIVE),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) lwir_mclk_i (
+        .O  (),                      // output
+        .IO (lwir_mclk),             // inout I/O pad
+        .I  (sns_mclk_r),           // input
+        .T  (1'b0)                  // input - always on
+    );
+
+/*    
     oddr_ss #(
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW),
@@ -401,7 +390,7 @@ module  sens_lepton3 #(
         .tin   (1'b0),                     // input
         .dq    (lwir_mclk)                 // output
     );
-
+*/
     iobuf #( // spi_miso
         .DRIVE        (PXD_DRIVE),
         .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),

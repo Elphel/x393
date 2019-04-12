@@ -1836,20 +1836,20 @@ assign axi_grst = axi_rst_pre;
         .SENSI2C_SLEW               (SENSI2C_SLEW),
 `ifdef HISPI
 `elsif LWIR
-        .VOSPI_EN                   (VOSPI_EN), //                 0,
-        .VOSPI_EN_BITS              (VOSPI_EN_BITS), //            2,
-        .VOSPI_SEGM0_OK             (VOSPI_SEGM0_OK), //           2,
-        .VOSPI_SEGM0_OK_BITS        (VOSPI_SEGM0_OK_BITS), //      2,
-        .VOSPI_OUT_EN               (VOSPI_OUT_EN), //             4,
-        .VOSPI_OUT_EN_BITS          (VOSPI_OUT_EN_BITS), //        2,
-        .VOSPI_OUT_EN_SINGL         (VOSPI_OUT_EN_SINGL), //       6,
-        .VOSPI_RESET_CRC            (VOSPI_RESET_CRC), //          7,
-        .VOSPI_MRST                 (VOSPI_MRST), //               8,
+        .VOSPI_MRST                 (VOSPI_MRST), //               0,
         .VOSPI_MRST_BITS            (VOSPI_MRST_BITS), //          2,
-        .VOSPI_PWDN                 (VOSPI_PWDN), //              10,
+        .VOSPI_PWDN                 (VOSPI_PWDN), //               2,
         .VOSPI_PWDN_BITS            (VOSPI_PWDN_BITS), //          2,
-        .VOSPI_MCLK                 (VOSPI_MCLK), //              12,
+        .VOSPI_MCLK                 (VOSPI_MCLK), //               4,
         .VOSPI_MCLK_BITS            (VOSPI_MCLK_BITS), //          2,
+        .VOSPI_EN                   (VOSPI_EN), //                 6,
+        .VOSPI_EN_BITS              (VOSPI_EN_BITS), //            2,
+        .VOSPI_SEGM0_OK             (VOSPI_SEGM0_OK), //           8,
+        .VOSPI_SEGM0_OK_BITS        (VOSPI_SEGM0_OK_BITS), //      2,
+        .VOSPI_OUT_EN               (VOSPI_OUT_EN), //            10,
+        .VOSPI_OUT_EN_BITS          (VOSPI_OUT_EN_BITS), //        2,
+        .VOSPI_OUT_EN_SINGL         (VOSPI_OUT_EN_SINGL), //      12,
+        .VOSPI_RESET_CRC            (VOSPI_RESET_CRC), //         13,
         .VOSPI_SPI_CLK              (VOSPI_SPI_CLK), //           14,
         .VOSPI_SPI_CLK_BITS         (VOSPI_SPI_CLK_BITS), //       2,
         .VOSPI_GPIO                 (VOSPI_GPIO), //              16,
@@ -1866,6 +1866,8 @@ assign axi_grst = axi_rst_pre;
         .VOSPI_PACKET_TTT           (VOSPI_PACKET_TTT), //        20,
         .VOSPI_SOF_TO_HACT          (VOSPI_SOF_TO_HACT), //        2,
         .VOSPI_HACT_TO_HACT_EOF     (VOSPI_HACT_TO_HACT_EOF), //   2,
+        .VOSPI_MCLK_HALFDIV         (VOSPI_MCLK_HALFDIV), //       4
+        
         
 `else
 

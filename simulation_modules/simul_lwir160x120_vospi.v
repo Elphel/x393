@@ -46,6 +46,9 @@ module  simul_lwir160x120_vospi # (
     
     parameter TELEMETRY       =      1,  // 0 - disabled, 1 - as header, 2 - as footer
     parameter FRAME_PERIOD    = 946969,  // 26.4 fps @25 MHz
+    parameter SEGMENT_PERIOD  =  10000,  // 236742,  // 26.4 fps @25 MHz
+    parameter SEGMENTS_SEQ    =      8,  // 12 With ITAR
+    
     parameter FRAME_DELAY     =    100,  // mclk period to start first frame 1
     parameter MS_PERIOD       =     25   // ahould actually be 25000  
 )(
@@ -90,15 +93,21 @@ module  simul_lwir160x120_vospi # (
     localparam SEGMENT_PACKETS = 60; // w/o telemetry
     localparam SEGMENT_PACKETS_TELEMETRY = SEGMENT_PACKETS + ((TELEMETRY > 0)? 1 : 0);
     localparam FRAME_SEGMENTS =   4;
-    localparam FRAME_PACKETS =   SEGMENT_PACKETS * FRAME_SEGMENTS;
+    localparam FRAME_PACKETS =        SEGMENT_PACKETS * FRAME_SEGMENTS;
     localparam FRAME_PACKETS_FULL =   FRAME_PACKETS + ((TELEMETRY==0) ? 0 : 4);
-    localparam FRAMES =           2; // 2 frames in a ping-pong buffer 
-    localparam FRAME_WORDS =     FRAME_SEGMENTS * (SEGMENT_PACKETS + ((TELEMETRY>0)?1 : 0)) * PACKET_WORDS;
+    localparam FRAMES =               2; // 2 frames in a ping-pong buffer 
+    localparam FRAME_WORDS =          FRAME_SEGMENTS * (SEGMENT_PACKETS + ((TELEMETRY>0)?1 : 0)) * PACKET_WORDS;
+    localparam SEGMENT_PACKETS_FULL = SEGMENT_PACKETS + ((TELEMETRY>0)?1 : 0);
+    localparam SEGMENT_WORDS =        SEGMENT_PACKETS_FULL * PACKET_WORDS;
+    localparam SEGMENTS_MIN =     4;  // minimal segments ready to be able to read
+    localparam SEGMENTS_MAX =     6;  // maximum segments ready before sync is lost
+        
     
     wire rst = !mrst;
     
     reg  [OUT_BITS-1:0] sensor_data[0 : WINDOW_WIDTH * WINDOW_HEIGHT - 1]; // SuppressThisWarning VEditor - Will be assigned by $readmem
     reg  [OUT_BITS-1:0] packed_data[0: FRAMES * FRAME_WORDS -1];
+    reg  [OUT_BITS-1:0] packet_bad [0: PACKET_WORDS-1];
 
     wire [160*16-1:0] telemetry_a;
     wire [160*16-1:0] telemetry_b;
@@ -107,20 +116,29 @@ module  simul_lwir160x120_vospi # (
     
 //'0xe7319'
     reg            [19:0]  frame_dly_cntr; // delay till next frame start   
+    reg            [19:0]  segment_dly_cntr; // delay till next frame segment
     reg                    frame_start;
+    reg                    segment_start;
+    reg            [ 3:0]  segments_cntr;
+    wire           [ 3:0]  segment_id;
+    
     reg                    copy_page;
     reg                    copy_run;
     wire                   copy_done;
+    reg                    segment_run;
+    wire                   segment_done;
     
 //    reg              [2:0] copy_segment; // 4 - copy average and telemetry
-    reg              [7:0] copy_packet;    // 240 image packets, then telemetry
+    reg              [7:0] copy_packet;       // number of a packet in a frame 240 image packets, then telemetry
+    reg              [6:0] segment_packet;    // 60/61 packets
+    
     reg              [6:0] copy_word;      // word number to copy in a packet (0..82), last one copies CRC to word 1
     reg                    copy_crc;
     wire             [7:0] copy_packet_full;
     wire             [7:0] copy_telemetry_packet; // only 2 LSB
-    wire             [7:0] copy_packet_segment;
+//    wire             [7:0] copy_packet_segment;
     wire            [11:0] copy_packet_indx; // high bits are always 0
-    wire             [7:0] copy_packet_ttt;
+    wire             [3:0] copy_packet_ttt;
     
     reg             [15:0] copy_pxd;
     reg             [30:0] frame_sum;
@@ -137,13 +155,58 @@ module  simul_lwir160x120_vospi # (
     
     wire            [15:0] copy_din;
     wire            [ 6:0] copy_wa; // address in a packet where to write data
-    wire            [15:0] copy_wa_full;    
+    wire            [15:0] copy_wa_full;
     wire            [15:0] crc_in;
     wire            [15:0] crc_out;
     reg                    en_avg; // write frame average value to telemetry
     reg             [31:0] frame_num;
     reg             [31:0] time_ms;
     reg             [31:0] ms_cntr;
+    
+    //----------------
+    wire                   start_segm_rd;      // starting readout page, spi_clk domain
+    wire                   start_segm_rd_mclk; // starting readout page, resync to mclk
+    reg                    readout_page;          // readout page number
+    reg             [ 1:0] readout_segment;    // actually just 2 (2 bits, but will use FRAME_SEGMENTS==4
+    reg             [ 5:0] readout_packet;     // number of packet read out in a segment
+    reg             [ 6:0] readout_word_indx;  // number of word in a readout packet   
+    reg             [ 3:0] readout_bit;        // 0 - msb, 15 - lsb
+    reg             [15:0] readout_sr_good;
+    reg             [15:0] readout_sr_bad;
+    reg             [ 3:0] segments_ready;
+    reg                    segment_av;            // segments avalable for readout
+    reg                    sync_lost; 
+    reg                    packet_sent;
+//    reg                    packet_skipped; // sent invalid packet 
+    reg                    packet_re_last;
+    
+    wire                   readout_last_segment;  // reading last segment in a frame
+    wire                   readout_last_packet;   // reading last packet in a segment
+    wire                   readout_last_word;     // reading last word in a packet
+    wire                   readout_pre_last_bit;  // reading out pre-last bit
+    wire                   readout_pre_first_bit; // reading out pre-first bit in a word
+    reg                    readout_last_bit;     
+    reg                    readout_first_bit = 1;
+    wire            [15:0] readout_address;      // buffer readout address
+    wire                   readout_good_w ;       // should be valid at first negative transition of the spi_clk
+    reg                    readout_good;          // reading out/sending valid packet
+    
+        
+    assign readout_last_segment =   readout_segment == (FRAME_SEGMENTS - 1);
+    assign readout_last_packet =    readout_packet == (SEGMENT_PACKETS_TELEMETRY -1);
+    assign readout_last_word =      readout_word_indx == (PACKET_WORDS -1);
+    assign readout_pre_last_bit =   readout_bit[3:0] == 14;
+    assign readout_pre_first_bit =  readout_bit[3:0] == 15;
+    
+    
+    assign readout_address = readout_word_indx +
+                            (PACKET_WORDS *  readout_packet) +
+                            (SEGMENT_WORDS * readout_segment) +
+                            (FRAME_WORDS *   readout_page);
+                            
+    assign readout_good_w = segment_av;                            
+    assign spi_miso = readout_good ? readout_sr_good[15] : readout_sr_bad[15];
+    assign start_segm_rd = (readout_word_indx == 0) && readout_last_bit && !spi_cs; 
     
 //    wire            [ 2:0] copy_segment;
 
@@ -161,6 +224,8 @@ module  simul_lwir160x120_vospi # (
       
       
       assign copy_done =           copy_run && copy_crc && (copy_packet== (FRAME_PACKETS_FULL -1));
+      assign segment_done =        copy_run && copy_crc && (segment_packet== (SEGMENT_PACKETS_FULL -1));
+      assign segment_id =          (segments_cntr < 4) ? (segments_cntr +1) : 4'b0;
       
       assign copy_packet_full =    (copy_packet < FRAME_PACKETS)?(copy_packet + ((TELEMETRY == 1) ? 4 : 0)):(copy_packet - ((TELEMETRY == 1)?FRAME_PACKETS: 0)) ;
       
@@ -168,9 +233,11 @@ module  simul_lwir160x120_vospi # (
       assign copy_pix_or_tel =     copy_run && (copy_word < PACKET_PIXELS); //  && (copy_packet < FRAME_PACKETS);
       assign copy_pix_only =       copy_pix_or_tel && (copy_packet < FRAME_PACKETS);
       assign copy_tel_only =       copy_pix_or_tel && (copy_packet >= FRAME_PACKETS);
-      assign copy_packet_segment = copy_packet_full / SEGMENT_PACKETS_TELEMETRY; 
+//      assign copy_packet_segment = copy_packet_full / SEGMENT_PACKETS_TELEMETRY;  /// 
       assign copy_packet_indx =    copy_packet_full % SEGMENT_PACKETS_TELEMETRY; 
-      assign copy_packet_ttt =     (copy_packet_indx == 20) ? (copy_packet_segment + 1): 8'b0; 
+      
+      assign copy_packet_ttt =     (copy_packet_indx == 20) ? segment_id: 4'b0; 
+      
       assign crc_in =   (copy_word == 0) ? {4'b0,copy_packet_indx[11:0]}:(
                         (copy_word == 1) ?16'b0:copy_d[15:0]);
 
@@ -190,42 +257,71 @@ module  simul_lwir160x120_vospi # (
         `define ROOTPATH "."
     `endif
 `endif
+integer i;
 initial begin
 // $readmemh({`ROOTPATH,"/input_data/sensor_16.dat"},sensor_data);
-$readmemh(DATA_FILE,sensor_data,0);
+  $readmemh(DATA_FILE,sensor_data,0);
+  //    reg  [OUT_BITS-1:0] packet_bad [0: PACKET_WORDS-1];
+  packet_bad[0] <= 'h0f00;
+  packet_bad[1] <= 'h0000; // calculate and put crc?
+  for (i = 2; i < PACKET_WORDS; i = i+1) begin
+    packet_bad[i] <= 0;
+  end
 end
 always @ (posedge mclk) begin
     if (rst || (ms_cntr == 0)) ms_cntr <= MS_PERIOD -1;
-    else                        ms_cntr <=  ms_cntr - 1;
+    else                       ms_cntr <=  ms_cntr - 1;
 
-    if      (rst)           time_ms <= 0;
-    else if ((ms_cntr == 0)) time_ms <=  time_ms + 1;
+    if      (rst)              time_ms <= 0;
+    else if ((ms_cntr == 0))   time_ms <=  time_ms + 1;
 
     //restarting frames
-    if      (rst)        frame_dly_cntr <= FRAME_DELAY;
-    else if (frame_start) frame_dly_cntr <= FRAME_PERIOD;
-    else                  frame_dly_cntr <= frame_dly_cntr - 1;
+    if      (rst)              segment_dly_cntr <= FRAME_DELAY;
+    else if (segment_start)    segment_dly_cntr <= SEGMENT_PERIOD;
+    else                       segment_dly_cntr <= segment_dly_cntr - 1;
+    segment_start <=  !rst && (segment_dly_cntr == 0);
+    
+    if      (rst || segment_done) segment_run <= 0;
+    else if (segment_start)       segment_run <= 1;
+    
+    
+    
+    if      (rst)              frame_dly_cntr <= FRAME_DELAY;
+    else if (frame_start)      frame_dly_cntr <= FRAME_PERIOD;
+    else                       frame_dly_cntr <= frame_dly_cntr - 1;
+    
     
     frame_start <= !rst && (frame_dly_cntr == 0);
     
-    if      (rst)        frame_num <= 0;
-    else if (frame_start) frame_num <=  frame_num + 1;
+    if      (rst)              frame_num <= 0;
+    else if (frame_start)      frame_num <=  frame_num + 1;
     
-    if      (rst)        copy_page <= 0;
-    else if (frame_start) copy_page <= !copy_page;
+    if      (rst)              copy_page <= 0;
+    else if (frame_start)      copy_page <= !copy_page;
 
     if      (rst || copy_done) copy_run <= 0;
-    else if (frame_start)       copy_run <= 1;
+    else if (frame_start)      copy_run <= 1;
     
     copy_crc <= copy_word == (PACKET_WORDS - 1); 
     if (!copy_run || copy_crc) copy_word <= 0;
     else                       copy_word <= copy_word + 1;
     
-    if      (!copy_run) copy_packet <= 0;
-    else if (copy_crc)  copy_packet <= copy_packet + 1;
+    if      (!copy_run)        copy_packet <= 0;
+    else if (copy_crc)         copy_packet <= copy_packet + 1;
     
-    if (copy_pix_only)   copy_pxd <= sensor_data[copy_packet * PACKET_PIXELS + copy_word];
-    else                 copy_pxd <= 'bx;
+//    if       (rst || frame_start)  segment_packet <= 0;
+//    else if (copy_run && copy_crc) segment_packet <= (copy_packet== (FRAME_PACKETS_FULL -1))? 0:  (segment_packet + 1);
+
+    if         (rst || segment_start) segment_packet <= 0;
+    else if (segment_run && copy_crc) segment_packet <= segment_packet + 1;
+
+    
+    if (rst)                  segments_cntr <= 0;
+    else if (segment_done)    segments_cntr <= (segments_cntr == (SEGMENTS_SEQ - 1)) ? 0: (segments_cntr + 1);
+    
+    
+    if (copy_pix_only)         copy_pxd <= sensor_data[copy_packet * PACKET_PIXELS + copy_word];
+    else                       copy_pxd <= 'bx;
 
     if (copy_tel_only)   copy_telemetry_d <= copy_telemetry_packet[1]?
                                              telemetry_b[(PACKET_PIXELS * (2 - copy_telemetry_packet[0])-copy_word - 1)*16 +: 16]:
@@ -234,9 +330,7 @@ always @ (posedge mclk) begin
     
     copy_d <= (copy_packet < FRAME_PACKETS) ? copy_pxd : copy_telemetry_d;
     
-//    copy_pixels_r <= copy_pix_or_tel;
     copy_pixels_pix <= copy_pix_or_tel && (copy_packet < FRAME_PACKETS); 
-//    copy_pixels_tel <= copy_pix_or_tel && (copy_packet >= FRAME_PACKETS); 
     
     if      (frame_start)   frame_sum <= 0;
     else if (copy_pixels_pix) frame_sum <= frame_sum + copy_pxd;
@@ -244,8 +338,68 @@ always @ (posedge mclk) begin
     if (copy_run) packed_data[copy_wa_full] <= copy_din; // copy_d;
     
     en_avg <= copy_crc && (copy_packet == (FRAME_PACKETS - 1)); // 1 cycle after last pixel written
-    
 end
+
+// readout, mclk part
+always @ (posedge mclk) begin
+    if      (rst)                                  segments_ready <= 0;
+    else if ( segment_done && !start_segm_rd_mclk) segments_ready <= segments_ready + 1;
+    else if (!segment_done &&  start_segm_rd_mclk) segments_ready <= segments_ready - 1;
+    
+    segment_av <= !rst && !sync_lost && (segments_ready >= SEGMENTS_MIN);
+    if      (rst)                             sync_lost <= 0;
+    else if (segments_ready >= SEGMENTS_MAX)  sync_lost <= 1; 
+end
+
+// readout, spi_clk part
+always @ (posedge rst or negedge spi_clk) begin
+
+    if      (rst)       readout_bit <= 0;
+    else if (!spi_cs)   readout_bit <= readout_bit + 1;
+
+    if      (rst)     readout_last_bit <= 0; 
+    else if (!spi_cs) readout_last_bit <= readout_pre_last_bit;
+
+    if      (rst)     readout_first_bit <= 1; 
+    else if (!spi_cs) readout_first_bit <= readout_pre_first_bit;
+
+    if      (rst)                                                      readout_good <= 0; 
+    else if (!spi_cs && readout_first_bit && (readout_word_indx == 0)) readout_good <= readout_good_w;
+    
+    if (!spi_cs) begin
+        if (readout_first_bit) begin
+            readout_sr_good <= packed_data[readout_address];
+            readout_sr_bad <=  packet_bad[readout_word_indx];
+        end else begin
+            readout_sr_good <= {readout_sr_good[14:0], 1'b0};
+            readout_sr_bad <=  {readout_sr_bad[14:0],  1'b0};
+        end
+    end
+
+    if      (rst)                         readout_word_indx <= 0;
+    else if (!spi_cs && readout_last_bit) readout_word_indx <=packet_re_last ? 0 : (readout_word_indx + 1);
+    
+    if      (rst)   begin
+        packet_re_last <= 0;
+        packet_sent    <= 0;
+//        packet_skipped <= 0;   
+    end else if (!spi_cs)  begin
+        packet_re_last <= readout_last_word && readout_pre_last_bit;
+        packet_sent <=    readout_last_word && readout_pre_last_bit &&  readout_good;
+//        packet_skipped <= readout_last_word && readout_pre_last_bit && !readout_good;
+    end
+
+    if      (rst)                    readout_packet <= 0;
+    else if (!spi_cs && packet_sent) readout_packet <= readout_last_packet ? 0 : (readout_packet + 1);
+    
+    if      (rst)                                          readout_segment <= 0;
+    else if (!spi_cs && packet_sent&& readout_last_packet) readout_segment <= readout_last_segment ? 0 : (readout_segment + 1);
+
+    if      (rst)                                                                   readout_page <= 0;
+    else if (!spi_cs && packet_sent && readout_last_packet && readout_last_segment) readout_page <= !readout_page;
+
+end
+
 
 
     crc16_x16x12x5x0 crc16_x16x12x5x0_i (
@@ -283,9 +437,19 @@ end
         .telemetry_b               (telemetry_b)                 // output[2559:0] reg 
     );
 
+       pulse_cross_clock pulse_cross_clock_start_segm_i (
+            .rst         (rst),                  // input extended to include sensor reset and rst_mmcm
+            .src_clk     (!spi_clk),             // input
+            .dst_clk     (mclk),                 // input
+            .in_pulse    (start_segm_rd),                  // input
+            .out_pulse   (start_segm_rd_mclk),              // output
+            .busy() // output
+        );
 
 
 endmodule
+
+
 
 
 /*

@@ -225,20 +225,20 @@ module  sensors393 #(
     
 `ifdef HISPI
 `elsif LWIR
-    parameter VOSPI_EN =                 0,
-    parameter VOSPI_EN_BITS =            2,
-    parameter VOSPI_SEGM0_OK =           2,
-    parameter VOSPI_SEGM0_OK_BITS =      2,
-    parameter VOSPI_OUT_EN =             4,
-    parameter VOSPI_OUT_EN_BITS =        2,
-    parameter VOSPI_OUT_EN_SINGL =       6,
-    parameter VOSPI_RESET_CRC =          7,
-    parameter VOSPI_MRST =               8,
+    parameter VOSPI_MRST =               0,
     parameter VOSPI_MRST_BITS =          2,
-    parameter VOSPI_PWDN =              10,
+    parameter VOSPI_PWDN =               2,
     parameter VOSPI_PWDN_BITS =          2,
-    parameter VOSPI_MCLK =              12,
+    parameter VOSPI_MCLK =               4,
     parameter VOSPI_MCLK_BITS =          2,
+    parameter VOSPI_EN =                 6,
+    parameter VOSPI_EN_BITS =            2,
+    parameter VOSPI_SEGM0_OK =           8,
+    parameter VOSPI_SEGM0_OK_BITS =      2,
+    parameter VOSPI_OUT_EN =            10,
+    parameter VOSPI_OUT_EN_BITS =        2,
+    parameter VOSPI_OUT_EN_SINGL =      12,
+    parameter VOSPI_RESET_CRC =         13,
     parameter VOSPI_SPI_CLK =           14,
     parameter VOSPI_SPI_CLK_BITS =       2,
     parameter VOSPI_GPIO =              16,
@@ -255,6 +255,8 @@ module  sensors393 #(
     parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
     parameter VOSPI_SOF_TO_HACT =        2,  // clock cycles from SOF to HACT
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
+    parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
+    
 `else
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
@@ -678,20 +680,20 @@ module  sensors393 #(
                 .NUM_FRAME_BITS                (NUM_FRAME_BITS),
 `ifdef HISPI
 `elsif LWIR
-                .VOSPI_EN                      (VOSPI_EN), //                 0,
-                .VOSPI_EN_BITS                 (VOSPI_EN_BITS), //            2,
-                .VOSPI_SEGM0_OK                (VOSPI_SEGM0_OK), //           2,
-                .VOSPI_SEGM0_OK_BITS           (VOSPI_SEGM0_OK_BITS), //      2,
-                .VOSPI_OUT_EN                  (VOSPI_OUT_EN), //             4,
-                .VOSPI_OUT_EN_BITS             (VOSPI_OUT_EN_BITS), //        2,
-                .VOSPI_OUT_EN_SINGL            (VOSPI_OUT_EN_SINGL), //       6,
-                .VOSPI_RESET_CRC               (VOSPI_RESET_CRC), //          7,
-                .VOSPI_MRST                    (VOSPI_MRST), //               8,
+                .VOSPI_MRST                    (VOSPI_MRST), //               0,
                 .VOSPI_MRST_BITS               (VOSPI_MRST_BITS), //          2,
-                .VOSPI_PWDN                    (VOSPI_PWDN), //              10,
+                .VOSPI_PWDN                    (VOSPI_PWDN), //               2,
                 .VOSPI_PWDN_BITS               (VOSPI_PWDN_BITS), //          2,
-                .VOSPI_MCLK                    (VOSPI_MCLK), //              12,
+                .VOSPI_MCLK                    (VOSPI_MCLK), //               4,
                 .VOSPI_MCLK_BITS               (VOSPI_MCLK_BITS), //          2,
+                .VOSPI_EN                      (VOSPI_EN), //                 6,
+                .VOSPI_EN_BITS                 (VOSPI_EN_BITS), //            2,
+                .VOSPI_SEGM0_OK                (VOSPI_SEGM0_OK), //           8,
+                .VOSPI_SEGM0_OK_BITS           (VOSPI_SEGM0_OK_BITS), //      2,
+                .VOSPI_OUT_EN                  (VOSPI_OUT_EN), //            10,
+                .VOSPI_OUT_EN_BITS             (VOSPI_OUT_EN_BITS), //        2,
+                .VOSPI_OUT_EN_SINGL            (VOSPI_OUT_EN_SINGL), //      12,
+                .VOSPI_RESET_CRC               (VOSPI_RESET_CRC), //         13,
                 .VOSPI_SPI_CLK                 (VOSPI_SPI_CLK), //           14,
                 .VOSPI_SPI_CLK_BITS            (VOSPI_SPI_CLK_BITS), //       2,
                 .VOSPI_GPIO                    (VOSPI_GPIO), //              16,
@@ -708,6 +710,7 @@ module  sensors393 #(
                 .VOSPI_PACKET_TTT              (VOSPI_PACKET_TTT), //        20,
                 .VOSPI_SOF_TO_HACT             (VOSPI_SOF_TO_HACT), //        2,
                 .VOSPI_HACT_TO_HACT_EOF        (VOSPI_HACT_TO_HACT_EOF), //   2,
+                .VOSPI_MCLK_HALFDIV            (VOSPI_MCLK_HALFDIV), //       4
                 
 `else
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),
