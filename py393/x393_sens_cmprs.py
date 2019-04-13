@@ -1732,7 +1732,7 @@ class X393SensCmprs(object):
                                        afi_cmprs3_sa =  afi_cmprs3_sa,
                                        afi_cmprs3_len = afi_cmprs_len)
                 """
-                self.x393Sensor.print_status_sensor_io (num_sensor = num_sensor)
+                self.x393Sensor.print_status_sensor_io (num_sensor = num_sensor, sensorType = sensorType)
                 self.x393Sensor.print_status_sensor_i2c (num_sensor = num_sensor)
 
                 if verbose >0 :
