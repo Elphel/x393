@@ -101,7 +101,10 @@ module  status_read#(
     initial begin
         ram [DATA_2DEPTH]   = FPGA_VERSION;
 `ifdef HISPI
-        ram [DATA_2DEPTH-1] = 1; //0 - parallel sensor, 1 - HiSPi sensor 
+        ram [DATA_2DEPTH-1] = 1; //0 - parallel sensor, 1 - HiSPi sensor, 2 - LWIR 160x120 sensor
+`elsif LWIR
+        ram [DATA_2DEPTH-1] = 2; //0 - parallel sensor, 1 - HiSPi sensor, 2 - LWIR 160x120 sensor
+        
 `endif         
     end
     always @ (posedge axi_clk) begin

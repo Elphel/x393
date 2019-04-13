@@ -48,6 +48,7 @@ import subprocess
 #import x393_sens_cmprs
 SENSOR_INTERFACE_PARALLEL = "PAR12"
 SENSOR_INTERFACE_HISPI =    "HISPI"
+SENSOR_INTERFACE_LWIR =     "LWIR"
 
 class X393Sensor(object):
     DRY_MODE= True # True
@@ -74,8 +75,11 @@ class X393Sensor(object):
         @return "PAR12" or "HISPI"
         """
         if  self.DRY_MODE is True:
+            print ("===== Running in dry mode, using parallel sensor======")
             return SENSOR_INTERFACE_PARALLEL
-        return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+        sens_type = (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI,SENSOR_INTERFACE_LWIR)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+        print ("===== Sensor type read from FPGA = >>> %s <<< ======"%(sens_type))
+        return sens_type
 
     def program_status_sensor_i2c( self,
                                    num_sensor,
@@ -155,7 +159,7 @@ class X393Sensor(object):
                     address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSIO_STATUS_REG_REL))
 
     def print_status_sensor_io (self,
-                                num_sensor="All"):
+                                num_sensor="All", sensorType = SENSOR_INTERFACE_PARALLEL):
         """
         Print sensor_io status word (no sync)
         @param num_sensor - number of the sensor port (0..3)
@@ -164,47 +168,52 @@ class X393Sensor(object):
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
                 for num_sensor in range(4):
                     print ("\n ==== Sensor %d"%(num_sensor))
-                    self.print_status_sensor_io (num_sensor = num_sensor)
+                    self.print_status_sensor_io (num_sensor = num_sensor, sensorType = sensorType)
                 return
         except:
             pass
         status= self.get_status_sensor_io(num_sensor)
         print ("print_status_sensor_io(%d):"%(num_sensor))
+        
+        if (sensorType == SENSOR_INTERFACE_LWIR):
+            pass
+            
+        else:    
 #last_in_line_1cyc_mclk, dout_valid_1cyc_mclk
-        """
-        print ("   last_in_line_1cyc_mclk = %d"%((status>>23) & 1))
-        print ("   dout_valid_1cyc_mclk =   %d"%((status>>22) & 1))
-        print ("   alive_hist0_gr =         %d"%((status>>21) & 1))
-        print ("   alive_hist0_rq =         %d"%((status>>20) & 1))
-        print ("   sof_out_mclk =           %d"%((status>>19) & 1))
-        print ("   eof_mclk =               %d"%((status>>18) & 1))
-        print ("   sof_mclk =               %d"%((status>>17) & 1))
-        print ("   sol_mclk =               %d"%((status>>16) & 1))
-        """
-        """
-        #Folowing 5 bits may be just temporarily available
-        print ("   irst =                   %d"%((status>>20) & 1))
-        print ("async_prst_with_sens_mrst = %d"%((status>>19) & 1))
-        print ("   imrst =                  %d"%((status>>18) & 1))
-        print ("   rst_mmcm =               %d"%((status>>17) & 1))
-        print ("   pxd_out_pre[1] =         %d"%((status>>16) & 1))
-        """
-
-        print ("   shifted TDO              %d"%((status>>16) & 0xff))
-
-        print ("   vact_alive =             %d"%((status>>15) & 1))
-        print ("   hact_ext_alive =         %d"%((status>>14) & 1))
-#        print ("   hact_alive =             %d"%((status>>13) & 1))
-        print ("   hact_run =               %d"%((status>>13) & 1))
-        print ("   locked_pxd_mmcm =        %d"%((status>>12) & 1))
-        print ("   clkin_pxd_stopped_mmcm = %d"%((status>>11) & 1))
-        print ("   clkfb_pxd_stopped_mmcm = %d"%((status>>10) & 1))
-        print ("   xfpgadone =              %d"%((status>> 9) & 1))
-        print ("   ps_rdy =                 %d"%((status>> 8) & 1))
-        print ("   ps_out =                 %d"%((status>> 0)  & 0xff))
-        print ("   xfpgatdo =               %d"%((status>>25) & 1))
-        print ("   senspgmin =              %d"%((status>>24) & 1))
-        print ("   seq =                    %d"%((status>>26) & 0x3f))
+            """
+            print ("   last_in_line_1cyc_mclk = %d"%((status>>23) & 1))
+            print ("   dout_valid_1cyc_mclk =   %d"%((status>>22) & 1))
+            print ("   alive_hist0_gr =         %d"%((status>>21) & 1))
+            print ("   alive_hist0_rq =         %d"%((status>>20) & 1))
+            print ("   sof_out_mclk =           %d"%((status>>19) & 1))
+            print ("   eof_mclk =               %d"%((status>>18) & 1))
+            print ("   sof_mclk =               %d"%((status>>17) & 1))
+            print ("   sol_mclk =               %d"%((status>>16) & 1))
+            """
+            """
+            #Folowing 5 bits may be just temporarily available
+            print ("   irst =                   %d"%((status>>20) & 1))
+            print ("async_prst_with_sens_mrst = %d"%((status>>19) & 1))
+            print ("   imrst =                  %d"%((status>>18) & 1))
+            print ("   rst_mmcm =               %d"%((status>>17) & 1))
+            print ("   pxd_out_pre[1] =         %d"%((status>>16) & 1))
+            """
+    
+            print ("   shifted TDO              %d"%((status>>16) & 0xff))
+    
+            print ("   vact_alive =             %d"%((status>>15) & 1))
+            print ("   hact_ext_alive =         %d"%((status>>14) & 1))
+    #        print ("   hact_alive =             %d"%((status>>13) & 1))
+            print ("   hact_run =               %d"%((status>>13) & 1))
+            print ("   locked_pxd_mmcm =        %d"%((status>>12) & 1))
+            print ("   clkin_pxd_stopped_mmcm = %d"%((status>>11) & 1))
+            print ("   clkfb_pxd_stopped_mmcm = %d"%((status>>10) & 1))
+            print ("   xfpgadone =              %d"%((status>> 9) & 1))
+            print ("   ps_rdy =                 %d"%((status>> 8) & 1))
+            print ("   ps_out =                 %d"%((status>> 0)  & 0xff))
+            print ("   xfpgatdo =               %d"%((status>>25) & 1))
+            print ("   senspgmin =              %d"%((status>>24) & 1))
+            print ("   seq =                    %d"%((status>>26) & 0x3f))
 #vact_alive, hact_ext_alive, hact_alive
     def get_status_sensor_i2c ( self,
                               num_sensor="All"):

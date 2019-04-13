@@ -130,11 +130,13 @@ FRAME_START_ADDRESS_INC = 0x80000
 #SENSOR_INTERFACE_HISPI =    "HISPI"
 # for now - single sensor type per interface
 SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
-                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}}
+                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"},
+                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"}}
 #                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":2500, "freq":24.444, "iface":"1V8_LVDS"}}
 
-SENSOR_DEFAULTS= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
-                   x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
+SENSOR_DEFAULTS= { x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
+                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2},
+                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"width":160,  "height":120,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
 
 #SENSOR_DEFAULTS_SIMULATION= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
 #                             x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
@@ -173,6 +175,7 @@ class X393SensCmprs(object):
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
+                    # do not update LWIR defaults !!!
                     if nomargins:
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 0 # 4
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 0
@@ -1540,9 +1543,9 @@ class X393SensCmprs(object):
         if histogram_top is None:
             histogram_top = 0
         if histogram_width_m1 is None:
-            histogram_width_m1 = window_width - 33
+            histogram_width_m1 = window_width - 1 # 33
         if histogram_height_m1 is None:
-            histogram_height_m1 = window_height - 1145
+            histogram_height_m1 = window_height - 1 # 1145
 
         self.specify_phys_memory(circbuf_chn_size = circbuf_chn_size)
         """

@@ -1891,7 +1891,7 @@ class X393ExportC(object):
         dw.append(("in_busy",                8, 1,0,  "Frame segments are waited for or received to FIFO"))
         dw.append(("out_busy",               9, 1,0,  "received frame is being transferred to video memory"))
         dw.append(("crc_err",               10, 1,0,  "At least 1 CRC error happened since reset by command bit"))
-        dw.append(("fake in",               11, 1,0,  "Just to keep hardware"))
+        dw.append(("fake_in",               11, 1,0,  "Just to keep hardware"))
         dw.append(("senspgmin",             24, 1,0,  "senspgm pin state (0 means non-FPGA SFE is present)"))
         dw.append(("busy",                  25, 1,0,  "in_busy OR out_busy"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
