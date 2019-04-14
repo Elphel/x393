@@ -84,6 +84,9 @@ module  compressor393 # (
         parameter CMPRS_CBIT_BAYER_BITS =      2, // number of bits to control compressor Bayer shift mode
         parameter CMPRS_CBIT_FOCUS =          23, // bit # to control compressor focus display mode
         parameter CMPRS_CBIT_FOCUS_BITS =      2, // number of bits to control compressor focus display mode
+        parameter CMPRS_CBIT_ROWS_LSB =       28, // bit # Four height LSBs in raw mode 
+        parameter CMPRS_CBIT_ROWS_LSB_BITS =   4, // number of bits to control four height LSBs in raw mode
+        
         // compressor bit-fields decode
         parameter CMPRS_CBIT_RUN_RST =         2'h0, // reset compressor, stop immediately
 //      parameter CMPRS_CBIT_RUN_DISABLE =     2'h1, // disable compression of the new frames, finish any already started
@@ -382,6 +385,8 @@ module  compressor393 # (
                 .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
                 .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
                 .CMPRS_CBIT_FOCUS_BITS           (CMPRS_CBIT_FOCUS_BITS),
+                .CMPRS_CBIT_ROWS_LSB             (CMPRS_CBIT_ROWS_LSB),
+                .CMPRS_CBIT_ROWS_LSB_BITS        (CMPRS_CBIT_ROWS_LSB_BITS),
                 .CMPRS_CBIT_RUN_RST              (CMPRS_CBIT_RUN_RST),
                 .CMPRS_CBIT_RUN_STANDALONE       (CMPRS_CBIT_RUN_STANDALONE),
                 .CMPRS_CBIT_RUN_ENABLE           (CMPRS_CBIT_RUN_ENABLE),

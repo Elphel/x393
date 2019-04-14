@@ -570,7 +570,7 @@
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
     parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
 //`else
-    //sensor_fifo parameters
+    //sensor_fifo parameters (for parallel12)
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
     parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
@@ -755,6 +755,8 @@
     parameter CMPRS_CBIT_BAYER_BITS =      2, // number of bits to control compressor Bayer shift mode
     parameter CMPRS_CBIT_FOCUS =          23, // bit # to control compressor focus display mode
     parameter CMPRS_CBIT_FOCUS_BITS =      2, // number of bits to control compressor focus display mode
+    parameter CMPRS_CBIT_ROWS_LSB =       28, // bit # Four height LSBs in raw mode 
+    parameter CMPRS_CBIT_ROWS_LSB_BITS =   4, // number of bits to control four height LSBs in raw mode
     // compressor bit-fields decode
     parameter CMPRS_CBIT_RUN_RST =         2'h0, // reset compressor, stop immediately
 //      parameter CMPRS_CBIT_RUN_DISABLE =     2'h1, // disable compression of the new frames, finish any already started

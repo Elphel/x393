@@ -35,7 +35,10 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h03930107;      // parallel - 17.4 - restored delay after linear, fixed bug, all met
+         parameter FPGA_VERSION =          32'h03930120;      //
+ 
+ 
+//        parameter FPGA_VERSION =          32'h03930107;      // parallel - 17.4 - restored delay after linear, fixed bug, all met
 //        parameter FPGA_VERSION =          32'h03930110;      //A serial - 17.4 - restored delay after linear, fixed bug, timing met
 //        parameter FPGA_VERSION =          32'h03930110;      // serial - 17.4 - restored delay after linear, fixed bug, timing failed
 //        parameter FPGA_VERSION =          32'h03930107;      // parallel - 17.4 - restored delay after linear, fixed bug, all met

@@ -129,6 +129,8 @@ module  cmprs_cmd_decode#(
         parameter CMPRS_CBIT_BAYER_BITS =     2, // number of bits to control compressor Bayer shift mode
         parameter CMPRS_CBIT_FOCUS =         23, // bit # to control compressor focus display mode
         parameter CMPRS_CBIT_FOCUS_BITS =     2, // number of bits to control compressor focus display mode
+        parameter CMPRS_CBIT_ROWS_LSB =      28, // bit # Four height LSBs in raw mode 
+        parameter CMPRS_CBIT_ROWS_LSB_BITS =  4, // number of bits to control four height LSBs in raw mode
         // compressor bit-fields decode
         parameter CMPRS_CBIT_RUN_RST =        2'h0, // reset compressor, stop immediately
 //      parameter CMPRS_CBIT_RUN_DISABLE =    2'h1, // disable compression of the new frames, finish any already started
@@ -205,6 +207,7 @@ module  cmprs_cmd_decode#(
     output reg             [ 2:0] cmprs_qpage, // [2:0] - quantizator page number (0..7)
     output reg                    cmprs_dcsub, // subtract dc level before DCT, restore later
     output reg             [ 1:0] cmprs_fmode, //[1:0] - focus mode
+    output reg             [ 3:0] raw_rows_lsb,    // Four LSBs of the window height - used in raw mode
     output reg             [ 1:0] bayer_shift, // additional shift to bayer mosaic
                                   
     output reg                    ignore_color,
@@ -246,6 +249,7 @@ module  cmprs_cmd_decode#(
     reg          cmprs_dcsub_mclk; // subtract dc level before DCT, restore later
     reg   [ 3:0] cmprs_mode_mclk;  // [3:0] - compressor mode
     reg   [ 1:0] cmprs_fmode_mclk; //[1:0] - focus mode
+    reg   [ 3:0] rows_lsb_mclk;     // [3:0] - Four LSBs of the window height - used in raw mode
     reg   [ 1:0] bayer_shift_mclk; // additional shift to bayer mosaic
     
     reg   [30:0] format_mclk; // left margin and macroblock rows/columns
@@ -256,6 +260,8 @@ module  cmprs_cmd_decode#(
     reg          cmprs_dcsub_xclk; // subtract dc level before DCT, restore later
     reg   [ 3:0] cmprs_mode_xclk;  // [3:0] - compressor mode
     reg   [ 1:0] cmprs_fmode_xclk; //[1:0] - focus mode
+    reg   [ 3:0] rows_lsb_xclk;  // Four LSBs of the window height - used in raw mode
+    
     reg   [ 1:0] bayer_shift_xclk; // additional shift to bayer mosaic
     
     reg   [30:0] format_xclk; // left margin and macroblock rows/columns
@@ -311,6 +317,9 @@ module  cmprs_cmd_decode#(
         
         if      (mrst)                                 cmprs_fmode_mclk <=  0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_FOCUS])  cmprs_fmode_mclk <=  di_r[CMPRS_CBIT_FOCUS-1 -:CMPRS_CBIT_FOCUS_BITS];
+
+        if      (mrst)                                    rows_lsb_mclk <=  4'h0f;
+        else if (ctrl_we_r && di_r[CMPRS_CBIT_ROWS_LSB])  rows_lsb_mclk <=  di_r[CMPRS_CBIT_ROWS_LSB-1 -:CMPRS_CBIT_ROWS_LSB_BITS];
         
         if      (mrst)                                 bayer_shift_mclk <=  0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_BAYER])  bayer_shift_mclk <=  di_r[CMPRS_CBIT_BAYER-1 -:CMPRS_CBIT_BAYER_BITS];
@@ -343,6 +352,7 @@ module  cmprs_cmd_decode#(
         cmprs_dcsub_xclk <=     cmprs_dcsub_mclk;
         cmprs_mode_xclk <=      cmprs_mode_mclk;
         cmprs_fmode_xclk <=     cmprs_fmode_mclk;
+        rows_lsb_xclk <=        rows_lsb_mclk;
         bayer_shift_xclk <=     bayer_shift_mclk;
     end
     
@@ -356,6 +366,7 @@ module  cmprs_cmd_decode#(
         cmprs_qpage <=        cmprs_qpage_xclk;
         cmprs_dcsub <=        cmprs_dcsub_xclk;
         cmprs_fmode <=        cmprs_fmode_xclk;
+        raw_rows_lsb <=       rows_lsb_xclk;
         bayer_shift <=        bayer_shift_xclk;
         
         left_marg <=          format_xclk[CMPRS_FRMT_LMARG +: CMPRS_FRMT_LMARG_BITS];

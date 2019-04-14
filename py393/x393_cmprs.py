@@ -113,7 +113,8 @@ class X393Cmprs(object):
                                  cmode =       None,
                                  multi_frame = None,
                                  bayer =       None,
-                                 focus_mode =  None):
+                                 focus_mode =  None,
+                                 row_lsb_raw = None):
         """
         Combine compressor control parameters into a single word. None value preserves old setting for the parameter
         @param run_mode -    0 - reset, 2 - run single from memory, 3 - run repetitive
@@ -135,7 +136,8 @@ class X393Cmprs(object):
                                 CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
         @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
         @param bayer -        Bayer shift (0..3)
-        @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
+        @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image
+        @param row_lsb_raw - four LSBs of the window height - used in raw mode
         @return               combined data word
         """
         data = 0;
@@ -166,6 +168,9 @@ class X393Cmprs(object):
         if not focus_mode is None:
             data |= (1 << vrlg.CMPRS_CBIT_FOCUS)
             data |= (focus_mode & ((1 << vrlg.CMPRS_CBIT_FOCUS_BITS) - 1)) << (vrlg.CMPRS_CBIT_FOCUS - vrlg.CMPRS_CBIT_FOCUS_BITS)
+        if not row_lsb_raw is None:
+            data |= (1 << vrlg.CMPRS_CBIT_ROWS_LSB)
+            data |= (row_lsb_raw & ((1 << vrlg.CMPRS_CBIT_ROWS_LSB_BITS) - 1)) << (vrlg.CMPRS_CBIT_ROWS_LSB - vrlg.CMPRS_CBIT_ROWS_LSB_BITS)
         return data
     
     def compressor_format (self,
@@ -218,7 +223,8 @@ class X393Cmprs(object):
                             cmode =       None,
                             multi_frame = None,
                             bayer =       None,
-                            focus_mode =  None):
+                            focus_mode =  None,
+                            row_lsb_raw = None):
         """
         Combine compressor control parameters into a single word. None value preserves old setting for the parameter
         @param chn -         compressor channel number, "a" or "all" - same for all 4 channels
@@ -242,6 +248,7 @@ class X393Cmprs(object):
         @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
         @param bayer -        Bayer shift (0..3)
         @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
+        @param row_lsb_raw - four LSBs of the window height - used in raw mode
         """
         try:
             if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
@@ -253,7 +260,8 @@ class X393Cmprs(object):
                                              cmode =       cmode,
                                              multi_frame = multi_frame,
                                              bayer =       bayer,
-                                             focus_mode =  focus_mode)
+                                             focus_mode =  focus_mode,
+                                             row_lsb_raw = row_lsb_raw)
                 return
         except:
             pass
@@ -264,7 +272,8 @@ class X393Cmprs(object):
                             cmode =       cmode,
                             multi_frame = multi_frame,
                             bayer =       bayer,
-                            focus_mode =  focus_mode)
+                            focus_mode =  focus_mode,
+                            row_lsb_raw = row_lsb_raw)
         self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_CONTROL_REG,
                                                   data)
         
@@ -519,11 +528,13 @@ class X393Cmprs(object):
                                   qbank,
                                   dc_sub,
                                   cmode,
+                                  bit16,
                                   multi_frame,
                                   bayer,
                                   focus_mode,
                                   num_macro_cols_m1,
                                   num_macro_rows_m1,
+                                  row_lsb_raw,
                                   left_margin,
                                   colorsat_blue,
                                   colorsat_red,
@@ -547,11 +558,14 @@ class X393Cmprs(object):
                                 CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
                                 CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
                                 CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
+                                CMPRS_CBIT_CMODE_RAW =            15 -  raw (uncompressed) mode
+        @param bit16 -       16-bit (2 bytes per pixel) mode                                
         @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
         @param bayer -        Bayer shift (0..3)
         @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
         @param num_macro_cols_m1 - number of macroblock colums minus 1
         @param num_macro_rows_m1 - number of macroblock rows minus 1
+        @param row_lsb_raw - four LSBs of the window height - used in raw mode
         @param left_margin - left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
         @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
@@ -567,6 +581,7 @@ class X393Cmprs(object):
             print (   "multi_frame = ",multi_frame)
             print (   "bayer = ",bayer)
             print (   "focus_mode = ",focus_mode)
+            print (   "row_lsb_raw = ", row_lsb_raw)
         self.compressor_control(
             chn =         chn,         # compressor channel number (0..3)
             qbank =       qbank,       # [6:3] quantization table page

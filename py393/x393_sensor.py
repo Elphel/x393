@@ -176,8 +176,15 @@ class X393Sensor(object):
         print ("print_status_sensor_io(%d):"%(num_sensor))
         
         if (sensorType == SENSOR_INTERFACE_LWIR):
-            pass
-            
+            print ("   segment_id =             %d"%((status>> 0) & 0x0f))
+            print ("   gpio_in =                %d"%((status>> 4) & 0x0f))
+            print ("   in_busy =                %d"%((status>> 8) & 1))
+            print ("   out_busy =               %d"%((status>> 9) & 1))
+            print ("   crc_err =                %d"%((status>>10) & 1))
+            print ("   fake_in =                %d"%((status>>11) & 1))
+            print ("   senspgmin =              %d"%((status>>24) & 1))
+            print ("   busy =                   %d"%((status>>25) & 1))
+            print ("   seq =                    %d"%((status>>26) & 0x3f))
         else:    
 #last_in_line_1cyc_mclk, dout_valid_1cyc_mclk
             """
@@ -445,6 +452,76 @@ class X393Sensor(object):
             rslt |= 1 <<  vrlg.SENS_CTRL_QUADRANTS_EN
             rslt |= (quadrants & ((1 << vrlg.SENS_CTRL_QUADRANTS_WIDTH) - 1)) <<  vrlg.SENS_CTRL_QUADRANTS
         return rslt
+
+    def func_sensor_io_ctl_lwir (self,
+                                 mrst =       None,
+                                 pwdn =       None,
+                                 mclk  =      None,
+                                 spi_en =     None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
+                                 segm_zero =  None,
+                                 out_en =     None,
+                                 out_single = False,
+                                 reset_crc =  False,
+                                 spi_clk =    None,
+                                 gpio0 =      None, 
+                                 gpio1 =      None, 
+                                 gpio2 =      None, 
+                                 gpio3 =      None, 
+                                 fake =       None,
+                                 mosi =       None):
+        """
+        Combine sensor I/O control parameters into a control word
+        @param mrst -       True - activate MRST signal (low), False - deactivate MRST (high), None - no change
+        @param pwdn -       True - activate POWER_DOWN signal (low), False - deactivate POWER_DOWN (high), None - no change
+        @param mclk -       True - enable master clock (25MHz) to sensor, False - disable, None - no change
+        @param spi_en -     True - SPI reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable, None - no change 
+        @param segm_zero =  True - allow receiving segment ID==0 (ITAR invalid), False - disallow, None - no change,
+        @param out_en =     True - enable continuously receiving data to memory, False - disable, None - no change
+        @param out_single = True - acquire single frame,
+        @param reset_crc =  True - reset CRC error status bit,
+        @param spi_clk =    True - generate SPI clock during inactive SPI CS, False - do not generate SPI CLK when CS is inactive, None - no change
+        @param gpio0 =      Output control for GPIO0: 0 - nop, 1 - set low, 2 - set high, 3 - input
+        @param gpio1 =      Output control for GPIO0: 1 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param gpio2 =      Output control for GPIO0: 2 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param fake =       Do not use, just for keeping hardware portsNone,
+        @param mosi =       Do not use, just for keeping hardware portsNone,
+        @return LWIR sensor i/o control word
+        """
+        rslt = 0
+        if not mrst is None:
+            rslt |= (3,2)[mrst] <<       vrlg.VOSPI_MRST
+        if not pwdn is None:
+            rslt |= (3,2)[pwdn] <<       vrlg.VOSPI_PWDN
+        if not mclk is None:
+            rslt |= (2,3)[mclk] <<       vrlg.VOSPI_MCLK
+        if not spi_en is None:
+            rslt |= (spi_en & 3) <<      vrlg.VOSPI_EN
+        if not segm_zero is None:
+            rslt |= (2,3)[segm_zero] <<  vrlg.VOSPI_SEGM0_OK
+        if not out_en is None:
+            rslt |= (2,3)[out_en] <<     vrlg.VOSPI_OUT_EN
+        if out_single:
+            rslt |= 1 <<                 vrlg.VOSPI_OUT_EN_SINGL
+        if reset_crc:
+            rslt |= 1 <<                 vrlg.VOSPI_RESET_CRC
+        if not out_en is None:
+            rslt |= (2,3)[spi_clk] <<    vrlg.VOSPI_SPI_CLK
+        if not gpio0 is None:
+            rslt |= (gpio0 & 3) <<       (vrlg.VOSPI_GPIO + 0)
+        if not gpio1 is None:
+            rslt |= (gpio1 & 3) <<       (vrlg.VOSPI_GPIO + 2)
+        if not gpio2 is None:
+            rslt |= (gpio2 & 3) <<       (vrlg.VOSPI_GPIO + 4)
+        if not gpio3 is None:
+            rslt |= (gpio3 & 3) <<       (vrlg.VOSPI_GPIO + 6)
+        if fake:
+            rslt |= 1 <<                 vrlg.VOSPI_FAKE_OUT
+        if fake:
+            mosi |= 1 <<                 vrlg.VOSPI_MOSI
+        return rslt
+
+
 
     def func_sensor_jtag_ctl(self,
                              pgmen = None,    # <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
@@ -963,6 +1040,84 @@ class X393Sensor(object):
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
 # TODO: Make one for HiSPi (it is different)
+
+    def set_sensor_io_ctl_lwir (self,
+                                 mrst =       None,
+                                 pwdn =       None,
+                                 mclk  =      None,
+                                 spi_en =     None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
+                                 segm_zero =  None,
+                                 out_en =     None,
+                                 out_single = False,
+                                 reset_crc =  False,
+                                 spi_clk =    None,
+                                 gpio0 =      None, 
+                                 gpio1 =      None, 
+                                 gpio2 =      None, 
+                                 gpio3 =      None, 
+                                 fake =       None,
+                                 mosi =       None):
+        """
+        Combine sensor I/O control parameters into a control word
+        @param mrst -       True - activate MRST signal (low), False - deactivate MRST (high), None - no change
+        @param pwdn -       True - activate POWER_DOWN signal (low), False - deactivate POWER_DOWN (high), None - no change
+        @param mclk -       True - enable master clock (25MHz) to sensor, False - disable, None - no change
+        @param spi_en -     True - SPI reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable, None - no change 
+        @param segm_zero =  True - allow receiving segment ID==0 (ITAR invalid), False - disallow, None - no change,
+        @param out_en =     True - enable continuously receiving data to memory, False - disable, None - no change
+        @param out_single = True - acquire single frame,
+        @param reset_crc =  True - reset CRC error status bit,
+        @param spi_clk =    True - generate SPI clock during inactive SPI CS, False - do not generate SPI CLK when CS is inactive, None - no change
+        @param gpio0 =      Output control for GPIO0: 0 - nop, 1 - set low, 2 - set high, 3 - input
+        @param gpio1 =      Output control for GPIO0: 1 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param gpio2 =      Output control for GPIO0: 2 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param fake =       Do not use, just for keeping hardware portsNone,
+        @param mosi =       Do not use, just for keeping hardware portsNone,
+        @return LWIR sensor i/o control word
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_io_ctl_lwir (num_sensor,
+                           mrst =       mrst,
+                           pwdn =       pwdn,
+                           mclk  =      mclk,
+                           spi_en =     spi_en,
+                           segm_zero =  segm_zero,
+                           out_en =     out_en,
+                           out_single = out_single,
+                           reset_crc =  reset_crc,
+                           spi_clk =    spi_clk,
+                           gpio0 =      gpio0, 
+                           gpio1 =      gpio1, 
+                           gpio2 =      gpio2, 
+                           gpio3 =      gpio3, 
+                           fake =       fake,
+                           mosi =       mosi)
+                return
+        except:
+            pass
+        data = self.func_sensor_io_ctl_lwir (
+                           mrst =       mrst,
+                           pwdn =       pwdn,
+                           mclk  =      mclk,
+                           spi_en =     spi_en,
+                           segm_zero =  segm_zero,
+                           out_en =     out_en,
+                           out_single = out_single,
+                           reset_crc =  reset_crc,
+                           spi_clk =    spi_clk,
+                           gpio0 =      gpio0, 
+                           gpio1 =      gpio1, 
+                           gpio2 =      gpio2, 
+                           gpio3 =      gpio3, 
+                           fake =       fake,
+                           mosi =       mosi)
+
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
+        self.x393_axi_tasks.write_control_register(reg_addr, data)
+
     def set_sensor_io_dly_parallel (self,
                                     num_sensor,
                                     mmcm_phase,

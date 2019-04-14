@@ -2133,7 +2133,7 @@ class X393ExportC(object):
         dw.append(("pwdn_set",     vrlg.VOSPI_PWDN + 1,         1,   0,  "When set to 1, POWER DOWN is set  to the 'pwdn' field value"))
         dw.append(("mclk",         vrlg.VOSPI_MCLK,             1,   0,  "Enable master clock (25MHz) to sensor"))
         dw.append(("mclk_set",     vrlg.VOSPI_MCLK + 1,         1,   0,  "When set to 1, MCLK enable  is set  to the 'mclk' field value"))
-        dw.append(("spi_en",       vrlg.VOSPI_EN,               2,   0,  "SPI Reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable"))
+        dw.append(("spi_en",       vrlg.VOSPI_EN,               2,   0,  "SPI reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable"))
         dw.append(("segm_zero",    vrlg.VOSPI_SEGM0_OK,         1,   0,  "OK to input segment 0 (invalid, valid are 1,2,3,4)"))
         dw.append(("segm_zero_set",vrlg.VOSPI_SEGM0_OK + 1,     1,   0,  "Enable setting of segm_zero"))
         dw.append(("out_en",       vrlg.VOSPI_OUT_EN,           1,   0,  "Enable output sensor data to memory"))
@@ -2362,6 +2362,8 @@ class X393ExportC(object):
         dw.append(("bayer_set",      vrlg.CMPRS_CBIT_BAYER,                                                          1, 0, "Set 'bayer'"))
         dw.append(("focus",          vrlg.CMPRS_CBIT_FOCUS - vrlg.CMPRS_CBIT_FOCUS_BITS,   vrlg.CMPRS_CBIT_FOCUS_BITS,  0, "Focus mode"))
         dw.append(("focus_set",      vrlg.CMPRS_CBIT_FOCUS,                                                          1, 0, "Set 'focus'"))
+        dw.append(("rows_lsb",       vrlg.CMPRS_CBIT_ROWS_LSB - vrlg.CMPRS_CBIT_ROWS_LSB_BITS,   vrlg.CMPRS_CBIT_ROWS_LSB_BITS,  0, "4 LSBs of the (height-1), used in raw mode"))
+        dw.append(("rows_lsb_set",   vrlg.CMPRS_CBIT_ROWS_LSB,                                                          1, 0, "Set 4 LSBs of the (height-1)"))
         return dw
     def _enc_cmprs_coring_sel(self):
         dw=[]
@@ -2374,7 +2376,7 @@ class X393ExportC(object):
         return dw
     def _enc_cmprs_format(self):
         dw=[]
-        dw.append(("num_macro_cols_m1", vrlg.CMPRS_FRMT_MBCM1,       vrlg.CMPRS_FRMT_MBCM1_BITS,   0, "Number of macroblock colums minus 1"))
+        dw.append(("num_macro_cols_m1", vrlg.CMPRS_FRMT_MBCM1,       vrlg.CMPRS_FRMT_MBCM1_BITS,   0, "Number of macroblock columns minus 1"))
         dw.append(("num_macro_rows_m1", vrlg.CMPRS_FRMT_MBRM1,       vrlg.CMPRS_FRMT_MBRM1_BITS,   0, "Number of macroblock rows minus 1"))
         dw.append(("left_margin",       vrlg.CMPRS_FRMT_LMARG,       vrlg.CMPRS_FRMT_LMARG_BITS,   0, "Left margin of the first pixel (0..31) for 32-pixel wide colums in memory access"))
         return dw

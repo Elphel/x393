@@ -78,6 +78,8 @@ module  jp_channel#(
         parameter CMPRS_CBIT_BAYER_BITS =     2, // number of bits to control compressor Bayer shift mode
         parameter CMPRS_CBIT_FOCUS =         23, // bit # to control compressor focus display mode
         parameter CMPRS_CBIT_FOCUS_BITS =     2, // number of bits to control compressor focus display mode
+        parameter CMPRS_CBIT_ROWS_LSB =      28, // bit # Four height LSBs in raw mode 
+        parameter CMPRS_CBIT_ROWS_LSB_BITS =  4, // number of bits to control four height LSBs in raw mode
         // compressor bit-fields decode
         parameter CMPRS_CBIT_RUN_RST =        2'h0, // reset compressor, stop immediately
 //      parameter CMPRS_CBIT_RUN_DISABLE =    2'h1, // disable compression of the new frames, finish any already started
@@ -253,7 +255,7 @@ module  jp_channel#(
     wire    [CMPRS_CSAT_CR_BITS-1:0] m_cr;               // [9:0] scale for CR - default 0.713 (10'hb6)
 
     wire   [ 1:0] cmprs_fmode;        // focusing/overlay mode
-
+    wire   [ 3:0] raw_rows_lsb;       // four LSBs of window height in raw mode, 0 means 'h10, 'hf means f
     //TODO: assign next 5 values from converter_type[2:0]
     wire   [ 5:0] mb_w_m1;            // macroblock width minus 1
     wire   [ 5:0] mb_h_m1;            // macroblock height -1
@@ -701,6 +703,8 @@ module  jp_channel#(
         .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
         .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
         .CMPRS_CBIT_FOCUS_BITS           (CMPRS_CBIT_FOCUS_BITS),
+        .CMPRS_CBIT_ROWS_LSB             (CMPRS_CBIT_ROWS_LSB),
+        .CMPRS_CBIT_ROWS_LSB_BITS        (CMPRS_CBIT_ROWS_LSB_BITS),
         .CMPRS_CBIT_RUN_RST              (CMPRS_CBIT_RUN_RST),
         .CMPRS_CBIT_RUN_STANDALONE       (CMPRS_CBIT_RUN_STANDALONE),
         .CMPRS_CBIT_RUN_ENABLE           (CMPRS_CBIT_RUN_ENABLE),
@@ -760,7 +764,8 @@ module  jp_channel#(
         .cmprs_en_late_xclk (stuffer_en),          // output reg - extended enable to allow stuffer to gracefully finish 
         .cmprs_qpage        (cmprs_qpage),         // output[2:0] reg 
         .cmprs_dcsub        (subtract_dc),         // output reg 
-        .cmprs_fmode        (cmprs_fmode),         // output[1:0] reg 
+        .cmprs_fmode        (cmprs_fmode),         // output[1:0] reg
+        .raw_rows_lsb       (raw_rows_lsb),        // output[3:0] reg 
         .bayer_shift        (bayer_phase),         // output[1:0] reg 
         .ignore_color       (ignore_color),        // output reg 
         .four_blocks        (),                    // output reg Not used?
@@ -888,7 +893,7 @@ module  jp_channel#(
         .frame_go           (frame_go_raw),       // input
         .cmprs_run_mclk     (cmprs_run_mclk),     // input
         .n_blocks_in_row_m1 (n_blocks_in_row_m1), // input[12:0] 
-        .n_block_rows_m1    (n_block_rows_m1),    // input[12:0] 
+        .n_block_rows_m1    ({n_block_rows_m1,raw_rows_lsb}), // input[12:0] 
         .stuffer_running    (stuffer_running),    // input
         .raw_be16           (raw_be16),           // input
         .buf_ra             (raw_buf_ra),         // output[11:0] 

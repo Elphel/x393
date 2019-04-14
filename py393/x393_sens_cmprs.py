@@ -133,10 +133,11 @@ SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.
                    x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"},
                    x393_sensor.SENSOR_INTERFACE_LWIR:     {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"}}
 #                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":2500, "freq":24.444, "iface":"1V8_LVDS"}}
-
+#slave is 7 bit
 SENSOR_DEFAULTS= { x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
                    x393_sensor.SENSOR_INTERFACE_HISPI:    {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2},
-                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"width":160,  "height":120,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
+#                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"width":160,  "height":120,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
+                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"width":160,  "height":122,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
 
 #SENSOR_DEFAULTS_SIMULATION= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
 #                             x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
@@ -175,6 +176,10 @@ class X393SensCmprs(object):
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["width"]=     vrlg.WOI_WIDTH #4
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["height"]=    vrlg.WOI_HEIGHT
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["top"]=       0
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["left"]=      0
                     # do not update LWIR defaults !!!
                     if nomargins:
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 0 # 4
@@ -641,12 +646,15 @@ class X393SensCmprs(object):
             print ("===================== MEMORY_SENSOR =========================, mode= %d"%(cmode))
 
         window_height_memory = window_height
-        if (cmode==vrlg.CMPRS_CBIT_CMODE_JP4) or (cmode==15): # vrlg.CMPRS_CBIT_CMODE_RAW):
+#        if (cmode==vrlg.CMPRS_CBIT_CMODE_JP4) or (cmode==15): # vrlg.CMPRS_CBIT_CMODE_RAW):
+        if (cmode==vrlg.CMPRS_CBIT_CMODE_JP4): # vrlg.CMPRS_CBIT_CMODE_RAW): # RAW may be any umber of lines
             window_height_memory &= 0xfff0 # do not need extra margins
             num_burst_in_line &= 0xfffe    # make even (assuming left=0)
-            print ("===================== Mode is JP4 or raw =========================")
+#            print ("===================== Mode is JP4 or raw =========================")
+            print ("===================== Mode is JP4 =========================")
         else:
-            print ("===================== Mode is neither JP4 nor raw =========================")
+#            print ("===================== Mode is neither JP4 nor raw =========================")
+            print ("===================== Mode is not JP4 =========================")
 
         self.x393Sensor.setup_sensor_memory (
             num_sensor =       num_sensor,              # input  [1:0] num_sensor;
@@ -654,7 +662,6 @@ class X393SensCmprs(object):
             frame_sa_inc =     frame_start_address_inc, # input [31:0] frame_sa_inc;     # 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
             last_frame_num =   last_buf_frame,          # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
             frame_full_width = frame_full_width,        # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-#            window_width =     window_width >> 4,        # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
             window_width =     num_burst_in_line,       # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
 #            window_height =    window_height,           # input [31:0] window_height;    # 16 bit
             window_height =    window_height_memory,   # input [31:0] window_height;    # 16 bit
@@ -669,72 +676,10 @@ class X393SensCmprs(object):
         self.x393Cmprs.compressor_control(chn =  num_sensor,
                                           run_mode = 0) # reset compressor
         #TODO: Calculate from the image size?
-        """
-        #How it was
-        self.x393Cmprs.setup_compressor_channel (
-                                  chn =               num_sensor,
-                                  qbank =             0,
-                                  dc_sub =            True,
-                                  cmode =             vrlg.CMPRS_CBIT_CMODE_JPEG18,
-#                                  cmode =             vrlg.CMPRS_CBIT_CMODE_JP4,
-                                  multi_frame =       True,
-                                  bayer       =       0,
-                                  focus_mode  =       0,
-                                  num_macro_cols_m1 = num_macro_cols_m1,
-                                  num_macro_rows_m1 = num_macro_rows_m1,
-                                  left_margin =       compressor_left_margin,
-                                  colorsat_blue =     colorsat_blue,
-                                  colorsat_red =      colorsat_red,
-                                  coring =            0,
-                                  verbose =           verbose)
-    # TODO: calculate widths correctly!
-        if exit_step == 14: return False
-        tile_margin = 2 # 18x18 instead of 16x16
-        left_tiles32 = window_left // 32
-#        last_tile32 = (window_left + (window_width & ~0xf) + tile_margin - 1) // 32
-        last_tile32 = (window_left + ((num_macro_cols_m1 + 1) * 16) + tile_margin - 1) // 32
-        width32 = last_tile32 - left_tiles32 + 1 # number of 32-wide tiles needed in each row
-
-        if (verbose > 0) :
-            print ("setup_compressor_memory:")
-            print ("num_sensor =       ", num_sensor)
-            print ("frame_sa =         0x%x"%(frame_start_address))
-            print ("frame_sa_inc =     0x%x"%(frame_start_address_inc))
-            print ("last_frame_num =   0x%x"%(last_buf_frame))
-            print ("frame_full_width = 0x%x"%(frame_full_width))
-            print ("window_width =     0x%x"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made evem
-            print ("window_height =    0x%x"%(window_height & 0xfffffff0))
-            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
-            print ("window_top =       0x%x"%(window_top))
-            print ("byte32 =           1")
-            print ("tile_width =       2")
-            print ("tile_vstep =      16")
-            print ("tile_height =     18")
-            print ("extra_pages =      1")
-            print ("disable_need =     1")
-            print ("abort_late =       0")
-
-        self.x393Cmprs.setup_compressor_memory (
-            num_sensor =       num_sensor,
-            frame_sa =         frame_start_address,         # input [31:0] frame_sa;         # 22-bit frame start address ((3 CA LSBs==0. BA==0)
-            frame_sa_inc =     frame_start_address_inc,     # input [31:0] frame_sa_inc;     # 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
-            last_frame_num =   last_buf_frame,              # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
-            frame_full_width = frame_full_width,            # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-            window_width =     (width32 * 2 ),              # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
-            window_height =    window_height & 0xfffffff0,  # input [31:0] window_height;    # 16 bit
-            window_left =      left_tiles32 * 2,            # input [31:0] window_left;
-            window_top =       window_top,                  # input [31:0] window_top;
-            byte32 =           1,
-            tile_width =       2,
-            tile_vstep =      16,
-            tile_height =     18,
-            extra_pages =      1,
-            disable_need =     1,
-            abort_late =       False)
-        """
         # replacing with setup compressor:
         self.setup_compressor(chn =  num_sensor,
                                cmode =          cmode,
+                               bit16 =          bit16,
                                qbank =          0,
                                dc_sub =         True,
                                multi_frame =    True,
@@ -1165,6 +1110,7 @@ class X393SensCmprs(object):
     def setup_compressor(self,
                           chn,
                           cmode =            0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                          bit16 =            bit16,
                           bayer =            0,
                           qbank =            0,
                           dc_sub =           1,
@@ -1195,6 +1141,8 @@ class X393SensCmprs(object):
                                 CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
                                 CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
                                 CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
+                                CMPRS_CBIT_CMODE_RAW =            15 -  raw (uncompressed) mode
+        @param bit16 -       16-bit (2 bytes per pixel) mode                                
         @param qbank -       quantization table page (0..15)
         @param dc_sub -      True - subtract DC before running DCT, False - no subtraction, convert as is,
         @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
@@ -1219,6 +1167,7 @@ class X393SensCmprs(object):
                     self. setup_compressor( #self,
                                            chn =            chn,
                                            cmode =          cmode,
+                                           bit16 =          bit16,
                                            qbank =          qbank,
                                            dc_sub =         dc_sub,
                                            multi_frame =    multi_frame,
@@ -1251,35 +1200,6 @@ class X393SensCmprs(object):
         num_sensor = chn # 1:1 sensor - compressor
 
         align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
-        """
-        overlap = 0    # tile overlap (total - 2 for JPEG18, 4 - for JPEG20, 0 otherwise
-        cmprs_top = 0  # 1 for JPEG18 only, 0 for others (also is used for compressor left)
-        if cmode ==  vrlg.CMPRS_CBIT_CMODE_JPEG18:
-            overlap = 2
-            cmprs_top = 1
-        elif cmode ==  vrlg.CMPRS_CBIT_CMODE_JPEG20:
-            overlap = 4
-
-        if overlap:
-            window_width +=  (2 * COLOR_MARGINS)
-            window_height += (2 * COLOR_MARGINS)
-            tile_width = 2
-        else:
-            tile_width = 4
-#        cmprs_frame_format.left_margin = cmprs_top; // same as top - only for 18x18 tiles to keep Bayer shift (0/1)
-
-        width_bursts = window_width >> 4
-        if  window_width & 0xf:
-            width_bursts += 1
-        # Adjusting for tile width. TODO: probably not needed, handled in FPGA - verify (and remove 2 next lines)
-        if width_bursts & 1:
-            width_bursts += 1
-        if (tile_width > 2) and (width_bursts & 2):
-             width_bursts += 2
-
-        tile_height = 16 + overlap;
-        """
-
 
         width_in_bursts = window_width >> 4
         if (window_width & 0xf):
@@ -1306,7 +1226,19 @@ class X393SensCmprs(object):
         frame_start_address_inc = FRAME_START_ADDRESS_INC #Fixed size
 
         num_macro_cols_m1 = (window_width >> 4) - 1
-        num_macro_rows_m1 = (window_height >> 4) - 1
+        
+        if (cmode == vrlg.CMPRS_CBIT_CMODE_RAW) and (bit16):
+            num_macro_cols_m1 = ((window_width >> 4) << 1) - 1
+        else:
+            num_macro_cols_m1 = (window_width >> 4) - 1
+            
+        if (cmode == vrlg.CMPRS_CBIT_CMODE_RAW):
+            num_macro_rows_m1 = (window_height >> 4) - 1
+            cmprs_mem_height = window_height
+        else:
+            num_macro_rows_m1 = (window_height -1) >> 4
+            cmprs_mem_height = window_height & 0xfff0
+            
         frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
 
         self.x393Cmprs.setup_compressor_channel (
@@ -1314,11 +1246,13 @@ class X393SensCmprs(object):
                                   qbank =             qbank,
                                   dc_sub =            dc_sub,
                                   cmode =             cmode, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                                  bit16 =             bit16,
                                   multi_frame =       True,
                                   bayer       =       bayer,
                                   focus_mode  =       focus_mode,
                                   num_macro_cols_m1 = num_macro_cols_m1,
                                   num_macro_rows_m1 = num_macro_rows_m1,
+                                  row_lsb_raw =       (window_height -1) & 0xf,
                                   left_margin =       compressor_left_margin,
                                   colorsat_blue =     colorsat_blue,
                                   colorsat_red =      colorsat_red,
@@ -1350,7 +1284,7 @@ class X393SensCmprs(object):
             print ("last_frame_num =   0x%x"%(last_buf_frame))
             print ("frame_full_width = 0x%x"%(frame_full_width))
             print ("window_width =     0x%x (in 16 - bursts, made even)"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made even
-            print ("window_height =    0x%x"%(window_height & 0xfffffff0))
+            print ("window_height =    0x%x"%(cmprs_mem_height)) # window_height & 0xfffffff0))
             print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
             print ("window_top =       0x%x"%(window_top))
             print ("byte32 =           1")
@@ -1368,7 +1302,9 @@ class X393SensCmprs(object):
             last_frame_num =   last_buf_frame,              # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
             frame_full_width = frame_full_width,            # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
             window_width =     (width32 * 2 ),              # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
-            window_height =    window_height & 0xfffffff0,  # input [31:0] window_height;    # 16 bit
+
+            window_height =    cmprs_mem_height, #  window_height & 0xfffffff0,  # input [31:0] window_height;    # 16 bit
+
             window_left =      left_tiles32 * 2,            # input [31:0] window_left;
             window_top =       window_top,                  # input [31:0] window_top;
             byte32 =           1,
@@ -1736,7 +1672,7 @@ class X393SensCmprs(object):
                 self.x393Sensor.print_status_sensor_i2c (num_sensor = num_sensor)
 
                 if verbose >0 :
-                    print ("===================== I2C_SETUP =========================")
+                    print ("===================== I2C_SETUP Sensortype - %s ========================="%(sensorType))
                 slave_addr = SENSOR_DEFAULTS[sensorType]["slave"]
                 i2c_delay=  SENSOR_DEFAULTS[sensorType]["i2c_delay"]
 
@@ -1815,6 +1751,30 @@ class X393SensCmprs(object):
                                     num_bytes_rd =  2,
                                     bit_delay  =    i2c_delay,
                                     verbose =       verbose)
+                    
+                elif sensorType == x393_sensor.SENSOR_INTERFACE_LWIR:
+                    #slave address 0x2a(of 0x7f)
+                    #address - 16bit, data 16 bits
+                    for page in (0,                         # Most of the commands
+                                 0xf8,0xf9,0xfa,0xfb,       # Block DATA Buffer 0 (page 10 of FLIR LEPTON(R) Software IDD)
+                                 0xfc,0xfd,0xfe,0xff):      # Block DATA Buffer 1 (page 10 of FLIR LEPTON(R) Software IDD)
+                        self.x393Sensor.set_sensor_i2c_table_reg_wr (
+                                        num_sensor = num_sensor,
+                                        page       = page,
+                                        slave_addr = slave_addr,
+                                        rah        = page,
+                                        num_bytes  = 4,
+                                        bit_delay  = i2c_delay,
+                                        verbose = verbose)
+
+                    self.x393Sensor.set_sensor_i2c_table_reg_rd ( # last page used for read
+                                    num_sensor =    num_sensor,
+                                    page       =    0x01,
+                                    two_byte_addr = 1,
+                                    num_bytes_rd =  2,
+                                    bit_delay  =    i2c_delay,
+                                    verbose =       verbose)
+
                 else:
                     raise ("Unknown sensor type: %s"%(sensorType))
 
@@ -1830,6 +1790,7 @@ class X393SensCmprs(object):
 
         if exit_step == 21: return False
 
+        # not used for LWIR
         self.x393Camsync.camsync_setup (
                      sensor_mask =        sensor_mask,
                       trigger_mode =       False, # False - async (free running) sensor mode, True - triggered (global reset) sensor mode
@@ -2541,6 +2502,7 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
                              y_quality =       None,
                              c_quality =       None, # use "same" to save None
                              cmode =           0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                             bit16 =           0,
                              bayer =           3, #0, as in simulator
                              window_width    = 66,
                              window_height   = 36,
@@ -2571,6 +2533,8 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
                                 CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
                                 CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
                                 CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
+                                CMPRS_CBIT_CMODE_RAW =            15 -  raw (unclmpressed) mode
+        @param bit16 -         16 bit (2-byte per pixel) mode                        
         @param bayer -         Bayer shift (0..3)
         @param window_width -  window width in pixels (bytes) (TODO: add 16-bit mode)
         @param window_height - window height in lines
@@ -2669,6 +2633,7 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
 # setup compressor memory and mode
         self. setup_compressor(chn =            chn,
                                cmode =          cmode,
+                               bit16 =          bit16,
                                qbank =          qbank,
                                dc_sub =         True,
                                multi_frame =    False,

@@ -62,7 +62,8 @@ module  cmprs_raw_buf_iface #(
     input         cmprs_run_mclk,     // 0 - off or stopping, reset frame_pre_run
 //    input  [ 4:0] left_marg,          // left margin (for not-yet-implemented) mono JPEG (8 lines tile row) can need 7 bits (mod 32 - tile)
     input  [12:0] n_blocks_in_row_m1, // number of macroblocks in a macroblock row minus 1
-    input  [12:0] n_block_rows_m1,    // number of macroblock rows in a frame minus 1
+//    input  [12:0] n_block_rows_m1,    // number of macroblock rows in a frame minus 1
+    input  [16:0] n_block_rows_m1,    // number of macroblock rows in a frame minus 1
     input             stuffer_running, // @xclk, active while bit stuffer or trailer are running
     input             raw_be16,           // 0: bytes 0-1-2-3-4-5..., 1: bytes 1-0-3-2-5-4...
     output     [11:0] buf_ra,             // buffer read address (2 MSB - page number)
@@ -206,7 +207,8 @@ module  cmprs_raw_buf_iface #(
         
         quad_last <= mode_valid && !(|quads_left); // valid from 2 after frame_pre_start_r or after quad_r[3]
 
-        if      (frame_pre_start_r)                             rows_left <=  {n_block_rows_m1, 4'b1111};
+//        if      (frame_pre_start_r)                             rows_left <=  {n_block_rows_m1, 4'b1111};
+        if      (frame_pre_start_r)                             rows_left <=  n_block_rows_m1; //n_block_rows_m1 now combines n_block_rows_m1 and tile vstep ?
         else if ((quad_r[2] && quad_last))                      rows_left <=  rows_left - 1;
         
         rows_last <= {rows_last[0], mode_valid & ~(|rows_left)};

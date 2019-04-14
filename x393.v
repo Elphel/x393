@@ -2142,6 +2142,8 @@ assign axi_grst = axi_rst_pre;
         .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
         .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
         .CMPRS_CBIT_FOCUS_BITS           (CMPRS_CBIT_FOCUS_BITS),
+        .CMPRS_CBIT_ROWS_LSB             (CMPRS_CBIT_ROWS_LSB),
+        .CMPRS_CBIT_ROWS_LSB_BITS        (CMPRS_CBIT_ROWS_LSB_BITS),
         .CMPRS_CBIT_RUN_RST              (CMPRS_CBIT_RUN_RST),
         .CMPRS_CBIT_RUN_STANDALONE       (CMPRS_CBIT_RUN_STANDALONE),
         .CMPRS_CBIT_RUN_ENABLE           (CMPRS_CBIT_RUN_ENABLE),
