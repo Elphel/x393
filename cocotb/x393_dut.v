@@ -1746,8 +1746,7 @@ simul_axi_hp_wr #(
     );
 
 
-
-    /* Instance template for module simul_lwir160x120_vospi */
+/*
     wire lwir1_miso;
     simul_lwir160x120_vospi #(
         .DATA_FILE     ("/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat"),
@@ -1791,7 +1790,7 @@ simul_axi_hp_wr #(
         .telemetry_agc_low          (  16'd200),      // input[15:0] 
         .telemetry_video_format     (32'haaaa5555)    // input[31:0] 
     );
-
+*/
 `ifdef LWIR
     simul_lwir160x120_vospi #(
         .DATA_FILE                  (LWIR_DATA_FILE1),
@@ -1967,9 +1966,7 @@ simul_axi_hp_wr #(
 
 
 
-`endif
-
-
+`else
 
 
     simul_sensor12bits #(
@@ -2133,6 +2130,7 @@ simul_axi_hp_wr #(
         .VACT  (PX4_VACT), // output 
         .VACT1 () // output 
     );
+`endif    
 /*
     sim_soc_interrupts #(
         .NUM_INTERRUPTS (NUM_INTERRUPTS)

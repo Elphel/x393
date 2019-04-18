@@ -362,8 +362,8 @@ module  sensor_channel#(
     input                       sns_clkp,
     input                       sns_clkn,
 `elsif LWIR
-    input                [ 4:0] sns_dp40,
-    input                [ 4:0] sns_dn40,
+    inout                [ 4:0] sns_dp40,
+    inout                [ 4:0] sns_dn40,
     inout                       sns_dp5, // diff MIPI signals (not yet implemented)
     inout                       sns_dn5, // diff MIPI signals (not yet implemented)
     inout                [ 7:6] sns_dp76,
@@ -1069,12 +1069,12 @@ module  sensor_channel#(
 //            .sns_mclk(), // input
             .spi_miso             (sns_dp40[0]), // inout
             .spi_mosi             (sns_dn40[0]), // inout
-            .spi_cs               (sns_dp40[1]), // inout
-            .spi_clk              (sns_dn40[1]), // inout
+            .spi_cs               (sns_dp40[1]), // output
+            .spi_clk              (sns_dn40[1]), // output
             .gpio                 ({sns_dp40[4], sns_dn40[4], sns_dp40[3], sns_dn40[3]}), // inout [3:0]
-            .lwir_mclk            (sns_dp76[6]), // inout
-            .lwir_mrst            (sns_dp76[7]), // inout
-            .lwir_pwdn            (sns_dn76[7]), // inout
+            .lwir_mclk            (sns_dp76[6]), // output
+            .lwir_mrst            (sns_dp76[7]), // output
+            .lwir_pwdn            (sns_dn76[7]), // output
             .mipi_dp              (sns_dp5),     // inout
             .mipi_dn              (sns_dn5),     // inout
             .mipi_clkp            (sns_clkp),    // inout

@@ -176,10 +176,11 @@ class X393SensCmprs(object):
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
-                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["width"]=     vrlg.WOI_WIDTH #4
-                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["height"]=    vrlg.WOI_HEIGHT
-                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["top"]=       0
-                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["left"]=      0
+                    # keep settings from Python program
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["width"]=     vrlg.WOI_WIDTH #4
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["height"]=    vrlg.WOI_HEIGHT
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["top"]=       0
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["left"]=      0
                     # do not update LWIR defaults !!!
                     if nomargins:
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 0 # 4
@@ -526,6 +527,8 @@ class X393SensCmprs(object):
         sensorType = self.x393Sensor.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor port %d interface type: %s"%(num_sensor, sensorType))
+#            print ("setup_sensor_channel(): window_width['width']=",window_width)
+
         window = self.specify_window (window_width =  window_width,
                                       window_height = window_height,
                                       window_left =   window_left,
@@ -604,7 +607,7 @@ class X393SensCmprs(object):
         histogram_start_phys_page = self.get_histogram_byte_start() // 4096
 
         if verbose >0 :
-            print ("setup_sensor_channel:")
+            print ("setup_sensor_channel, type=",sensorType)
             print ("num_sensor =                ", num_sensor)
             print ("frame_full_width =          ", frame_full_width)
             print ("window_width =              ", window_width)
@@ -623,6 +626,7 @@ class X393SensCmprs(object):
             print ("num_macro_cols_m1 =         ", num_macro_cols_m1)
             print ("num_macro_rows_m1 =         ", num_macro_rows_m1)
             print ("cmode =                     ", cmode)
+            print ("bits16 =                    ", bits16)
             print ("verbose =                   ", verbose)
         if exit_step == 10: return False
 
@@ -655,6 +659,10 @@ class X393SensCmprs(object):
         else:
 #            print ("===================== Mode is neither JP4 nor raw =========================")
             print ("===================== Mode is not JP4 =========================")
+        if (bits16):
+            num_burst_in_line *= 2    
+            if verbose >0 :
+                print ("Doubling line width for 16-bit mode")
 
         self.x393Sensor.setup_sensor_memory (
             num_sensor =       num_sensor,              # input  [1:0] num_sensor;
@@ -679,7 +687,7 @@ class X393SensCmprs(object):
         # replacing with setup compressor:
         self.setup_compressor(chn =  num_sensor,
                                cmode =          cmode,
-                               bit16 =          bit16,
+                               bits16 =         bits16,
                                qbank =          0,
                                dc_sub =         True,
                                multi_frame =    True,
@@ -720,36 +728,72 @@ class X393SensCmprs(object):
 
         """
         if verbose >0 :
-            print ("===================== IO_SETUP =========================")
-        self.x393Sensor.set_sensor_io_width(
-            num_sensor = num_sensor, # input    [1:0] num_sensor;
-            width =      0) # Or use 0 for sensor-generated HACT input   [15:0] width; # 0 - use HACT, >0 - generate HACT from start to specified width
-        self.x393Sensor.set_sensor_io_ctl (
-                           num_sensor = num_sensor,
-                           mrst =       False,
-                           arst =       False,
-                           aro  =       False,
-                           mmcm_rst =   True,   #reset mmcm
-                           clk_sel =    None,   #Dealing with Unisims bug: "Error: [Unisim MMCME2_ADV-4] Input clock can only be switched when..."
-                           set_delays = False,
-                           quadrants =  None)
-
-        self.x393Sensor.set_sensor_io_ctl (
-                           num_sensor = num_sensor,
-                           mrst =       False,
-                           arst =       False,
-                           aro  =       False,
-                           mmcm_rst =   True,   #reset mmcm
-                           clk_sel =    clk_sel,
-                           set_delays = False,
-                           quadrants =  None)
-
-        self.x393Sensor.set_sensor_io_ctl (
-                           num_sensor = num_sensor,
-                           mmcm_rst =   False, # release MMCM reset (maybe wait longer?
-                           clk_sel =    clk_sel,
-                           set_delays = False,
-                           quadrants =  None)
+            print ("===================== IO_SETUP, sensorType=",sensorType," =========================")
+        if sensorType ==  x393_sensor.SENSOR_INTERFACE_PARALLEL:
+            self.x393Sensor.set_sensor_io_width(
+                num_sensor = num_sensor, # input    [1:0] num_sensor;
+                width =      0) # Or use 0 for sensor-generated HACT input   [15:0] width; # 0 - use HACT, >0 - generate HACT from start to specified width
+            self.x393Sensor.set_sensor_io_ctl (
+                               num_sensor = num_sensor,
+                               mrst =       False,
+                               arst =       False,
+                               aro  =       False,
+                               mmcm_rst =   True,   #reset mmcm
+                               clk_sel =    None,   #Dealing with Unisims bug: "Error: [Unisim MMCME2_ADV-4] Input clock can only be switched when..."
+                               set_delays = False,
+                               quadrants =  None)
+            #Wait 200 us in real system
+            self.x393Sensor.set_sensor_io_ctl (
+                               num_sensor = num_sensor,
+                               mrst =       False,
+                               arst =       False,
+                               aro  =       False,
+                               mmcm_rst =   True,   #reset mmcm
+                               clk_sel =    clk_sel,
+                               set_delays = False,
+                               quadrants =  None)
+    
+            self.x393Sensor.set_sensor_io_ctl (
+                               num_sensor = num_sensor,
+                               mmcm_rst =   False, # release MMCM reset (maybe wait longer?
+                               clk_sel =    clk_sel,
+                               set_delays = False,
+                               quadrants =  None)
+            
+        elif sensorType ==  x393_sensor.SENSOR_INTERFACE_LWIR:
+            self.x393Sensor.set_sensor_io_ctl_lwir (
+                               num_sensor = num_sensor,
+                               mrst =       True,
+                               pwdn =       False,
+                               mclk  =      True, # None,
+                               spi_en =     1, #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
+                               segm_zero =  True, #None,
+                               out_en =     None,
+                               out_single = False,
+                               reset_crc =  True,
+                               spi_clk =    False) #None)
+            print ("self.DRY_MODE=",self.DRY_MODE, " resetting LWIR sensor")
+            if  self.DRY_MODE:
+                self.x393Sensor.set_sensor_io_ctl_lwir (
+                                   num_sensor = num_sensor,
+                                   mrst =       False)
+                self.x393Sensor.set_sensor_io_ctl_lwir (
+                                   num_sensor = num_sensor,
+                                   spi_en =     2) #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
+#                self.x393Sensor.set_sensor_io_ctl_lwir (
+#                                   num_sensor = num_sensor,
+#                                   spi_en =     2) #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
+                self.x393Sensor.set_sensor_io_ctl_lwir (
+                                   num_sensor = num_sensor,
+                                   spi_en =     3, #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
+                                   out_en =     True)
+            else:    
+                self.sleep_ms(0.2) # 1 ms. TODO: For real camera turn off all channels simultaneously ***
+                self.x393Sensor.set_sensor_io_ctl_lwir (
+                                   num_sensor = num_sensor,
+                                   mrst =       False,
+                                   spi_en =     3, #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
+                                   out_en =     True)
 
         if exit_step == 17: return False
 
@@ -858,7 +902,9 @@ class X393SensCmprs(object):
                         colorsat_red =              None, # colorsat_red, #0x16c,     # 0xb6 for x1
                         verbose =                   1
                         ):
-
+        
+        
+        
         global GLBL_WINDOW
         if GLBL_WINDOW is None:
             GLBL_WINDOW = {}
@@ -870,6 +916,7 @@ class X393SensCmprs(object):
                 window_width = GLBL_WINDOW["width"]
             except:
                 window_width = SENSOR_DEFAULTS[sensorType]["width"]
+#        print ("specify_window()1.: window_width['width']=",window_width) #256
         if window_height is None:
             try:
                 window_height = GLBL_WINDOW["height"]
@@ -1110,7 +1157,7 @@ class X393SensCmprs(object):
     def setup_compressor(self,
                           chn,
                           cmode =            0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
-                          bit16 =            bit16,
+                          bits16 =           0,
                           bayer =            0,
                           qbank =            0,
                           dc_sub =           1,
@@ -1142,7 +1189,7 @@ class X393SensCmprs(object):
                                 CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
                                 CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
                                 CMPRS_CBIT_CMODE_RAW =            15 -  raw (uncompressed) mode
-        @param bit16 -       16-bit (2 bytes per pixel) mode                                
+        @param bits16 -       16-bit (2 bytes per pixel) mode                                
         @param qbank -       quantization table page (0..15)
         @param dc_sub -      True - subtract DC before running DCT, False - no subtraction, convert as is,
         @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
@@ -1167,7 +1214,7 @@ class X393SensCmprs(object):
                     self. setup_compressor( #self,
                                            chn =            chn,
                                            cmode =          cmode,
-                                           bit16 =          bit16,
+                                           bits16 =          bits16,
                                            qbank =          qbank,
                                            dc_sub =         dc_sub,
                                            multi_frame =    multi_frame,
@@ -1227,17 +1274,22 @@ class X393SensCmprs(object):
 
         num_macro_cols_m1 = (window_width >> 4) - 1
         
-        if (cmode == vrlg.CMPRS_CBIT_CMODE_RAW) and (bit16):
+        if (cmode == vrlg.CMPRS_CBIT_CMODE_RAW) and (bits16):
             num_macro_cols_m1 = ((window_width >> 4) << 1) - 1
         else:
             num_macro_cols_m1 = (window_width >> 4) - 1
             
         if (cmode == vrlg.CMPRS_CBIT_CMODE_RAW):
-            num_macro_rows_m1 = (window_height >> 4) - 1
-            cmprs_mem_height = window_height
-        else:
             num_macro_rows_m1 = (window_height -1) >> 4
+            cmprs_mem_height = window_height
+            if (verbose > 0) :
+                print ("num_macro_rows_m1 =       ", num_macro_rows_m1, " (raw mode, cmode=",cmode,")")
+        else:
+            num_macro_rows_m1 = (window_height >> 4) - 1
             cmprs_mem_height = window_height & 0xfff0
+            if (verbose > 0) :
+                print ("num_macro_rows_m1 =       ", num_macro_rows_m1, " (not raw mode, cmode=",cmode,")")
+            
             
         frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
 
@@ -1246,7 +1298,7 @@ class X393SensCmprs(object):
                                   qbank =             qbank,
                                   dc_sub =            dc_sub,
                                   cmode =             cmode, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
-                                  bit16 =             bit16,
+                                  bits16 =             bits16,
                                   multi_frame =       True,
                                   bayer       =       bayer,
                                   focus_mode  =       focus_mode,
@@ -1275,6 +1327,11 @@ class X393SensCmprs(object):
         left_tiles32 = window_left // 32
         last_tile32 = (window_left + ((num_macro_cols_m1 + 1) * 16) + tile_margin - 1) // 32
         width32 = last_tile32 - left_tiles32 + 1 # number of 32-wide tiles needed in each row
+#        Already done
+#        if (bits16):
+#            width32 *= 2    
+#            if verbose >0 :
+#                print ("Doubling line width for 16-bit mode")
 
         if (verbose > 0) :
             print ("setup_compressor_memory:")
@@ -1452,6 +1509,8 @@ class X393SensCmprs(object):
         sensorType = self.x393Sensor.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor interface type: %s"%(sensorType))
+#            print ("setup_all_sensors(): window_width['width']=",window_width) # None here
+            
         window = self.specify_window (window_width =  window_width,
                                       window_height = window_height,
                                       window_left =   window_left,
@@ -1482,8 +1541,10 @@ class X393SensCmprs(object):
             histogram_width_m1 = window_width - 1 # 33
         if histogram_height_m1 is None:
             histogram_height_m1 = window_height - 1 # 1145
+#        print ("setup_all_sensors().2: window_width['width']=",window_width) #256 here
 
         self.specify_phys_memory(circbuf_chn_size = circbuf_chn_size)
+#        print ("setup_all_sensors().3: window_width['width']=",window_width)
         """
         self.specify_window (window_width =  window_width,
                              window_height = window_height,
@@ -1527,6 +1588,7 @@ class X393SensCmprs(object):
             print ("membridge d2h end =         0x%x"%(GLBL_MEMBRIDGE_D2H_END))
             print ("membridge d2h size =        %d bytes"%(GLBL_MEMBRIDGE_D2H_END - GLBL_MEMBRIDGE_D2H_START))
             print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
+            
 
         self.program_status_debug (3,0)
         if setup_membridge:
@@ -2502,7 +2564,7 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
                              y_quality =       None,
                              c_quality =       None, # use "same" to save None
                              cmode =           0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
-                             bit16 =           0,
+                             bits16 =           0,
                              bayer =           3, #0, as in simulator
                              window_width    = 66,
                              window_height   = 36,
@@ -2534,7 +2596,7 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
                                 CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
                                 CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
                                 CMPRS_CBIT_CMODE_RAW =            15 -  raw (unclmpressed) mode
-        @param bit16 -         16 bit (2-byte per pixel) mode                        
+        @param bits16 -         16 bit (2-byte per pixel) mode                        
         @param bayer -         Bayer shift (0..3)
         @param window_width -  window width in pixels (bytes) (TODO: add 16-bit mode)
         @param window_height - window height in lines
@@ -2633,7 +2695,7 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
 # setup compressor memory and mode
         self. setup_compressor(chn =            chn,
                                cmode =          cmode,
-                               bit16 =          bit16,
+                               bits16 =         bits16,
                                qbank =          qbank,
                                dc_sub =         True,
                                multi_frame =    False,

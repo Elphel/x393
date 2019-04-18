@@ -528,7 +528,7 @@ class X393Cmprs(object):
                                   qbank,
                                   dc_sub,
                                   cmode,
-                                  bit16,
+                                  bits16,
                                   multi_frame,
                                   bayer,
                                   focus_mode,
@@ -559,7 +559,7 @@ class X393Cmprs(object):
                                 CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
                                 CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
                                 CMPRS_CBIT_CMODE_RAW =            15 -  raw (uncompressed) mode
-        @param bit16 -       16-bit (2 bytes per pixel) mode                                
+        @param bits16 -       16-bit (2 bytes per pixel) mode                                
         @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
         @param bayer -        Bayer shift (0..3)
         @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
@@ -584,13 +584,15 @@ class X393Cmprs(object):
             print (   "row_lsb_raw = ", row_lsb_raw)
         self.compressor_control(
             chn =         chn,         # compressor channel number (0..3)
+            run_mode =    None,        # no change
             qbank =       qbank,       # [6:3] quantization table page
             dc_sub =      dc_sub,      # [8:7] subtract DC
             cmode =       cmode,       #  [13:9] color mode:
             multi_frame = multi_frame, # [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
             bayer =       bayer,       # [20:18] # Bayer shift
-            focus_mode =  focus_mode)  # [23:21] Set focus mode
-            
+            focus_mode =  focus_mode,  # [23:21] Set focus mode
+            row_lsb_raw = row_lsb_raw) # [3:0] LSBs of the window height that do not fit into compressor format
+        
         self.compressor_format(
             chn =               chn,        # compressor channel number (0..3)
             num_macro_cols_m1 = num_macro_cols_m1, # number of macroblock colums minus 1

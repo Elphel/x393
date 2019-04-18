@@ -318,7 +318,7 @@ module  cmprs_cmd_decode#(
         if      (mrst)                                 cmprs_fmode_mclk <=  0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_FOCUS])  cmprs_fmode_mclk <=  di_r[CMPRS_CBIT_FOCUS-1 -:CMPRS_CBIT_FOCUS_BITS];
 
-        if      (mrst)                                    rows_lsb_mclk <=  4'h0f;
+        if      (mrst)                                    rows_lsb_mclk <=  4'hf;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_ROWS_LSB])  rows_lsb_mclk <=  di_r[CMPRS_CBIT_ROWS_LSB-1 -:CMPRS_CBIT_ROWS_LSB_BITS];
         
         if      (mrst)                                 bayer_shift_mclk <=  0;

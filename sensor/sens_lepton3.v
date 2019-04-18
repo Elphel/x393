@@ -259,7 +259,7 @@ module  sens_lepton3 #(
     assign fake_out =           set_ctrl_r && data_r[VOSPI_FAKE_OUT];
     assign spi_mosi_int =       set_ctrl_r && data_r[VOSPI_MOSI]; // not used
 
-    assign prsts = prst | lwir_mrst_pclk[1];
+    assign prsts = prst | !lwir_mrst_pclk[1];
     
     always @(posedge mclk) begin
         if      (mrst)     data_r <= 0;
@@ -346,6 +346,10 @@ module  sens_lepton3 #(
 // implement I/O ports, including fake ones, to be able to assign them I/O pads    
     // generate clocka to sesnor output, controlled by control word bits
     // SPI clock (10..20MHz)
+    reg prst_r;
+    always @ (posedge pclk) begin
+        prst_r <= prst;
+    end
     oddr_ss #( // spi_clk
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW),
@@ -353,13 +357,13 @@ module  sens_lepton3 #(
         .INIT         (1'b0),
         .SRTYPE       ("SYNC")
     ) spi_clk_i (
-        .clk   (pclk),                           // input
-        .ce    (spi_clk_en_pclk[1] | spi_clken), // input
-        .rst   (prst),                           // input
-        .set   (1'b0),                           // input
-        .din   (2'b01),                          // input[1:0] 
-        .tin   (1'b0),                           // input
-        .dq    (spi_clk)                         // output
+        .clk   (pclk),                                    // input
+        .ce    (spi_clk_en_pclk[1] | spi_clken | prst_r), // input
+        .rst   (prst),                                    // input
+        .set   (1'b0),                                    // input
+        .din   (2'b01),                                   // input[1:0] 
+        .tin   (1'b0),                                    // input
+        .dq    (spi_clk)                                  // output
     );
     // sensor master clock (25MHz)
     iobuf #( // lwir_mclk
@@ -430,7 +434,7 @@ module  sens_lepton3 #(
     generate // gpio[3:0]
         genvar i;
         for (i=0; i < (VOSPI_GPIO_BITS / 2); i=i+1) begin: gpio_block
-            gpio_bit gpio_bit_i (
+            gpio393_bit gpio_bit_i (
                 .clk     (mclk),                          // input
                 .srst    (mrst),                          // input
                 .we      (set_ctrl_r),                    // input

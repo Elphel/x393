@@ -71,6 +71,7 @@ module  vospi_packet_80#(
     reg         set_crc_r;
     reg         set_d_r;
     reg         den_r;
+    reg   [1:0] packet_header = 2'b11;
     
     reg  [15:0] d_sr;
     reg  [ 1:0] start_r;
@@ -88,7 +89,9 @@ module  vospi_packet_80#(
     assign pre_last_w =     pre_lsb_w && (wcntr == (VOSPI_PACKET_WORDS + 1));
     assign packet_done =    packet_end[2];
     assign id =             id_r;
-    assign dmask =          den_r ? 16'hffff: (wcntr[0]?16'h0: 16'h0fff);
+//    assign dmask =          den_r ? 16'hffff: (wcntr[0]?16'h0: 16'h0fff);
+    assign dmask =          packet_header[1] ? (packet_header[0] ? 16'h0fff: 16'h0) : 16'hffff ;
+    
     assign crc_err =        packet_end[2] && (crc_r != crc_w);
     assign dv =             dv_r;
     assign dout =           d_r;
@@ -96,7 +99,7 @@ module  vospi_packet_80#(
     
     always @ (posedge clk) begin
         if (rst || packet_end[0]) cs_r[0] <= 0;
-        else if (start)           cs_r[1] <= 1;
+        else if (start)           cs_r[0] <= 1;
         
         cs_r[1] <= cs_r[0];
         
@@ -111,8 +114,11 @@ module  vospi_packet_80#(
         if (rst || !cs_r[0] || packet_end[0]) wcntr <= 0;
         else if (lsb_r)                       wcntr <= wcntr + 1;
         
-        if (rst || !cs_r[0] ) packet_end <= 0;
-        else                  packet_end <= {packet_end[1:0], pre_last_w};
+        if (rst || !cs_r[0] ) packet_end[1:0] <= 0;
+        else                  packet_end[1:0] <= {packet_end[0], pre_last_w};
+
+        if (rst)              packet_end[2] <= 0;
+        else                  packet_end[2] <= packet_end[1];
         
         if (rst) start_r <= 0;
         else     start_r <= {start_r[0],start};
@@ -121,10 +127,11 @@ module  vospi_packet_80#(
         set_crc_r <=  !rst && (wcntr == 1) && lsb_r;
         set_d_r <=    !rst && den_r &&        lsb_r;
         
-        if (rst || !cs_r[1]) den_r <= 0;
-        else if (set_crc_r)  den_r <= 1;
+        if (rst || !cs_r[1] || packet_done) den_r <= 0;
+        else if (set_crc_r)                 den_r <= 1;
         
-        if (cs_r[0])         d_sr <=   {miso, d_sr[15:1]};  
+//        if (cs_r[0])         d_sr <=   {miso, d_sr[15:1]};  
+        if (cs_r[0])         d_sr <=   {d_sr[14:0],miso};  
         if (set_id_r)        id_r <=   d_sr;
         if (set_crc_r)       crc_r <= d_sr;
         if (set_d_r)         d_r <=   d_sr;
@@ -135,6 +142,9 @@ module  vospi_packet_80#(
         else if (set_id_r)   packet_invalid_r <= (d_sr[11:8] == 4'hf);
         
         id_stb <= set_id_r;
+        if (rst || start || packet_done) packet_header <= 2'b11;
+        else if (copy_word)              packet_header <= {packet_header[0], 1'b0};
+        
     end
     
     crc16_x16x12x5x0 crc16_x16x12x5x0_i (

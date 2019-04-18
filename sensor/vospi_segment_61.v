@@ -101,6 +101,8 @@ module  vospi_segment_61#(
     wire         packet_dv;            // read full packet
     wire  [15:0] packet_dout;          // read full packet
     wire  [15:0] packet_id;
+    wire  [ 3:0] segment_id;
+    wire         packet_invalid;
     wire         id_stb;
     wire         is_first_segment_w;
     wire         is_last_segment_w;
@@ -119,7 +121,9 @@ module  vospi_segment_61#(
 
     assign is_first_segment_w = (exp_segment == VOSPI_SEGMENT_FIRST);
     assign is_last_segment_w =  (exp_segment == VOSPI_SEGMENT_LAST);
-    assign segment_good_w =     (packet_id[15:12] == exp_segment) || ((packet_id[15:12] == 0) && segm0_ok);
+    assign segment_id =         packet_id[15:12]; 
+//    assign segment_good_w =     (packet_id[15:12] == exp_segment) || ((packet_id[15:12] == 0) && segm0_ok);
+    assign segment_good_w =     (segment_id == exp_segment) || ((packet_id[15:12] == 0) && segm0_ok);
     assign segment_stb =        id_stb && (packet_id[11:0] == VOSPI_PACKET_TTT);
     assign we =                 segment_running && !discard_segment_r && packet_dv;
     assign crc_err =            packet_done && packet_crc_err; // crc_err_r;
@@ -160,9 +164,9 @@ module  vospi_segment_61#(
         if (start_d) segment_start_packet <= full_packet;
         if (start_d) segment_start_waddr <=  waddr;
 
-        if (rst || (start && is_first_segment_w))   full_packet <= 0;
-        else if (discard_set)                       full_packet <= segment_start_packet;
-        else if (!discard_segment_r && packet_done) full_packet <= full_packet + 1;
+        if (rst || (start && is_first_segment_w))                      full_packet <= 0;
+        else if (discard_set)                                          full_packet <= segment_start_packet;
+        else if (!discard_segment_r && !packet_invalid && packet_done) full_packet <= full_packet + 1;
         
 //        if      (rst || start)                    crc_err_r <= 0;
 //        else if (packet_done && packet_crc_err)   crc_err_r <= 0;
@@ -176,7 +180,8 @@ module  vospi_segment_61#(
         if      (!segment_busy_r || start)                           segment_running <= 0;
         else if (id_stb && (packet_id[11:0] == VOSPI_PACKET_FIRST)) segment_running <= 1;
         
-        packet_start <= !rst && !packet_busy && segment_busy_r;
+//        packet_start <= !rst && !packet_busy && segment_busy_r;
+        packet_start <= !rst && !packet_busy && segment_busy_r && !packet_start;
         
         if      (rst)            waddr <= 0;
         else if (discard_set)    waddr <= segment_start_waddr;
@@ -201,7 +206,11 @@ module  vospi_segment_61#(
     wire         frame_dav;
     wire         hact_start_w; // (hact will start next cycle
     wire         hact_end_w;
+`ifdef SIMULATION
+    reg   [15:0] duration_cntr;
+`else    
     reg   [ 7:0] duration_cntr;
+`endif
     reg    [2:0] hact_r;
     reg          pend_eof_r;
     reg   [10:0] raddr;
@@ -211,13 +220,13 @@ module  vospi_segment_61#(
     assign start_out_frame_w = segment_good && is_first_segment_w && out_request;
     assign packets_avail =     {1'b0,full_packet_verified} - {1'b0,full_packet_out} - VOSPI_PACKETS_PER_LINE;
 //    assign frame_out_done_w =  packet_out_done && (full_packet_out == (VOSPI_PACKETS_FRAME - 1));
-    assign frame_out_done_w =  hact_end_w  &&  (full_packet_out == (VOSPI_PACKETS_FRAME - 1));
+    assign frame_out_done_w =  hact_end_w  &&  (full_packet_out == (VOSPI_PACKETS_FRAME - VOSPI_PACKETS_PER_LINE));
     
     assign frame_dav =         !packets_avail[8] || out_pending;
     assign hact_start_w =      out_frame && (duration_cntr == 0) && !hact_r[0] && frame_dav;
     assign hact_end_w =        (duration_cntr == 0) && hact_r[0];
     assign eof_w =             out_frame && (duration_cntr == 0) && pend_eof_r;
-    assign sof_w =             rst && start_out_frame_w;
+    assign sof_w =             !rst && start_out_frame_w;
     assign hact =              hact_r[2];
     assign eof =               eof_r[2];
     assign sof =               sof_r;
@@ -249,7 +258,8 @@ module  vospi_segment_61#(
         
         if      (rst)               pend_eof_r <= 0; // not needed?
         else if (frame_out_done_w)  pend_eof_r <= 1;
-        else if (eof_r[0])          pend_eof_r <= 0;
+//        else if (eof_r[0])          pend_eof_r <= 0;
+        else if (eof_w)             pend_eof_r <= 0;
         
         if      (rst)               duration_cntr <= 0;
         else if (start_out_frame_w) duration_cntr <= VOSPI_SOF_TO_HACT;
@@ -278,7 +288,7 @@ module  vospi_segment_61#(
         .packet_busy    (packet_busy),    // output
         .crc_err        (packet_crc_err), // output
         .id             (packet_id),      // output[15:0] 
-        .packet_invalid (),               // output - not used, processed internally, no dv generated
+        .packet_invalid (packet_invalid), // output - not used, processed internally, no dv generated
         .id_stb         (id_stb)          // output reg 
     );
 

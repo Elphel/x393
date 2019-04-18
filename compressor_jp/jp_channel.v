@@ -247,7 +247,7 @@ module  jp_channel#(
     wire                             jp4_dc_improved;    // in JP4 mode, compare DC coefficients to the same color ones
 //    wire   [ 1:0] tile_margin;        // margins around 16x16 tiles (0/1/2)
 //    wire   [ 2:0] tile_shift;         // tile shift from top left corner
-    wire                      [ 2:0] converter_type;     // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
+    wire                      [ 2:0] converter_type;     // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 6 - raw, 7 - mono8 (not yet implemented)
     wire                             scale_diff;         // divide differences by 2 (to fit in 8-bit range)
     wire                             hdr;                // second green absolute, not difference
     wire                             subtract_dc;        // subtract/restore DC components

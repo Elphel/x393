@@ -161,7 +161,7 @@ module  gpio393  #(
     generate
         genvar i;
         for (i=0; i < GPIO_N; i=i+1) begin: gpio_block
-            gpio_bit gpio_bit_i (
+            gpio393_bit gpio_bit_i (
 //                .rst     (rst),                // input
                 .clk     (mclk),               // input
                 .srst    (mrst),               // input

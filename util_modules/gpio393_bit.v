@@ -1,5 +1,5 @@
 /*!
- * <b>Module:</b>gpio393
+ * <b>Module:</b>gpio393_bit
  * @file gpio393.v
  * @date 2015-07-06  
  * @author Andrey Filippov     
@@ -48,7 +48,7 @@
 //   1     0      2      1      1
 //   1     1      3      0      0
 
-module gpio_bit (
+module gpio393_bit (
 //    input         rst,          // global reset
     input         clk,          // system clock
     input         srst,         // @posedge clk - sync reset

@@ -398,8 +398,8 @@ module  sensors393 #(
     input   [3:0] sns_clkp, // SuppressThisWarning all - input-only in HiSPi mode
     input   [3:0] sns_clkn, // SuppressThisWarning all - input-only in HiSPi mode
 `elsif LWIR
-    input  [19:0] sns_dp40,
-    input  [19:0] sns_dn40,
+    inout  [19:0] sns_dp40,
+    inout  [19:0] sns_dn40,
     inout  [ 3:0] sns_dp5, // diff MIPI signals (not yet implemented)
     inout  [ 3:0] sns_dn5, // diff MIPI signals (not yet implemented)
     inout  [ 7:0] sns_dp76,

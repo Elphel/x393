@@ -505,7 +505,7 @@ class X393Sensor(object):
             rslt |= 1 <<                 vrlg.VOSPI_OUT_EN_SINGL
         if reset_crc:
             rslt |= 1 <<                 vrlg.VOSPI_RESET_CRC
-        if not out_en is None:
+        if not spi_clk is None:
             rslt |= (2,3)[spi_clk] <<    vrlg.VOSPI_SPI_CLK
         if not gpio0 is None:
             rslt |= (gpio0 & 3) <<       (vrlg.VOSPI_GPIO + 0)
@@ -1042,6 +1042,7 @@ class X393Sensor(object):
 # TODO: Make one for HiSPi (it is different)
 
     def set_sensor_io_ctl_lwir (self,
+                                 num_sensor,
                                  mrst =       None,
                                  pwdn =       None,
                                  mclk  =      None,

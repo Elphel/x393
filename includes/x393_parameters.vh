@@ -305,8 +305,16 @@
     parameter MCONTR_LINTILE_ABORT_LATE =         14,  // abort frame if not finished by the new frame sync (wait pending memory)
     
     parameter MCNTRL_SCANLINE_DLY_WIDTH =         12,  // delay start pulse by 1..64 mclk
+    
+`ifdef SIMULATION
+    `ifdef LWIR
+        parameter MCNTRL_SCANLINE_DLY_DEFAULT =     100,   // initial delay value for start pulse
+    `else
+        parameter MCNTRL_SCANLINE_DLY_DEFAULT =     1024,  // initial delay value for start pulse
+    `endif
+`else
     parameter MCNTRL_SCANLINE_DLY_DEFAULT =     1024,  // initial delay value for start pulse
-
+`endif
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
     parameter MCNTRL_TEST01_MASK=                 'h7f0,
@@ -566,8 +574,13 @@
     parameter VOSPI_PACKET_FIRST =       0,
     parameter VOSPI_PACKET_LAST =       60,
     parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
-    parameter VOSPI_SOF_TO_HACT =        2,  // clock cycles from SOF to HACT
+`ifdef SIMULATION
+    parameter VOSPI_SOF_TO_HACT =        1000,  // clock cycles from SOF to HACT
+    parameter VOSPI_HACT_TO_HACT_EOF =   1000,  // pixel clock is 480 MHz, need to slow down for memory
+`else
+    parameter VOSPI_SOF_TO_HACT =        10,  // clock cycles from SOF to HACT
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
+`endif    
     parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
 //`else
     //sensor_fifo parameters (for parallel12)
@@ -1000,8 +1013,14 @@
     parameter CLKIN_PERIOD_PCLK =         42, // 24MHz
     parameter DIVCLK_DIVIDE_PCLK =         1,
     parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
-    parameter CLKOUT_DIV_PCLK =           48, //  20 MHz
-    parameter CLKOUT_DIV_PCLK2X =         24, //  40 MHz
+    `ifdef SIMULATION
+        parameter CLKOUT_DIV_PCLK =           2, //480 MHz  // 4, //  240 MHz
+        parameter CLKOUT_DIV_PCLK2X =         1, //9060 MHz // 2, //  480 MHz
+    `else
+        parameter CLKOUT_DIV_PCLK =           48, //  20 MHz
+        parameter CLKOUT_DIV_PCLK2X =         24, //  40 MHz
+    `endif
+    
   `else
     parameter CLKIN_PERIOD_PCLK =         42, // 24MHz
     parameter DIVCLK_DIVIDE_PCLK =         1,

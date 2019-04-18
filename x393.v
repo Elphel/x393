@@ -88,8 +88,8 @@ module  x393 #(
     inout                        sns4_ctl,
     inout                        sns4_pg,
 `elsif LWIR
-    input                  [4:0] sns1_dp40,
-    input                  [4:0] sns1_dn40,
+    inout                  [4:0] sns1_dp40,
+    inout                  [4:0] sns1_dn40,
     inout                        sns1_dp5, // diff MIPI signals (not yet implemented)
     inout                        sns1_dn5, // diff MIPI signals (not yet implemented)
     inout                  [7:6] sns1_dp76,
@@ -101,8 +101,8 @@ module  x393 #(
     inout                        sns1_ctl,
     inout                        sns1_pg,
 
-    input                  [4:0] sns2_dp40,
-    input                  [4:0] sns2_dn40,
+    inout                  [4:0] sns2_dp40,
+    inout                  [4:0] sns2_dn40,
     inout                        sns2_dp5, // diff MIPI signals (not yet implemented)
     inout                        sns2_dn5, // diff MIPI signals (not yet implemented)
     inout                  [7:6] sns2_dp76,
@@ -114,8 +114,8 @@ module  x393 #(
     inout                        sns2_ctl,
     inout                        sns2_pg,
 
-    input                  [4:0] sns3_dp40,
-    input                  [4:0] sns3_dn40,
+    inout                  [4:0] sns3_dp40,
+    inout                  [4:0] sns3_dn40,
     inout                        sns3_dp5, // diff MIPI signals (not yet implemented)
     inout                        sns3_dn5, // diff MIPI signals (not yet implemented)
     inout                  [7:6] sns3_dp76,
@@ -127,8 +127,8 @@ module  x393 #(
     inout                        sns3_ctl,
     inout                        sns3_pg,
 
-    input                  [4:0] sns4_dp40,
-    input                  [4:0] sns4_dn40,
+    inout                  [4:0] sns4_dp40,
+    inout                  [4:0] sns4_dn40,
     inout                        sns4_dp5, // diff MIPI signals (not yet implemented)
     inout                        sns4_dn5, // diff MIPI signals (not yet implemented)
     inout                  [7:6] sns4_dp76,
