@@ -229,6 +229,7 @@ class X393Cmprs(object):
                             cmode =       None,
                             multi_frame = None,
                             bayer =       None,
+                            focus_mode =  None,
                             row_lsb_raw = None,
                             be16 =        None):
         """
