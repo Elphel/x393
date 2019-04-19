@@ -114,7 +114,8 @@ class X393Cmprs(object):
                                  multi_frame = None,
                                  bayer =       None,
                                  focus_mode =  None,
-                                 row_lsb_raw = None):
+                                 row_lsb_raw = None,
+                                 be16 =        None):
         """
         Combine compressor control parameters into a single word. None value preserves old setting for the parameter
         @param run_mode -    0 - reset, 2 - run single from memory, 3 - run repetitive
@@ -137,7 +138,8 @@ class X393Cmprs(object):
         @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
         @param bayer -        Bayer shift (0..3)
         @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image
-        @param row_lsb_raw - four LSBs of the window height - used in raw mode
+        @param row_lsb_raw -  four LSBs of the window height - used in raw mode
+        @param be16 -         big endian 16-bit mode (1 for 16-bit raw) 
         @return               combined data word
         """
         data = 0;
@@ -161,6 +163,10 @@ class X393Cmprs(object):
             data |= (1 << vrlg.CMPRS_CBIT_FRAMES)
             data |= (multi_frame & ((1 << vrlg.CMPRS_CBIT_FRAMES_BITS) - 1)) << (vrlg.CMPRS_CBIT_FRAMES - vrlg.CMPRS_CBIT_FRAMES_BITS)
                      
+        if not be16 is None:
+            data |= (1 << vrlg.CMPRS_CBIT_BE16)
+            data |= (bayer & ((1 << vrlg.CMPRS_CBIT_BE16_BITS) - 1)) << (vrlg.CMPRS_CBIT_BE16 - vrlg.CMPRS_CBIT_BE16_BITS)
+
         if not bayer is None:
             data |= (1 << vrlg.CMPRS_CBIT_BAYER)
             data |= (bayer & ((1 << vrlg.CMPRS_CBIT_BAYER_BITS) - 1)) << (vrlg.CMPRS_CBIT_BAYER - vrlg.CMPRS_CBIT_BAYER_BITS)
@@ -223,8 +229,8 @@ class X393Cmprs(object):
                             cmode =       None,
                             multi_frame = None,
                             bayer =       None,
-                            focus_mode =  None,
-                            row_lsb_raw = None):
+                            row_lsb_raw = None,
+                            be16 =        None):
         """
         Combine compressor control parameters into a single word. None value preserves old setting for the parameter
         @param chn -         compressor channel number, "a" or "all" - same for all 4 channels
@@ -249,6 +255,7 @@ class X393Cmprs(object):
         @param bayer -        Bayer shift (0..3)
         @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
         @param row_lsb_raw - four LSBs of the window height - used in raw mode
+        @param be16 -         big endian 16-bit mode (1 for 16-bit raw) 
         """
         try:
             if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
@@ -261,7 +268,8 @@ class X393Cmprs(object):
                                              multi_frame = multi_frame,
                                              bayer =       bayer,
                                              focus_mode =  focus_mode,
-                                             row_lsb_raw = row_lsb_raw)
+                                             row_lsb_raw = row_lsb_raw,
+                                             be16 =        be16)
                 return
         except:
             pass
@@ -273,7 +281,9 @@ class X393Cmprs(object):
                             multi_frame = multi_frame,
                             bayer =       bayer,
                             focus_mode =  focus_mode,
-                            row_lsb_raw = row_lsb_raw)
+                            row_lsb_raw = row_lsb_raw,
+                            be16 =        be16)
+        
         self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_CONTROL_REG,
                                                   data)
         
@@ -597,7 +607,8 @@ class X393Cmprs(object):
             multi_frame = multi_frame, # [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
             bayer =       bayer,       # [20:18] # Bayer shift
             focus_mode =  focus_mode,  # [23:21] Set focus mode
-            row_lsb_raw = row_lsb_raw) # [3:0] LSBs of the window height that do not fit into compressor format
+            row_lsb_raw = row_lsb_raw, # [3:0] LSBs of the window height that do not fit into compressor format
+            be16 =        bits16)      # swap bytes in compressor channel
         
         self.compressor_format(
             chn =               chn,        # compressor channel number (0..3)

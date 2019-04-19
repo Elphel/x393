@@ -788,7 +788,7 @@
     parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
     parameter CMPRS_CBIT_CMODE_MONO1 =     4'hb, // mono JPEG (not yet implemented)
     parameter CMPRS_CBIT_CMODE_MONO4 =     4'he, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
-    parameter CMPRS_CBIT_CMODE_RAW =      4'hf, // uncompressed
+    parameter CMPRS_CBIT_CMODE_RAW =       4'hf, // uncompressed
 
     parameter CMPRS_CBIT_FRAMES_SINGLE =   0, //1, // use a single-frame buffer for images
 
