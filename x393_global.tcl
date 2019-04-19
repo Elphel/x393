@@ -45,7 +45,7 @@ while { [gets $infile line] >= 0 } {
 set LWIR 0
 seek $infile 0 start
 while { [gets $infile line] >= 0 } {
-    if { [regexp {(.*)`define(\s*)LWIRI} $line matched prematch] } {
+    if { [regexp {(.*)`define(\s*)LWIR} $line matched prematch] } {
 	if {[regexp "//" $prematch] != 0} { continue }
 	set LWIR 1
 	break

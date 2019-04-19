@@ -46,6 +46,7 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
                                    single =       False,
                                    reset_frame =  False,
                                    byte32 =       True,
+                                   linear =       False,
                                    keep_open =    False,
                                    extra_pages =  0,
                                    write_mem =    False,
@@ -61,6 +62,7 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
     @param single       - run single frame
     @param reset_frame  - reset frame number
     @param byte32 -       32-byte columns (False - 16-byte columns) (not used in scanline mode)
+    @param linear -       linear mode instead of tiled (for raw images)
     @param keep_open-     for 8 or less rows - do not close page between accesses (not used in scanline mode)
     @param extra_pages  2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
                     This argument can be used for  read access with horizontal overlapping tiles
@@ -77,8 +79,8 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
     rslt |= (extra_pages & ((1 <<   vrlg.MCONTR_LINTILE_EXTRAPG_BITS) - 1)) << vrlg.MCONTR_LINTILE_EXTRAPG
     rslt |= (0,1)[keep_open] <<     vrlg.MCONTR_LINTILE_KEEP_OPEN
     rslt |= (0,1)[byte32] <<        vrlg.MCONTR_LINTILE_BYTE32
+    rslt |= (0,1)[linear] <<        vrlg.MCONTR_LINTILE_LINEAR
     rslt |= (0,1)[reset_frame] <<   vrlg.MCONTR_LINTILE_RST_FRAME
-    
     rslt |= (0,1)[single] <<        vrlg.MCONTR_LINTILE_SINGLE
     rslt |= (0,1)[repetitive] <<    vrlg.MCONTR_LINTILE_REPEAT
     rslt |= (0,1)[disable_need] <<  vrlg.MCONTR_LINTILE_DIS_NEED

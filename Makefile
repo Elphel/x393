@@ -24,6 +24,8 @@ COMMAND_FILES =   py393/hargs \
 				  py393/hargs-after \
 				  py393/hargs-eyesis \
 				  py393/hargs-hispi \
+				  py393/hargs-vospi \
+				  py393/hargs-post-vospi \
 				  py393/hargs-post-par12 \
 				  py393/hargs-power_par12 \
 				  py393/hargs-power-eyesis \

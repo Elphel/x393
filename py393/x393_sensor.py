@@ -48,7 +48,7 @@ import subprocess
 #import x393_sens_cmprs
 SENSOR_INTERFACE_PARALLEL = "PAR12"
 SENSOR_INTERFACE_HISPI =    "HISPI"
-SENSOR_INTERFACE_LWIR =     "LWIR"
+SENSOR_INTERFACE_VOSPI =    "VOSPI"
 
 class X393Sensor(object):
     DRY_MODE= True # True
@@ -77,7 +77,7 @@ class X393Sensor(object):
         if  self.DRY_MODE is True:
             print ("===== Running in dry mode, using parallel sensor======")
             return SENSOR_INTERFACE_PARALLEL
-        sens_type = (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI,SENSOR_INTERFACE_LWIR)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+        sens_type = (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI,SENSOR_INTERFACE_VOSPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
         print ("===== Sensor type read from FPGA = >>> %s <<< ======"%(sens_type))
         return sens_type
 
@@ -175,7 +175,7 @@ class X393Sensor(object):
         status= self.get_status_sensor_io(num_sensor)
         print ("print_status_sensor_io(%d):"%(num_sensor))
         
-        if (sensorType == SENSOR_INTERFACE_LWIR):
+        if (sensorType == SENSOR_INTERFACE_VOSPI):
             print ("   segment_id =             %d"%((status>> 0) & 0x0f))
             print ("   gpio_in =                %d"%((status>> 4) & 0x0f))
             print ("   in_busy =                %d"%((status>> 8) & 1))
@@ -486,7 +486,7 @@ class X393Sensor(object):
         @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
         @param fake =       Do not use, just for keeping hardware portsNone,
         @param mosi =       Do not use, just for keeping hardware portsNone,
-        @return LWIR sensor i/o control word
+        @return VOSPI sensor i/o control word
         """
         rslt = 0
         if not mrst is None:
@@ -1075,7 +1075,7 @@ class X393Sensor(object):
         @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
         @param fake =       Do not use, just for keeping hardware portsNone,
         @param mosi =       Do not use, just for keeping hardware portsNone,
-        @return LWIR sensor i/o control word
+        @return VOSPI sensor i/o control word
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function

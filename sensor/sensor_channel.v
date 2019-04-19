@@ -1084,7 +1084,11 @@ module  sensor_channel#(
             .pxd                  (pxd[15:0]),   // output[15:0] 
             .hact                 (hact),        // output
             .sof                  (sof),         // output
-            .eof                  (eof)          // output
+            .eof                  (eof),         // output
+            // not used PADS, keep for compatibility with PCB
+            .dp2                  (sns_dp40[2]), // input reserved
+            .dn2                  (sns_dn40[2]), // input reserved
+            .dn6                  (sns_dn76[6])  // input reserved
     );
     // sns_dn76[6] - not used
     // sns_dn40[2] - not used

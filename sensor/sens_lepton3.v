@@ -159,10 +159,10 @@ module  sens_lepton3 #(
     output        lwir_mrst,    // output, externally connected to inout port   
     output        lwir_pwdn,    // output, externally connected to inout port    
 
-    inout         mipi_dp,      // input diff, not implemented in lepton3 sensor
-    inout         mipi_dn,      // input diff, not implemented in lepton3 sensor
-    inout         mipi_clkp,    // input diff, not implemented in lepton3 sensor
-    inout         mipi_clkn,    // input diff, not implemented in lepton3 sensor
+    input         mipi_dp,      // input diff, not implemented in lepton3 sensor
+    input         mipi_dn,      // input diff, not implemented in lepton3 sensor
+    input         mipi_clkp,    // input diff, not implemented in lepton3 sensor
+    input         mipi_clkn,    // input diff, not implemented in lepton3 sensor
      
     inout         senspgm,    // SENSPGM I/O pin
     inout         sns_ctl,    // npot used at all
@@ -170,7 +170,12 @@ module  sens_lepton3 #(
     output [15:0] pxd,  // @pclk
     output        hact, // @pclktwice per actual line
     output        sof,  // @pclk
-    output        eof   // @pclk
+    output        eof,   // @pclk
+            // not used PADS, keep for compatibility with PCB
+    input         dp2, //  input reserved
+    input         dn2, // input reserved
+    input         dn6  // input reserved
+    
 );
     localparam VOSPI_STATUS_BITS = 14;
 // Status data (6 bits + 4)
@@ -182,6 +187,9 @@ module  sens_lepton3 #(
     wire                         out_busy;
     wire                  [ 3:0] gpio_in;    // none currently used
     wire                         fake_in;
+    wire                         fake_dp2; //  input reserved
+    wire                         fake_dn2; // input reserved
+    wire                         fake_dn6;  // input reserved
 
     assign status = {
        fake_in,
@@ -252,7 +260,7 @@ module  sens_lepton3 #(
     
     
 // temporary?
-    assign fake_in = sns_ctl_int ^ mipi_dp_int ^ mipi_dn_int ^ mipi_clkp_int ^ mipi_clkn_int;
+    assign fake_in = sns_ctl_int ^ mipi_dp_int ^ mipi_dn_int ^ mipi_clkp_int ^ mipi_clkn_int ^ fake_dp2 ^ fake_dn2 ^ fake_dn6;
 
     assign out_en_single_mclk = set_ctrl_r && data_r[VOSPI_OUT_EN_SINGL] && !mrst;
     assign crc_reset_mclk   =   set_ctrl_r && data_r[VOSPI_RESET_CRC] && !mrst;
@@ -378,23 +386,6 @@ module  sens_lepton3 #(
         .T  (1'b0)                  // input - always on
     );
 
-/*    
-    oddr_ss #(
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW),
-        .DDR_CLK_EDGE ("OPPOSITE_EDGE"),
-        .INIT         (1'b0),
-        .SRTYPE       ("SYNC")
-    ) lwir_mclk_i (
-        .clk   (sns_mclk),                 // input
-        .ce    (sns_mclk_en_lwir_mclk[1]), // input
-        .rst   (prst),                     // input
-        .set   (1'b0),                     // input
-        .din   (2'b01),                    // input[1:0] 
-        .tin   (1'b0),                     // input
-        .dq    (lwir_mclk)                 // output
-    );
-*/
     iobuf #( // spi_miso
         .DRIVE        (PXD_DRIVE),
         .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
@@ -483,53 +474,33 @@ module  sens_lepton3 #(
         .T  (1'b0)               // input - always on
     );
     
-// MIPI - anyway it is not implemented, IOSTANDARD not known, put just single-ended input buffers    
-    iobuf #( // mipi_dp
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+// MIPI - anyway it is not implemented, IOSTANDARD not known, put just single-ended input buffers
+    ibuf_ibufg #(
+        .IOSTANDARD   (PXD_IOSTANDARD)
     ) mipi_dp_i (
-        .O  (mipi_dp_int),         // output - currently not used
-        .IO (mipi_dp),             // inout I/O pad
-        .I  (1'b0),                // input
-        .T  (1'b1)                 // input - always off
+        .O(mipi_dp_int),        // output - currently not used
+        .I(mipi_dp)             // inout I/O pad
     );
-
-    iobuf #( // mipi_dn
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+    
+    ibuf_ibufg #(
+        .IOSTANDARD   (PXD_IOSTANDARD)
     ) mipi_dn_i (
-        .O  (mipi_dn_int),         // output - currently not used
-        .IO (mipi_dn),             // inout I/O pad
-        .I  (1'b0),                // input
-        .T  (1'b1)                 // input - always off
+        .O(mipi_dn_int),        // output - currently not used
+        .I(mipi_dn)             // inout I/O pad
     );
 
-    iobuf #( // mipi_clkp
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+    ibuf_ibufg #(
+        .IOSTANDARD   (PXD_IOSTANDARD)
     ) mipi_clkp_i (
-        .O  (mipi_clkp_int),         // output - currently not used
-        .IO (mipi_clkp),             // inout I/O pad
-        .I  (1'b0),                // input
-        .T  (1'b1)                 // input - always off
+        .O(mipi_clkp_int),        // output - currently not used
+        .I(mipi_clkp)             // inout I/O pad
     );
 
-    iobuf #( // mipi_clkn
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+    ibuf_ibufg #(
+        .IOSTANDARD   (PXD_IOSTANDARD)
     ) mipi_clkn_i (
-        .O  (mipi_clkn_int),         // output - currently not used
-        .IO (mipi_clkn),             // inout I/O pad
-        .I  (1'b0),                  // input
-        .T  (1'b1)                   // input - always off
+        .O(mipi_clkn_int),        // output - currently not used
+        .I(mipi_clkn)             // inout I/O pad
     );
 
     iobuf #( // senspgm
@@ -556,7 +527,27 @@ module  sens_lepton3 #(
         .T  (1'b1)                 // input - always off
     );
 
-    
+    ibuf_ibufg #(
+        .IOSTANDARD   (PXD_IOSTANDARD)
+    ) fake_dp2_i (
+        .O(fake_dp2),
+        .I(dp2)
+    );
+
+    ibuf_ibufg #(
+        .IOSTANDARD   (PXD_IOSTANDARD)
+    ) fake_dn2_i (
+        .O(fake_dn2),
+        .I(dn2)
+    );
+
+    ibuf_ibufg #(
+        .IOSTANDARD   (PXD_IOSTANDARD)
+    ) fake_dn6_i (
+        .O(fake_dn6),
+        .I(dn6)
+    );
+   
     wire        segment_done; 
     wire        discard_segment;
     reg         start_segment;

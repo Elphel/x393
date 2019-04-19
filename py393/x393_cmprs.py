@@ -361,6 +361,7 @@ class X393Cmprs(object):
                               reset_frame = False,
                               copy_frame = False,
                               abort_late = False,
+                              linear =     False,
                               verbose = 1):
         """
         Control memory access (write) of a sensor channel
@@ -384,6 +385,7 @@ class X393Cmprs(object):
                                                    reset_frame = reset_frame,
                                                    copy_frame = copy_frame,
                                                    abort_late = abort_late,
+                                                   linear =     linear,
                                                    verbose =    verbose)
                 return
         except:
@@ -417,6 +419,7 @@ class X393Cmprs(object):
                                    single =       sngl,
                                    reset_frame =  reset_frame,
                                    byte32 =       byte32,
+                                   linear =       linear,
                                    keep_open =    False,
                                    extra_pages =  0,
                                    write_mem =    False,
@@ -443,6 +446,7 @@ class X393Cmprs(object):
                                  window_left,
                                  window_top,
                                  byte32,
+                                 linear,
                                  tile_width,
                                  tile_vstep, # = 16
                                  tile_height, #= 18
@@ -461,6 +465,7 @@ class X393Cmprs(object):
         @param window_left -      13-bit window left margin in 8-bursts (16 bytes)
         @param window_top -       16-bit window top margin (in scan lines
         @param byte32 -           32-byte columns
+        @param linear -           linear mode instead of tiled (for raw images)
         @param tile_width         tile width,
         @param tile_vstep         tile vertical step in pixel rows (JPEG18/jp4 = 16)
         @param tile_height        tile height: 18 for color JPEG, 16 fore JP$ flavors,
@@ -478,6 +483,7 @@ class X393Cmprs(object):
                                    single =       False,
                                    reset_frame =  True, # Now needed to propagate start address False,
                                    byte32 =       byte32,
+                                   linear =       linear,
                                    keep_open =    False,
                                    extra_pages =  extra_pages,
                                    write_mem =    False,

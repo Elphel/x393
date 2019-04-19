@@ -653,7 +653,8 @@ module  sensors393 #(
 `endif                
                 .SENSIO_DELAYS                 (SENSIO_DELAYS),
                 
-`ifdef MON_HISPI
+`ifdef HISPI
+    `ifdef MON_HISPI
                 .SENSOR_TIMING_STATUS_REG_BASE (SENSOR_TIMING_STATUS_REG_BASE),
                 .SENSOR_TIMING_STATUS_REG_INC  (SENSOR_TIMING_STATUS_REG_INC),
                 .SENSOR_TIMING_BITS            (SENSOR_TIMING_BITS),
@@ -661,6 +662,7 @@ module  sensors393 #(
                 .SENSOR_TIMING_LANE            (SENSOR_TIMING_LANE),
                 .SENSOR_TIMING_FROM            (SENSOR_TIMING_FROM),
                 .SENSOR_TIMING_TO              (SENSOR_TIMING_TO),
+    `endif
 `endif                
                 .SENSI2C_ABS_RADDR             (SENSI2C_ABS_RADDR),
                 .SENSI2C_REL_RADDR             (SENSI2C_REL_RADDR),

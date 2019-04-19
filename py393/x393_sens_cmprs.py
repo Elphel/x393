@@ -131,13 +131,13 @@ FRAME_START_ADDRESS_INC = 0x80000
 # for now - single sensor type per interface
 SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
                    x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"},
-                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"}}
+                   x393_sensor.SENSOR_INTERFACE_VOSPI:    {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"}}
 #                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":2500, "freq":24.444, "iface":"1V8_LVDS"}}
 #slave is 7 bit
 SENSOR_DEFAULTS= { x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
                    x393_sensor.SENSOR_INTERFACE_HISPI:    {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2},
-#                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"width":160,  "height":120,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
-                   x393_sensor.SENSOR_INTERFACE_LWIR:     {"width":160,  "height":122,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
+#                   x393_sensor.SENSOR_INTERFACE_VOSPI:     {"width":160,  "height":120,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
+                   x393_sensor.SENSOR_INTERFACE_VOSPI:    {"width":160,  "height":122,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
 
 #SENSOR_DEFAULTS_SIMULATION= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
 #                             x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
@@ -177,11 +177,11 @@ class X393SensCmprs(object):
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
                     SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
                     # keep settings from Python program
-                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["width"]=     vrlg.WOI_WIDTH #4
-                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["height"]=    vrlg.WOI_HEIGHT
-                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["top"]=       0
-                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_LWIR]["left"]=      0
-                    # do not update LWIR defaults !!!
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_VOSPI]["width"]=     vrlg.WOI_WIDTH #4
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_VOSPI]["height"]=    vrlg.WOI_HEIGHT
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_VOSPI]["top"]=       0
+                    #SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_VOSPI]["left"]=      0
+                    # do not update VOSPI defaults !!!
                     if nomargins:
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 0 # 4
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 0
@@ -760,7 +760,7 @@ class X393SensCmprs(object):
                                set_delays = False,
                                quadrants =  None)
             
-        elif sensorType ==  x393_sensor.SENSOR_INTERFACE_LWIR:
+        elif sensorType ==  x393_sensor.SENSOR_INTERFACE_VOSPI:
             self.x393Sensor.set_sensor_io_ctl_lwir (
                                num_sensor = num_sensor,
                                mrst =       True,
@@ -772,7 +772,7 @@ class X393SensCmprs(object):
                                out_single = False,
                                reset_crc =  True,
                                spi_clk =    False) #None)
-            print ("self.DRY_MODE=",self.DRY_MODE, " resetting LWIR sensor")
+            print ("self.DRY_MODE=",self.DRY_MODE, " resetting VOSPI sensor")
             if  self.DRY_MODE:
                 self.x393Sensor.set_sensor_io_ctl_lwir (
                                    num_sensor = num_sensor,
@@ -1327,6 +1327,7 @@ class X393SensCmprs(object):
         left_tiles32 = window_left // 32
         last_tile32 = (window_left + ((num_macro_cols_m1 + 1) * 16) + tile_margin - 1) // 32
         width32 = last_tile32 - left_tiles32 + 1 # number of 32-wide tiles needed in each row
+        comp_mem_linear = (0,1)[cmode == vrlg.CMPRS_CBIT_CMODE_RAW]
 #        Already done
 #        if (bits16):
 #            width32 *= 2    
@@ -1345,6 +1346,7 @@ class X393SensCmprs(object):
             print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
             print ("window_top =       0x%x"%(window_top))
             print ("byte32 =           1")
+            print ("linear =           ",comp_mem_linear)
             print ("tile_width =       0x%x"%(tile_width))
             print ("tile_vstep =       0x%x"%(tile_vstep))
             print ("tile_height =      0x%x"%(tile_height))
@@ -1365,6 +1367,7 @@ class X393SensCmprs(object):
             window_left =      left_tiles32 * 2,            # input [31:0] window_left;
             window_top =       window_top,                  # input [31:0] window_top;
             byte32 =           1,
+            linear =           comp_mem_linear,
             tile_width =       tile_width,
             tile_vstep =       tile_vstep,
             tile_height =      tile_height,
@@ -1814,7 +1817,7 @@ class X393SensCmprs(object):
                                     bit_delay  =    i2c_delay,
                                     verbose =       verbose)
                     
-                elif sensorType == x393_sensor.SENSOR_INTERFACE_LWIR:
+                elif sensorType == x393_sensor.SENSOR_INTERFACE_VOSPI:
                     #slave address 0x2a(of 0x7f)
                     #address - 16bit, data 16 bits
                     for page in (0,                         # Most of the commands
@@ -1852,7 +1855,7 @@ class X393SensCmprs(object):
 
         if exit_step == 21: return False
 
-        # not used for LWIR
+        # not used for VOSPI
         self.x393Camsync.camsync_setup (
                      sensor_mask =        sensor_mask,
                       trigger_mode =       False, # False - async (free running) sensor mode, True - triggered (global reset) sensor mode

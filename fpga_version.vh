@@ -35,13 +35,12 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-         parameter FPGA_VERSION =          32'h03930120;      //
- 
- 
-//        parameter FPGA_VERSION =          32'h03930107;      // parallel - 17.4 - restored delay after linear, fixed bug, all met
-//        parameter FPGA_VERSION =          32'h03930110;      //A serial - 17.4 - restored delay after linear, fixed bug, timing met
-//        parameter FPGA_VERSION =          32'h03930110;      // serial - 17.4 - restored delay after linear, fixed bug, timing failed
-//        parameter FPGA_VERSION =          32'h03930107;      // parallel - 17.4 - restored delay after linear, fixed bug, all met
+        parameter FPGA_VERSION =          32'h03930120;      // VOSPI
+//      parameter FPGA_VERSION =          32'h03930108;      // parallel - in master branch
+//      parameter FPGA_VERSION =          32'h03930107;      // parallel - 17.4 - restored delay after linear, fixed bug, all met
+//      parameter FPGA_VERSION =          32'h03930110;      //A serial - 17.4 - restored delay after linear, fixed bug, timing met
+//      parameter FPGA_VERSION =          32'h03930110;      // serial - 17.4 - restored delay after linear, fixed bug, timing failed
+//      parameter FPGA_VERSION =          32'h03930107;      // parallel - 17.4 - restored delay after linear, fixed bug, all met
 //      parameter FPGA_VERSION =          32'h03930106;      // parallel - 17.4 - increased delay after linear read all met
 //      parameter FPGA_VERSION =          32'h03930105;      // parallel - 17.4 - fixed wide raw frames all met
 //      parameter FPGA_VERSION =          32'h03930104;      // parallel - 17.4 - added RAW mode (for tiff files) timing met
