@@ -228,8 +228,8 @@ module  sens_lepton3 #(
     wire        crc_reset_pclk;
 
 
-    wire        fake_out;
-    wire        spi_mosi_int; // not used
+//    wire        fake_out;
+//    wire        spi_mosi_int; // not used
 
     reg         out_en_r;   // single paulse - single frame, level - continuous
 
@@ -264,8 +264,8 @@ module  sens_lepton3 #(
 
     assign out_en_single_mclk = set_ctrl_r && data_r[VOSPI_OUT_EN_SINGL] && !mrst;
     assign crc_reset_mclk   =   set_ctrl_r && data_r[VOSPI_RESET_CRC] && !mrst;
-    assign fake_out =           set_ctrl_r && data_r[VOSPI_FAKE_OUT];
-    assign spi_mosi_int =       set_ctrl_r && data_r[VOSPI_MOSI]; // not used
+///    assign fake_out =           set_ctrl_r && data_r[VOSPI_FAKE_OUT];
+///    assign spi_mosi_int =       set_ctrl_r && data_r[VOSPI_MOSI]; // not used
 
     assign prsts = prst | !lwir_mrst_pclk[1];
     
@@ -406,8 +406,9 @@ module  sens_lepton3 #(
     ) spi_mosi_i (
         .O  (),                     // output - currently not used
         .IO (spi_mosi),             // inout I/O pad
-        .I  (spi_mosi_int),         // input
-        .T  (!fake_out)             // input - always off
+//        .I  (spi_mosi_int),       // input
+        .I  (1'b0),                // input
+        .T  (1'b0)                 // input - always off
     );
     
      iobuf #( // spi_cs
