@@ -2426,7 +2426,7 @@ input               mem                 mtd4                ram1                
 
     def lepton35_i2c_w(self,num_sensor,reg,val):
         """
-        write 16 bit value to an i2c register via sysfs
+        Write 16 bit value to an i2c register via sysfs
         @param num_sensor - sensor port number (0..3)
         @param reg - register address (0x0 - power_on reg, 0x2 - status reg, 0x4 - command reg, 0x6 - data length reg, 0x08-0x26 - data regs)
         @param val - value
@@ -2439,7 +2439,7 @@ input               mem                 mtd4                ram1                
 
     def lepton35_i2c_r(self,num_sensor,reg):
         """
-        read 16 bit value from an i2c register via sysfs
+        Read 16 bit value from an i2c register via sysfs
         @param num_sensor - sensor port number (0..3)
         @param reg - register address (0x0 - power_on reg, 0x2 - status reg, 0x4 - command reg, 0x6 - data length reg, 0x08-0x26 - data regs)
         """
@@ -2458,7 +2458,7 @@ input               mem                 mtd4                ram1                
 
     def lepton35_poll_BUSY(self,num_sensor,ntries=10):
         """
-        poll BUSY bit of a status reg
+        Poll BUSY bit of a status reg
         @param num_sensor - sensor port number (0..3)
         @param ntries - timeout, exit after ntries times
         """
@@ -2480,12 +2480,18 @@ input               mem                 mtd4                ram1                
 
     def lepton35_read(self,num_sensor,cmdreg,datalen):
         """
-        Read attribute sequence
+        Read attribute sequence, auto-sets OEM bit for OEM(0x08..) and RAD(0x0e..) modules
         @param num_sensor - sensor port number (0..3)
         @param cmdreg     - register base address
         @param datalen    - number of 16-bit words to read
         """
         res = []
+
+        mod = (cmdreg>>8)&0xf
+        # mode
+        if mod==0x8 or mod==0xe:
+            cmdreg += 0x4000
+
         busy = self.lepton35_poll_BUSY(num_sensor)
         if not busy:
             print("not busy, writing data length and command")
@@ -2504,12 +2510,17 @@ input               mem                 mtd4                ram1                
 
     def lepton35_write(self,num_sensor,cmdreg,cmddata):
         """
-        Write sequence
+        Write sequence, auto-sets OEM bit for OEM(0x08..) and RAD(0x0e..) modules
         @param num_sensor - sensor port number (0..3)
         @param cmdreg     - register base address (true addr = cmdreg|0x1)
         @param cmddata    - string with comma separated values "0,1,2,3,4"
         """
         cmdreg = cmdreg|0x1
+        mod = (cmdreg>>8)&0xf
+        # mode
+        if mod==0x8 or mod==0xe:
+            cmdreg += 0x4000
+
         cmddata = [int(a) for a in cmddata.split(",")]
         datalen = len(cmddata)
 
@@ -2526,10 +2537,14 @@ input               mem                 mtd4                ram1                
 
     def lepton35_run(self,num_sensor,cmdreg):
         """
-        Run command sequence
+        Run command sequence, auto-sets OEM bit for OEM(0x08..) and RAD(0x0e..) modules
         @param num_sensor - sensor port number (0..3)
         @param cmdreg     - register base address (true addr = cmdreg|0x2)
         """
+        mod = (cmdreg>>8)&0xf
+        # mode
+        if mod==0x8 or mod==0xe:
+            cmdreg += 0x4000
         busy = self.lepton35_poll_BUSY(num_sensor)
         if not busy:
             self.lepton35_i2c_w(num_sensor,self.LEPTON35_REG_CMD,cmdreg)
