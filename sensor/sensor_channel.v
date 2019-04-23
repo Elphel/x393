@@ -1086,7 +1086,7 @@ module  sensor_channel#(
             .sof                  (sof),         // output
             .eof                  (eof),         // output
             // not used PADS, keep for compatibility with PCB
-            .dp2                  (sns_dp40[2]), // input reserved
+            .dp2                  (sns_dp40[2]), // inout reserved - used for debug
             .dn2                  (sns_dn40[2]), // input reserved
             .dn6                  (sns_dn76[6])  // input reserved
     );

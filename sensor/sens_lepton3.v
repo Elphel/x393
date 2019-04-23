@@ -172,7 +172,7 @@ module  sens_lepton3 #(
     output        sof,  // @pclk
     output        eof,   // @pclk
             // not used PADS, keep for compatibility with PCB
-    input         dp2, //  input reserved
+    inout         dp2, //  input reserved - used for hardware debug (output for oscilloscope)
     input         dn2, // input reserved
     input         dn6  // input reserved
     
@@ -181,6 +181,7 @@ module  sens_lepton3 #(
 // Status data (6 bits + 4)
     wire [VOSPI_STATUS_BITS-1:0] status;
     wire                  [ 3:0] segment_id;
+    wire                         dbg_running;       // output debug output for oscilloscope
     wire                         crc_err_w;  // single-cycle CRC error
     reg                          crc_err_r;  // at least one CRC error happened since reset
     wire                         in_busy;
@@ -528,12 +529,26 @@ module  sens_lepton3 #(
         .T  (1'b1)                 // input - always off
     );
 
+    iobuf #( // sns_ctl
+        .DRIVE        (PXD_DRIVE),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) dp2_i (
+        .O  (fake_dp2),            // output - currently not used
+        .IO (dp2),                 // inout I/O pad
+        .I  (dbg_running),         // input
+        .T  (1'b0)                 // input - always on
+    );
+
+/*
     ibuf_ibufg #(
         .IOSTANDARD   (PXD_IOSTANDARD)
     ) fake_dp2_i (
         .O(fake_dp2),
         .I(dp2)
     );
+*/
 
     ibuf_ibufg #(
         .IOSTANDARD   (PXD_IOSTANDARD)
@@ -606,7 +621,9 @@ module  sens_lepton3 #(
         .sof             (sof),              // output
         .eof             (eof),              // output
         .crc_err         (crc_err_w),        // output
-        .id              (segment_id)        // output[3:0] 
+        .id              (segment_id),       // output[3:0]
+        .dbg_running     (dbg_running)       // output debug output for oscilloscope
+         
     );
 
 

@@ -73,7 +73,8 @@ module  vospi_segment_61#(
     output        sof,             // start of frame
     output        eof,             // end of frame
     output        crc_err,         // crc error happened for any packet (valid at eos)
-    output  [3:0] id               // segment number  (valid at eos)
+    output  [3:0] id,               // segment number  (valid at eos)
+    output        dbg_running      // debug output for segment_running
 );
     localparam VOSPI_PACKETS_FRAME = (VOSPI_SEGMENT_LAST - VOSPI_SEGMENT_FIRST + 1) *
                                      (VOSPI_PACKET_LAST - VOSPI_PACKET_FIRST + 1);
@@ -134,7 +135,7 @@ module  vospi_segment_61#(
     assign in_busy=             segment_busy_r;       // waiting for or receiving a segment
     assign discard_segment=     discard_segment_r;    // segment was disc arded  
     
-    
+    assign dbg_running =        segment_running;
     // To Buffer
     always @ (posedge clk) begin
 //        if      (rst)   first_segment_in <= 0;
@@ -178,7 +179,7 @@ module  vospi_segment_61#(
         segment_done <= segment_done_w; // module output reg
         
         if      (!segment_busy_r || start)                           segment_running <= 0;
-        else if (id_stb && (packet_id[11:0] == VOSPI_PACKET_FIRST)) segment_running <= 1;
+        else if (id_stb && (packet_id[11:0] == VOSPI_PACKET_FIRST))  segment_running <= 1;
         
 //        packet_start <= !rst && !packet_busy && segment_busy_r;
         packet_start <= !rst && !packet_busy && segment_busy_r && !packet_start;
