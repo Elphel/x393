@@ -467,8 +467,9 @@ class X393Sensor(object):
                                  gpio1 =      None, 
                                  gpio2 =      None, 
                                  gpio3 =      None, 
-                                 fake =       None,
-                                 mosi =       None):
+                                 vsync_use =  None,
+                                 noresync =   None,
+                                 dbg_src =    None):
         """
         Combine sensor I/O control parameters into a control word
         @param mrst -       True - activate MRST signal (low), False - deactivate MRST (high), None - no change
@@ -484,8 +485,16 @@ class X393Sensor(object):
         @param gpio1 =      Output control for GPIO0: 1 - nop, 1 - set low, 2 - set high, 3 - input 
         @param gpio2 =      Output control for GPIO0: 2 - nop, 1 - set low, 2 - set high, 3 - input 
         @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
-        @param fake =       Do not use, just for keeping hardware portsNone,
-        @param mosi =       Do not use, just for keeping hardware portsNone,
+        @param vsync_use =  Wait for VSYNC (should be enabled over i2c) before reading each segment
+        @param noresync =   Disable resynchronization by discard packets
+        @param dbg_src =    source of the hardware debug output: 0 - dbg_running
+                                                                 1 - vsync_rdy[0]
+                                                                 2 - vsync_rdy[1]
+                                                                 3 - discard_segment
+                                                                 4 - in_busy
+                                                                 5 - out_busy
+                                                                 6 - hact
+                                                                 7 - sof
         @return VOSPI sensor i/o control word
         """
         rslt = 0
@@ -504,7 +513,7 @@ class X393Sensor(object):
         if out_single:
             rslt |= 1 <<                 vrlg.VOSPI_OUT_EN_SINGL
         if reset_crc:
-            rslt |= 1 <<                 vrlg.VOSPI_RESET_CRC
+            rslt |= 1 <<                 vrlg.VOSPI_RESET_ERR
         if not spi_clk is None:
             rslt |= (2,3)[spi_clk] <<    vrlg.VOSPI_SPI_CLK
         if not gpio0 is None:
@@ -515,10 +524,20 @@ class X393Sensor(object):
             rslt |= (gpio2 & 3) <<       (vrlg.VOSPI_GPIO + 4)
         if not gpio3 is None:
             rslt |= (gpio3 & 3) <<       (vrlg.VOSPI_GPIO + 6)
-        if fake:
-            rslt |= 1 <<                 vrlg.VOSPI_FAKE_OUT
-        if fake:
-            mosi |= 1 <<                 vrlg.VOSPI_MOSI
+        if not vsync_use is None:
+            rslt |= (2,3)[vsync_use] <<  vrlg.VOSPI_VSYNC
+        if not noresync is None:
+            rslt |= (2,3)[noresync] <<   vrlg.VOSPI_NORESYNC
+
+        if not dbg_src is None:
+            rslt |= ((dbg_src & (( 1 << (vrlg.VOSPI_DBG_SRC_BITS - 1)) -1 )) |
+                      (1 << (vrlg.VOSPI_DBG_SRC_BITS - 1))) << vrlg.VOSPI_DBG_SRC
+            pass    
+            
+#            .VOSPI_DBG_SRC          (VOSPI_DBG_SRC), // =         26, // source of the debug output
+#            .VOSPI_DBG_SRC_BITS     (VOSPI_DBG_SRC_BITS), // =     4,
+            
+            
         return rslt
 
 
@@ -1056,8 +1075,10 @@ class X393Sensor(object):
                                  gpio1 =      None, 
                                  gpio2 =      None, 
                                  gpio3 =      None, 
-                                 fake =       None,
-                                 mosi =       None):
+                                 vsync_use =  None,
+                                 noresync =   None,
+                                 dbg_src =    None):
+
         """
         Combine sensor I/O control parameters into a control word
         @param mrst -       True - activate MRST signal (low), False - deactivate MRST (high), None - no change
@@ -1073,9 +1094,16 @@ class X393Sensor(object):
         @param gpio1 =      Output control for GPIO0: 1 - nop, 1 - set low, 2 - set high, 3 - input 
         @param gpio2 =      Output control for GPIO0: 2 - nop, 1 - set low, 2 - set high, 3 - input 
         @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
-        @param fake =       Do not use, just for keeping hardware portsNone,
-        @param mosi =       Do not use, just for keeping hardware portsNone,
-        @return VOSPI sensor i/o control word
+        @param vsync_use =  Wait for VSYNC (should be enabled over i2c) before reading each segment
+        @param noresync =   Disable resynchronization by discard packets
+        @param dbg_src =    source of the hardware debug output: 0 - dbg_running
+                                                                 1 - vsync_rdy[0]
+                                                                 2 - vsync_rdy[1]
+                                                                 3 - discard_segment
+                                                                 4 - in_busy
+                                                                 5 - out_busy
+                                                                 6 - hact
+                                                                 7 - sof
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -1094,8 +1122,9 @@ class X393Sensor(object):
                            gpio1 =      gpio1, 
                            gpio2 =      gpio2, 
                            gpio3 =      gpio3, 
-                           fake =       fake,
-                           mosi =       mosi)
+                           vsync_use =  vsync_use,
+                           noresync =   noresync,
+                           dbg_src =    dbg_src)
                 return
         except:
             pass
@@ -1113,8 +1142,9 @@ class X393Sensor(object):
                            gpio1 =      gpio1, 
                            gpio2 =      gpio2, 
                            gpio3 =      gpio3, 
-                           fake =       fake,
-                           mosi =       mosi)
+                           vsync_use =  vsync_use,
+                           noresync =   noresync,
+                           dbg_src =    dbg_src)
 
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)

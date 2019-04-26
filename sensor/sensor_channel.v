@@ -155,10 +155,14 @@ module  sensor_channel#(
       parameter SENS_LENS_POST_SCALE =      'h6a, // 01101010
       parameter SENS_LENS_POST_SCALE_MASK = 'hff,
     
-    parameter SENSIO_RADDR =          8, //'h408  .. 'h40f
-    parameter SENSIO_ADDR_MASK =      'h7f8,
-      // sens_parallel12 registers
+      parameter SENSIO_RADDR =          8, //'h408  .. 'h40f
+      parameter SENSIO_ADDR_MASK =      'h7f8,
+`ifdef LWIR
       parameter SENSIO_CTRL =           'h0,
+      parameter SENSIO_STATUS =         'h1,
+`else    
+      // sens_parallel12 registers
+        parameter SENSIO_CTRL =           'h0,
         // SENSIO_CTRL register bits
         parameter SENS_CTRL_MRST =        0,  //  1: 0
         parameter SENS_CTRL_ARST =        2,  //  3: 2
@@ -202,7 +206,7 @@ module  sensor_channel#(
         parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - sol, 2 - eof, 3 eol
   `endif
 `endif            
-      
+`endif      
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_BASE_ADDR)
     parameter SENSI2C_ABS_RADDR =       'h10, // 'h410..'h41f
@@ -229,6 +233,11 @@ module  sensor_channel#(
     
 `ifdef HISPI
 `elsif LWIR
+    parameter integer VOSPI_DRIVE =        16, // 12, (4,8,12,16)
+    parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
+    parameter         VOSPI_IOSTANDARD =   "LVCMOS25",
+    parameter         VOSPI_SLEW =         "FAST", // "SLOW",
+
     parameter VOSPI_MRST =               0,
     parameter VOSPI_MRST_BITS =          2,
     parameter VOSPI_PWDN =               2,
@@ -242,13 +251,17 @@ module  sensor_channel#(
     parameter VOSPI_OUT_EN =            10,
     parameter VOSPI_OUT_EN_BITS =        2,
     parameter VOSPI_OUT_EN_SINGL =      12,
-    parameter VOSPI_RESET_CRC =         13,
+    parameter VOSPI_RESET_ERR =         13,
     parameter VOSPI_SPI_CLK =           14,
     parameter VOSPI_SPI_CLK_BITS =       2,
     parameter VOSPI_GPIO =              16,
     parameter VOSPI_GPIO_BITS =          8,
-    parameter VOSPI_FAKE_OUT =          24, // to keep hardware
-    parameter VOSPI_MOSI =              25, // not used
+    parameter VOSPI_VSYNC =             24,
+    parameter VOSPI_VSYNC_BITS =         2,
+    parameter VOSPI_NORESYNC =          26, // disable re-sync
+    parameter VOSPI_NORESYNC_BITS =      2,
+    parameter VOSPI_DBG_SRC =           28, // source of the debug output
+    parameter VOSPI_DBG_SRC_BITS =       4,
     parameter VOSPI_PACKET_WORDS =      80,
     parameter VOSPI_NO_INVALID =         1, // do not output invalid packets data
     parameter VOSPI_PACKETS_PER_LINE =   2,
@@ -259,18 +272,22 @@ module  sensor_channel#(
     parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
     parameter VOSPI_SOF_TO_HACT =        2,  // clock cycles from SOF to HACT
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
-    parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
+    parameter VOSPI_MCLK_HALFDIV =       4  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
     
 `else
     //sensor_fifo parameters
-    parameter SENSOR_DATA_WIDTH =      12,
-    parameter SENSOR_FIFO_2DEPTH =     4,
-    parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
+    parameter SENSOR_DATA_WIDTH =       12,
+    parameter SENSOR_FIFO_2DEPTH =       4,
+    parameter [3:0] SENSOR_FIFO_DELAY =  5 // 7,
 `endif
     
+// start with comma!    
+`ifdef LWIR
+    ,parameter SENSI2C_IOSTANDARD =       "LVCMOS25"
+`else
     // sens_parallel12 other parameters
     
-    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
+   ,parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
     parameter integer IDELAY_VALUE = 0,
     parameter integer PXD_DRIVE = 12,
     parameter PXD_IBUF_LOW_PWR = "TRUE",
@@ -316,6 +333,9 @@ module  sensor_channel#(
     parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
+`endif
+ 
+ 
     
 `ifdef HISPI
    ,parameter HISPI_MSB_FIRST =            0,
@@ -981,10 +1001,13 @@ module  sensor_channel#(
             .SENSIO_ADDR_MASK      (SENSIO_ADDR_MASK),
             .SENSIO_CTRL           (SENSIO_CTRL),
             .SENSIO_STATUS         (SENSIO_STATUS),
+/*            
             .SENSIO_JTAG           (SENSIO_JTAG),
             .SENSIO_WIDTH          (SENSIO_WIDTH),
             .SENSIO_DELAYS         (SENSIO_DELAYS),
+*/            
             .SENSIO_STATUS_REG     (SENSIO_STATUS_REG),
+/*            
             .SENS_JTAG_PGMEN       (SENS_JTAG_PGMEN),
             .SENS_JTAG_PROG        (SENS_JTAG_PROG),
             .SENS_JTAG_TCK         (SENS_JTAG_TCK),
@@ -1024,6 +1047,11 @@ module  sensor_channel#(
             .SENS_SS_MODE           (SENS_SS_MODE),
             .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
             .STATUS_ALIVE_WIDTH     (STATUS_ALIVE_WIDTH),
+*/
+            .VOSPI_DRIVE            (VOSPI_DRIVE),
+            .VOSPI_IBUF_LOW_PWR     (VOSPI_IBUF_LOW_PWR),
+            .VOSPI_IOSTANDARD       (VOSPI_IOSTANDARD),
+            .VOSPI_SLEW             (VOSPI_SLEW),
             .VOSPI_MRST             (VOSPI_MRST), //               0,
             .VOSPI_MRST_BITS        (VOSPI_MRST_BITS), //          2,
             .VOSPI_PWDN             (VOSPI_PWDN), //               2,
@@ -1037,13 +1065,17 @@ module  sensor_channel#(
             .VOSPI_OUT_EN           (VOSPI_OUT_EN), //            10,
             .VOSPI_OUT_EN_BITS      (VOSPI_OUT_EN_BITS), //        2,
             .VOSPI_OUT_EN_SINGL     (VOSPI_OUT_EN_SINGL), //      12,
-            .VOSPI_RESET_CRC        (VOSPI_RESET_CRC), //         13,
+            .VOSPI_RESET_ERR        (VOSPI_RESET_ERR), //         13,
             .VOSPI_SPI_CLK          (VOSPI_SPI_CLK), //           14,
             .VOSPI_SPI_CLK_BITS     (VOSPI_SPI_CLK_BITS), //       2,
             .VOSPI_GPIO             (VOSPI_GPIO), //              16,
             .VOSPI_GPIO_BITS        (VOSPI_GPIO_BITS), //          8,
-            .VOSPI_FAKE_OUT         (VOSPI_FAKE_OUT), //          24, // to keep hardware
-            .VOSPI_MOSI             (VOSPI_MOSI), //              25, // pot used
+            .VOSPI_VSYNC            (VOSPI_VSYNC), //             24,
+            .VOSPI_VSYNC_BITS       (VOSPI_VSYNC_BITS), //         2,
+            .VOSPI_NORESYNC         (VOSPI_NORESYNC), //          26,
+            .VOSPI_NORESYNC_BITS    (VOSPI_NORESYNC_BITS), //      2,
+            .VOSPI_DBG_SRC          (VOSPI_DBG_SRC), // =         28, // source of the debug output
+            .VOSPI_DBG_SRC_BITS     (VOSPI_DBG_SRC_BITS), // =     4,
             .VOSPI_PACKET_WORDS     (VOSPI_PACKET_WORDS),//       80,
             .VOSPI_NO_INVALID       (VOSPI_NO_INVALID), //         1,
             .VOSPI_PACKETS_PER_LINE (VOSPI_PACKETS_PER_LINE), //   2,

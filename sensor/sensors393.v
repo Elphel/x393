@@ -156,9 +156,11 @@ module  sensors393 #(
 
     parameter SENSIO_RADDR =          8,  //'h408  .. 'h40f
     parameter SENSIO_ADDR_MASK =      'h7f8,
+    
+`ifdef LWIR
+`else    
       // sens_parallel12 registers
       parameter SENSIO_CTRL =           'h0,
-        // SENSIO_CTRL register bits
         parameter SENS_CTRL_MRST =        0,  //  1: 0
         parameter SENS_CTRL_ARST =        2,  //  3: 2
         parameter SENS_CTRL_ARO =         4,  //  5: 4
@@ -180,7 +182,6 @@ module  sensors393 #(
 `endif        
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
-        // SENSIO_JTAG register bits
         parameter SENS_JTAG_PGMEN =       8,
         parameter SENS_JTAG_PROG =        6,
         parameter SENS_JTAG_TCK =         4,
@@ -191,7 +192,10 @@ module  sensors393 #(
 `endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
 
-`ifdef MON_HISPI
+`endif // `ifdef LWIR
+
+`ifdef HISPI
+  `ifdef MON_HISPI
         parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
         parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
         parameter SENSOR_TIMING_BITS =               24,   // increment to the next sensor
@@ -199,7 +203,8 @@ module  sensors393 #(
         parameter SENSOR_TIMING_LANE =               14,   // 15:14 - select lane
         parameter SENSOR_TIMING_FROM =               12,   // select from 0 - sof, 1 - sol, 2 - eof, 3 eol
         parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - sol, 2 - eof, 3 eol
-`endif            
+  `endif
+`endif
       
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
@@ -225,6 +230,10 @@ module  sensors393 #(
     
 `ifdef HISPI
 `elsif LWIR
+    parameter integer VOSPI_DRIVE =        16, // 12, (4,8,12,16)
+    parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
+    parameter         VOSPI_IOSTANDARD =   "LVCMOS25",
+    parameter         VOSPI_SLEW =         "FAST", // "SLOW",
     parameter VOSPI_MRST =               0,
     parameter VOSPI_MRST_BITS =          2,
     parameter VOSPI_PWDN =               2,
@@ -238,13 +247,17 @@ module  sensors393 #(
     parameter VOSPI_OUT_EN =            10,
     parameter VOSPI_OUT_EN_BITS =        2,
     parameter VOSPI_OUT_EN_SINGL =      12,
-    parameter VOSPI_RESET_CRC =         13,
+    parameter VOSPI_RESET_ERR =         13,
     parameter VOSPI_SPI_CLK =           14,
     parameter VOSPI_SPI_CLK_BITS =       2,
     parameter VOSPI_GPIO =              16,
     parameter VOSPI_GPIO_BITS =          8,
-    parameter VOSPI_FAKE_OUT =          24, // to keep hardware
-    parameter VOSPI_MOSI =              25, // not used
+    parameter VOSPI_VSYNC =             24,
+    parameter VOSPI_VSYNC_BITS =         2,
+    parameter VOSPI_NORESYNC =          26, // disable re-sync
+    parameter VOSPI_NORESYNC_BITS =      2,
+    parameter VOSPI_DBG_SRC =           28, // source of the debug output
+    parameter VOSPI_DBG_SRC_BITS =       4,
     parameter VOSPI_PACKET_WORDS =      80,
     parameter VOSPI_NO_INVALID =         1, // do not output invalid packets data
     parameter VOSPI_PACKETS_PER_LINE =   2,
@@ -279,66 +292,79 @@ module  sensors393 #(
     parameter SENS_SYNC_LBITS =          16,    // number of bits in a line counter for sof_late output (limited by eof) 
     parameter SENS_SYNC_LATE_DFLT =      4, // 15,    // number of lines to delay late frame sync
     parameter SENS_SYNC_MINBITS =        8,    // number of bits to enforce minimal frame period 
-    parameter SENS_SYNC_MINPER =         130,    // minimal frame period (in pclk/mclk?) 
+    parameter SENS_SYNC_MINPER =         130    // minimal frame period (in pclk/mclk?) 
     
     
     // sens_parallel12 other parameters
     
 //    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
-    parameter integer IDELAY_VALUE =     0,
+// start with comma
+`ifdef LWIR
+`else
+   ,parameter integer IDELAY_VALUE =     0,
     parameter integer PXD_DRIVE =        12,
     parameter PXD_IBUF_LOW_PWR =         "TRUE",
     parameter PXD_SLEW =                 "SLOW",
     parameter real SENS_REFCLK_FREQUENCY =    300.0,
-    parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
-`ifdef HISPI
-    parameter PXD_CAPACITANCE =          "DONT_CARE",
-    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
-    parameter PXD_CLK_DIV_BITS =          4,
+    parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE"
 `endif    
-    parameter SENS_PHASE_WIDTH=           8,      // number of bits for te phase counter (depends on divisors)
-//    parameter SENS_PCLK_PERIOD =          10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
-    parameter SENS_BANDWIDTH =            "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
+ 
+// start with comma
+`ifdef HISPI
+   ,parameter PXD_CAPACITANCE =          "DONT_CARE",
+    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
+    parameter PXD_CLK_DIV_BITS =          4
+`endif
 
-    // parameters for the sensor-synchronous clock PLL
-`ifdef HISPI    
-    parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+// start with comma
+`ifdef LWIR
+`else    
+   .parameter SENS_PHASE_WIDTH=           8,           // number of bits for te phase counter (depends on divisors)
+    parameter SENS_BANDWIDTH =            "OPTIMIZED"  //"OPTIMIZED", "HIGH","LOW"
+`endif
+
+// start with comma
+`ifdef LWIR
+    ,parameter SENSI2C_IOSTANDARD =       "LVCMOS18"
+`elsif HISPI    
+   ,parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS18",
-    parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS18"
 `else    
-    parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+   ,parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS25",
-    parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS25"
 `endif
-//    parameter BUF_IPCLK =                "BUFR",
-//    parameter BUF_IPCLK2X =              "BUFR",  
-    parameter BUF_IPCLK_SENS0 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS0 =        "BUFR", //G", // "BUFR",  
 
+
+// start with comma
+`ifdef LWIR
+`else
+    ,parameter BUF_IPCLK_SENS0 =         "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS0 =        "BUFR", //G", // "BUFR",  
     parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",  
-
     parameter BUF_IPCLK_SENS2 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS2 =        "BUFR", //G", // "BUFR",  
-
     parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFR",  
-    
-
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =       0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter SENS_REF_JITTER2   =       0.010,
     parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =       10000        // integer 4000-40000 - SS modulation period in ns
+`endif    
+    
+    
 `ifdef HISPI
    ,parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
@@ -621,6 +647,8 @@ module  sensors393 #(
                 .SENS_LENS_POST_SCALE_MASK     (SENS_LENS_POST_SCALE_MASK),
                 .SENSIO_RADDR                  (SENSIO_RADDR),
                 .SENSIO_ADDR_MASK              (SENSIO_ADDR_MASK),
+`ifdef LWIR
+`else
                 .SENSIO_CTRL                   (SENSIO_CTRL),
                 .SENS_CTRL_MRST                (SENS_CTRL_MRST),
                 .SENS_CTRL_ARST                (SENS_CTRL_ARST),
@@ -652,7 +680,8 @@ module  sensors393 #(
                 .SENSIO_WIDTH                  (SENSIO_WIDTH),
 `endif                
                 .SENSIO_DELAYS                 (SENSIO_DELAYS),
-                
+`endif                
+
 `ifdef HISPI
     `ifdef MON_HISPI
                 .SENSOR_TIMING_STATUS_REG_BASE (SENSOR_TIMING_STATUS_REG_BASE),
@@ -682,6 +711,10 @@ module  sensors393 #(
                 .NUM_FRAME_BITS                (NUM_FRAME_BITS),
 `ifdef HISPI
 `elsif LWIR
+                .VOSPI_DRIVE                   (VOSPI_DRIVE),
+                .VOSPI_IBUF_LOW_PWR            (VOSPI_IBUF_LOW_PWR),
+                .VOSPI_IOSTANDARD              (VOSPI_IOSTANDARD),
+                .VOSPI_SLEW                    (VOSPI_SLEW),
                 .VOSPI_MRST                    (VOSPI_MRST), //               0,
                 .VOSPI_MRST_BITS               (VOSPI_MRST_BITS), //          2,
                 .VOSPI_PWDN                    (VOSPI_PWDN), //               2,
@@ -695,13 +728,17 @@ module  sensors393 #(
                 .VOSPI_OUT_EN                  (VOSPI_OUT_EN), //            10,
                 .VOSPI_OUT_EN_BITS             (VOSPI_OUT_EN_BITS), //        2,
                 .VOSPI_OUT_EN_SINGL            (VOSPI_OUT_EN_SINGL), //      12,
-                .VOSPI_RESET_CRC               (VOSPI_RESET_CRC), //         13,
+                .VOSPI_RESET_ERR               (VOSPI_RESET_ERR), //         13,
                 .VOSPI_SPI_CLK                 (VOSPI_SPI_CLK), //           14,
                 .VOSPI_SPI_CLK_BITS            (VOSPI_SPI_CLK_BITS), //       2,
                 .VOSPI_GPIO                    (VOSPI_GPIO), //              16,
                 .VOSPI_GPIO_BITS               (VOSPI_GPIO_BITS), //          8,
-                .VOSPI_FAKE_OUT                (VOSPI_FAKE_OUT), //          24, // to keep hardware
-                .VOSPI_MOSI                    (VOSPI_MOSI), //              25, // not used
+                .VOSPI_VSYNC                   (VOSPI_VSYNC), //             24,
+                .VOSPI_VSYNC_BITS              (VOSPI_VSYNC_BITS), //         2,
+                .VOSPI_NORESYNC                (VOSPI_NORESYNC), //          26,
+                .VOSPI_NORESYNC_BITS           (VOSPI_NORESYNC_BITS), //      2,
+                .VOSPI_DBG_SRC                 (VOSPI_DBG_SRC), // =         28, // source of the debug output
+                .VOSPI_DBG_SRC_BITS            (VOSPI_DBG_SRC_BITS), // =     4,
                 .VOSPI_PACKET_WORDS            (VOSPI_PACKET_WORDS),//       80,
                 .VOSPI_NO_INVALID              (VOSPI_NO_INVALID), //         1,
                 .VOSPI_PACKETS_PER_LINE        (VOSPI_PACKETS_PER_LINE), //   2,
@@ -712,28 +749,38 @@ module  sensors393 #(
                 .VOSPI_PACKET_TTT              (VOSPI_PACKET_TTT), //        20,
                 .VOSPI_SOF_TO_HACT             (VOSPI_SOF_TO_HACT), //        2,
                 .VOSPI_HACT_TO_HACT_EOF        (VOSPI_HACT_TO_HACT_EOF), //   2,
-                .VOSPI_MCLK_HALFDIV            (VOSPI_MCLK_HALFDIV), //       4
+                .VOSPI_MCLK_HALFDIV            (VOSPI_MCLK_HALFDIV) //       4
                 
 `else
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),
                 .SENSOR_FIFO_2DEPTH            (SENSOR_FIFO_2DEPTH),
-                .SENSOR_FIFO_DELAY             (SENSOR_FIFO_DELAY),
-`endif                
-                .IODELAY_GRP                   ((i & 2)?"IODELAY_SENSOR_34":"IODELAY_SENSOR_12"),
+                .SENSOR_FIFO_DELAY             (SENSOR_FIFO_DELAY)
+`endif
+// start with comma
+`ifdef LWIR
+`else                
+               ,.IODELAY_GRP                   ((i & 2)?"IODELAY_SENSOR_34":"IODELAY_SENSOR_12"),
                 .IDELAY_VALUE                  (IDELAY_VALUE),
                 .PXD_DRIVE                     (PXD_DRIVE),
                 .PXD_IBUF_LOW_PWR              (PXD_IBUF_LOW_PWR),
                 .PXD_IOSTANDARD                (PXD_IOSTANDARD),
                 .PXD_SLEW                      (PXD_SLEW),
                 .SENS_REFCLK_FREQUENCY         (SENS_REFCLK_FREQUENCY),
-                .SENS_HIGH_PERFORMANCE_MODE    (SENS_HIGH_PERFORMANCE_MODE),
-`ifdef HISPI
-                .PXD_CAPACITANCE               (PXD_CAPACITANCE),
+                .SENS_HIGH_PERFORMANCE_MODE    (SENS_HIGH_PERFORMANCE_MODE)
+`endif
+
+// start with comma
+`ifdef LWIR                
+`elsif HISPI
+               ,.PXD_CAPACITANCE               (PXD_CAPACITANCE),
                 .PXD_CLK_DIV                   (PXD_CLK_DIV),
                 .PXD_CLK_DIV_BITS              (PXD_CLK_DIV_BITS),
 `endif
-                .SENS_PHASE_WIDTH              (SENS_PHASE_WIDTH),
-//                .SENS_PCLK_PERIOD              (SENS_PCLK_PERIOD),
+
+// start with comma
+`ifdef LWIR
+`else
+               ,.SENS_PHASE_WIDTH              (SENS_PHASE_WIDTH),
                 .SENS_BANDWIDTH                (SENS_BANDWIDTH),
                 .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
                 .CLKFBOUT_MULT_SENSOR          (CLKFBOUT_MULT_SENSOR),
@@ -748,6 +795,8 @@ module  sensors393 #(
                 .SENS_SS_EN                    (SENS_SS_EN),
                 .SENS_SS_MODE                  (SENS_SS_MODE),
                 .SENS_SS_MOD_PERIOD            (SENS_SS_MOD_PERIOD)
+`endif                
+                
 `ifdef HISPI
                ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
                 .HISPI_NUMLANES                (HISPI_NUMLANES),
