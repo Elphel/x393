@@ -2495,7 +2495,7 @@ input               mem                 mtd4                ram1                
         return res
 
 
-    def lepton35_poll_BUSY(self,num_sensor,ntries=3):
+    def lepton35_poll_BUSY(self,num_sensor,ntries=500):
         """
         Poll BUSY bit of a status reg
         @param num_sensor - sensor port number (0..3)
