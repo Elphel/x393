@@ -35,7 +35,18 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h03930122;      // Added debug output
+        parameter FPGA_VERSION =          32'h0393012d;      // debugging - working sync
+//        parameter FPGA_VERSION =          32'h0393012c;      // debugging - working sync
+//      parameter FPGA_VERSION =          32'h0393012b;      // debugging
+//      parameter FPGA_VERSION =          32'h0393012a;      // debugging
+//      parameter FPGA_VERSION =          32'h03930129;      // adding synchronization by discard packets
+//      parameter FPGA_VERSION =          32'h03930128;      // output dbg_segment_stb on [7]
+//      parameter FPGA_VERSION =          32'h03930127;      // output vsync_use, reduced sclk to 10MHz
+//      parameter FPGA_VERSION =          32'h03930126;      // fast slew to sensor
+//      parameter FPGA_VERSION =          32'h03930125;      // fast slew to sensor
+//      parameter FPGA_VERSION =          32'h03930124;      // more hardware debug circuitry
+//      parameter FPGA_VERSION =          32'h03930123;      // Implementing VSYNC/GPIO3 input
+//      parameter FPGA_VERSION =          32'h03930122;      // Added debug output
 //      parameter FPGA_VERSION =          32'h03930121;      // VOSPI setting MOSI to low, according to DS
 //      parameter FPGA_VERSION =          32'h03930120;      // VOSPI
 //      parameter FPGA_VERSION =          32'h03930108;      // parallel - in master branch

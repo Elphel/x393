@@ -43,11 +43,13 @@ module  sens_lepton3 #(
     parameter SENSIO_ADDR_MASK =   'h7f8,
     parameter SENSIO_CTRL =        'h0,
     parameter SENSIO_STATUS =      'h1,
+/*    
     parameter SENSIO_JTAG =        'h2,
     parameter SENSIO_WIDTH =       'h3, // set line width (1.. 2^16) if 0 - use HACT
     parameter SENSIO_DELAYS =      'h4, // 'h4..'h7 - each address sets 4 delays through 4 bytes of 32-bit data
+*/    
     parameter SENSIO_STATUS_REG =  'h21,
-
+/*
     parameter SENS_JTAG_PGMEN =    8,
     parameter SENS_JTAG_PROG =     6,
     parameter SENS_JTAG_TCK =      4,
@@ -96,6 +98,11 @@ module  sens_lepton3 #(
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =     10000,        // integer 4000-40000 - SS modulation period in ns
     parameter STATUS_ALIVE_WIDTH =     4,
+*/
+    parameter integer VOSPI_DRIVE =        16, // 12, (4,8,12,16)    parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
+    parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
+    parameter         VOSPI_IOSTANDARD =   "LVCMOS25",
+    parameter         VOSPI_SLEW =         "FAST", // "SLOW",
     
     // mode bits
     parameter VOSPI_MRST =            0,
@@ -111,15 +118,18 @@ module  sens_lepton3 #(
     parameter VOSPI_OUT_EN =         10,
     parameter VOSPI_OUT_EN_BITS =     2,
     parameter VOSPI_OUT_EN_SINGL =   12,
-    parameter VOSPI_RESET_CRC =      13,
+    parameter VOSPI_RESET_ERR =      13,
     parameter VOSPI_SPI_CLK =        14,
     parameter VOSPI_SPI_CLK_BITS =    2,
     parameter VOSPI_GPIO =           16,
     parameter VOSPI_GPIO_BITS =       8,
+    parameter VOSPI_VSYNC =          24,
+    parameter VOSPI_VSYNC_BITS =      2,
+    parameter VOSPI_NORESYNC =       26, // disable re-sync
+    parameter VOSPI_NORESYNC_BITS =   2,
+    parameter VOSPI_DBG_SRC =        28, // source of the debug output
+    parameter VOSPI_DBG_SRC_BITS =    4,
     
-    
-    parameter VOSPI_FAKE_OUT =       24, // to keep hardware
-    parameter VOSPI_MOSI =           25, // pot used
     parameter VOSPI_PACKET_WORDS =    80,
     parameter VOSPI_NO_INVALID =       1, // do not output invalid packets data
     parameter VOSPI_PACKETS_PER_LINE = 2,
@@ -177,13 +187,23 @@ module  sens_lepton3 #(
     input         dn6  // input reserved
     
 );
-    localparam VOSPI_STATUS_BITS = 14;
+    localparam VOSPI_STATUS_BITS = 15;
 // Status data (6 bits + 4)
     wire [VOSPI_STATUS_BITS-1:0] status;
     wire                  [ 3:0] segment_id;
-    wire                         dbg_running;       // output debug output for oscilloscope
+    wire                         dbg_combined;       // output debug output for oscilloscope
+    wire                  [ 7:0] dbg_sources;
+    reg                   [ 2:0] dbg_sel;          // @mclk, no need to re-sync
+    
+    wire                         dbg_running;
+    wire                  [ 1:0] dbg_vsync_rdy;
+    wire                         dbg_segment_stb;
+    wire                         dbg_will_sync;
+    wire                  [4:0]  dbg_state;
     wire                         crc_err_w;  // single-cycle CRC error
     reg                          crc_err_r;  // at least one CRC error happened since reset
+    wire                         sync_err_w;  // single-cycle synchronzation error
+    reg                          sync_err_r;  // at least one synchronzation error happened since reset
     wire                         in_busy;
     wire                         out_busy;
     wire                  [ 3:0] gpio_in;    // none currently used
@@ -192,15 +212,6 @@ module  sens_lepton3 #(
     wire                         fake_dn2; // input reserved
     wire                         fake_dn6;  // input reserved
 
-    assign status = {
-       fake_in,
-       crc_err_r,
-       out_busy,
-       in_busy,
-       gpio_in     [3:0],
-       segment_id  [3:0],      
-       out_busy | in_busy, senspgm_int
-    };
 
 // then re-sync to pclk (and to sns_mclk)
     reg         spi_nrst_mclk;
@@ -208,11 +219,13 @@ module  sens_lepton3 #(
     reg         segm0_ok_mclk; // from mode register?
     reg         out_en_mclk;   // single paulse - single frame, level - continuous
     wire        out_en_single_mclk;
-    wire        crc_reset_mclk;
+    wire        err_reset_mclk;
     reg         lwir_mrst_mclk;
     reg         lwir_pwdn_mclk;
     reg         sns_mclk_en_mclk;
     reg         spi_clk_en_mclk;
+    reg         vsync_use_mclk;
+    reg         noresync_mclk;
     wire [ 3:0] gpio_out;     // only [3] may be used 
     wire [ 3:0] gpio_en;      // none currently used
 
@@ -225,8 +238,13 @@ module  sens_lepton3 #(
     reg  [ 1:0] lwir_pwdn_pclk;
 //    reg  [ 1:0] sns_mclk_en_pclk;
     reg  [ 1:0] spi_clk_en_pclk;
+    reg  [ 1:0] vsync_use_pclk;
+    reg  [ 1:0] noresync_pclk;
+    reg  [ 1:0] vsync_pclk;
+    wire        vsync;
+    
     wire        out_en_single_pclk;
-    wire        crc_reset_pclk;
+    wire        err_reset_pclk;
 
 
 //    wire        fake_out;
@@ -264,11 +282,37 @@ module  sens_lepton3 #(
     assign fake_in = sns_ctl_int ^ mipi_dp_int ^ mipi_dn_int ^ mipi_clkp_int ^ mipi_clkn_int ^ fake_dp2 ^ fake_dn2 ^ fake_dn6;
 
     assign out_en_single_mclk = set_ctrl_r && data_r[VOSPI_OUT_EN_SINGL] && !mrst;
-    assign crc_reset_mclk   =   set_ctrl_r && data_r[VOSPI_RESET_CRC] && !mrst;
-///    assign fake_out =           set_ctrl_r && data_r[VOSPI_FAKE_OUT];
-///    assign spi_mosi_int =       set_ctrl_r && data_r[VOSPI_MOSI]; // not used
+    assign err_reset_mclk   =   set_ctrl_r && data_r[VOSPI_RESET_ERR] && !mrst;
 
     assign prsts = prst | !lwir_mrst_pclk[1];
+    assign vsync = gpio_in[3];
+
+    assign status = {
+       fake_in,
+       sync_err_r,
+       crc_err_r,
+       out_busy,
+       in_busy,
+       gpio_in     [3:0],
+       segment_id  [3:0],      
+       out_busy | in_busy, senspgm_int
+    };
+    
+    
+    assign dbg_combined= dbg_sel[2]?
+                             (dbg_sel[1]?( dbg_sel[0]? dbg_sources[7]:dbg_sources[6]):( dbg_sel[0]? dbg_sources[5]: dbg_sources[4])):
+                             (dbg_sel[1]?( dbg_sel[0]? dbg_sources[3]:dbg_sources[2]):( dbg_sel[0]? dbg_sources[1]: dbg_sources[0]));
+                             
+    assign dbg_sources[0] =   dbg_running;
+    assign dbg_sources[2:1] = dbg_vsync_rdy;
+    assign dbg_sources[3] =   dbg_state[0]; //  discard_segment;
+    assign dbg_sources[4] =   dbg_state[1]; //  in_busy;
+    assign dbg_sources[5] =   dbg_state[2]; //  out_busy;
+    assign dbg_sources[6] =   dbg_state[3]; //  hact;
+    assign dbg_sources[7] =   dbg_state[4]; //  dbg_will_sync; // dbg_segment_stb; // sof;
+
+//dbg_will_sync dbg_state
+                             
     
     always @(posedge mclk) begin
         if      (mrst)     data_r <= 0;
@@ -277,7 +321,7 @@ module  sens_lepton3 #(
         if (mrst)          set_status_r <=0;
         else               set_status_r <= cmd_we && (cmd_a== SENSIO_STATUS);                             
         
-        if (mrst) set_ctrl_r <=0;
+        if (mrst)          set_ctrl_r <=0;
         else               set_ctrl_r <=   cmd_we && (cmd_a== SENSIO_CTRL);
         
         if      (mrst)                                             spi_nrst_mclk <= 0;
@@ -303,6 +347,17 @@ module  sens_lepton3 #(
         
         if      (mrst)                                                           spi_clk_en_mclk <= 0;
         else if (set_ctrl_r && data_r[VOSPI_SPI_CLK + VOSPI_SPI_CLK_BITS - 1])   spi_clk_en_mclk <= data_r[VOSPI_SPI_CLK]; 
+
+        if      (mrst)                                                           vsync_use_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_VSYNC + VOSPI_VSYNC_BITS - 1])       vsync_use_mclk <= data_r[VOSPI_VSYNC]; 
+
+        if      (mrst)                                                           noresync_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_NORESYNC + VOSPI_NORESYNC_BITS - 1]) noresync_mclk <= data_r[VOSPI_NORESYNC]; 
+
+
+        if      (mrst)                                                           dbg_sel <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_DBG_SRC + VOSPI_DBG_SRC_BITS - 1])   dbg_sel <= data_r[VOSPI_DBG_SRC +: VOSPI_DBG_SRC_BITS-1]; 
+
     end 
     // resync to pclk    
     always @ (posedge pclk) begin
@@ -313,11 +368,18 @@ module  sens_lepton3 #(
         lwir_mrst_pclk[1:0] <=   {lwir_mrst_pclk[0],   lwir_mrst_mclk};
         lwir_pwdn_pclk[1:0] <=   {lwir_pwdn_pclk[0],   lwir_pwdn_mclk};
         spi_clk_en_pclk[1:0] <=  {spi_clk_en_pclk[0],  spi_clk_en_mclk}; 
+        vsync_use_pclk[1:0] <=   {vsync_use_pclk[0],   vsync_use_mclk}; 
+        noresync_pclk[1:0] <=    {noresync_pclk[0],    noresync_mclk}; 
+        
+        vsync_pclk[1:0] <=       {vsync_pclk[0],       vsync}; 
         
         out_en_r <=               out_en_single_pclk | out_en_pclk[1];
         
-        if (prst || crc_reset_pclk) crc_err_r <= 0;
+        if (prst || err_reset_pclk) crc_err_r <= 0;
         else if (crc_err_w)         crc_err_r <= 1;
+
+        if (prst || err_reset_pclk) sync_err_r <= 0;
+        else if (sync_err_w)        sync_err_r <= 1;
         
     end
     
@@ -347,8 +409,8 @@ module  sens_lepton3 #(
         .rst         (mrst),                     // input
         .src_clk     (mclk),                     // input
         .dst_clk     (pclk),                     // input
-        .in_pulse    (crc_reset_mclk),           // input
-        .out_pulse   (crc_reset_pclk),           // output
+        .in_pulse    (err_reset_mclk),           // input
+        .out_pulse   (err_reset_pclk),           // output
         .busy() // output
     );
 
@@ -360,8 +422,8 @@ module  sens_lepton3 #(
         prst_r <= prst;
     end
     oddr_ss #( // spi_clk
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW),
         .DDR_CLK_EDGE ("OPPOSITE_EDGE"),
         .INIT         (1'b0),
         .SRTYPE       ("SYNC")
@@ -376,10 +438,10 @@ module  sens_lepton3 #(
     );
     // sensor master clock (25MHz)
     iobuf #( // lwir_mclk
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) lwir_mclk_i (
         .O  (),                      // output
         .IO (lwir_mclk),             // inout I/O pad
@@ -388,10 +450,10 @@ module  sens_lepton3 #(
     );
 
     iobuf #( // spi_miso
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) spi_miso_i (
         .O  (spi_miso_int),         // output
         .IO (spi_miso),             // inout I/O pad
@@ -400,10 +462,10 @@ module  sens_lepton3 #(
     );
 
     iobuf #( // spi_mosi, not implemented in the sensor
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) spi_mosi_i (
         .O  (),                     // output - currently not used
         .IO (spi_mosi),             // inout I/O pad
@@ -413,10 +475,10 @@ module  sens_lepton3 #(
     );
     
      iobuf #( // spi_cs
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) spi_cs_i (
         .O  (),                     // output - currently not used
         .IO (spi_cs),               // inout I/O pad
@@ -437,10 +499,10 @@ module  sens_lepton3 #(
             );
         
             iobuf #(
-                .DRIVE        (PXD_DRIVE),
-                .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-                .IOSTANDARD   (PXD_IOSTANDARD),
-                .SLEW         (PXD_SLEW)
+                .DRIVE        (VOSPI_DRIVE),
+                .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+                .IOSTANDARD   (VOSPI_IOSTANDARD),
+                .SLEW         (VOSPI_SLEW)
             ) gpio_i (
                 .O  (gpio_in[i]),  // output - currently not used
                 .IO (gpio[i]),     // inout I/O pad
@@ -453,10 +515,10 @@ module  sens_lepton3 #(
 
 // for debug/test alive   
     iobuf #( // lwir_mrst
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) lwir_mrst_i (
         .O  (),                  // output - currently not used
         .IO (lwir_mrst),         // inout I/O pad
@@ -465,51 +527,51 @@ module  sens_lepton3 #(
     );
 
     iobuf #( // lwir_pwdn
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) lwir_pwdn_i (
         .O  (),                  // output - currently not used
         .IO (lwir_pwdn),         // inout I/O pad
-        .I  (lwir_pwdn_pclk[0]), // input
+        .I  (lwir_pwdn_pclk[1]), // input
         .T  (1'b0)               // input - always on
     );
     
 // MIPI - anyway it is not implemented, IOSTANDARD not known, put just single-ended input buffers
     ibuf_ibufg #(
-        .IOSTANDARD   (PXD_IOSTANDARD)
+        .IOSTANDARD   (VOSPI_IOSTANDARD)
     ) mipi_dp_i (
         .O(mipi_dp_int),        // output - currently not used
         .I(mipi_dp)             // inout I/O pad
     );
     
     ibuf_ibufg #(
-        .IOSTANDARD   (PXD_IOSTANDARD)
+        .IOSTANDARD   (VOSPI_IOSTANDARD)
     ) mipi_dn_i (
         .O(mipi_dn_int),        // output - currently not used
         .I(mipi_dn)             // inout I/O pad
     );
 
     ibuf_ibufg #(
-        .IOSTANDARD   (PXD_IOSTANDARD)
+        .IOSTANDARD   (VOSPI_IOSTANDARD)
     ) mipi_clkp_i (
         .O(mipi_clkp_int),        // output - currently not used
         .I(mipi_clkp)             // inout I/O pad
     );
 
     ibuf_ibufg #(
-        .IOSTANDARD   (PXD_IOSTANDARD)
+        .IOSTANDARD   (VOSPI_IOSTANDARD)
     ) mipi_clkn_i (
         .O(mipi_clkn_int),        // output - currently not used
         .I(mipi_clkn)             // inout I/O pad
     );
 
     iobuf #( // senspgm
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) senspgm_i (
         .O  (senspgm_int),         // output (detection of the SFE
         .IO (senspgm),             // inout I/O pad
@@ -518,10 +580,10 @@ module  sens_lepton3 #(
     );
 
     iobuf #( // sns_ctl
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) sns_ctl_i (
         .O  (sns_ctl_int),         // output - currently not used
         .IO (sns_ctl),             // inout I/O pad
@@ -530,20 +592,20 @@ module  sens_lepton3 #(
     );
 
     iobuf #( // sns_ctl
-        .DRIVE        (PXD_DRIVE),
-        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
-        .IOSTANDARD   (PXD_IOSTANDARD),
-        .SLEW         (PXD_SLEW)
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
     ) dp2_i (
         .O  (fake_dp2),            // output - currently not used
         .IO (dp2),                 // inout I/O pad
-        .I  (dbg_running),         // input
+        .I  (dbg_combined),         // input
         .T  (1'b0)                 // input - always on
     );
 
 /*
     ibuf_ibufg #(
-        .IOSTANDARD   (PXD_IOSTANDARD)
+        .IOSTANDARD   (VOSPI_IOSTANDARD)
     ) fake_dp2_i (
         .O(fake_dp2),
         .I(dp2)
@@ -551,14 +613,14 @@ module  sens_lepton3 #(
 */
 
     ibuf_ibufg #(
-        .IOSTANDARD   (PXD_IOSTANDARD)
+        .IOSTANDARD   (VOSPI_IOSTANDARD)
     ) fake_dn2_i (
         .O(fake_dn2),
         .I(dn2)
     );
 
     ibuf_ibufg #(
-        .IOSTANDARD   (PXD_IOSTANDARD)
+        .IOSTANDARD   (VOSPI_IOSTANDARD)
     ) fake_dn6_i (
         .O(fake_dn6),
         .I(dn6)
@@ -609,6 +671,9 @@ module  sens_lepton3 #(
         .exp_segment     (exp_segment),      // input[3:0] 
         .segm0_ok        (segm0_ok_r),       // input
         .out_en          (out_en_r),         // input
+        .vsync           (vsync_pclk[1]),    // input
+        .vsync_use       (vsync_use_pclk[1]),// input
+        .resync_disable  (noresync_pclk[1]), // input
         .spi_clken       (spi_clken),        // output
         .spi_cs          (spi_cs_int),       // output
         .miso            (spi_miso_int),     // input
@@ -621,12 +686,15 @@ module  sens_lepton3 #(
         .sof             (sof),              // output
         .eof             (eof),              // output
         .crc_err         (crc_err_w),        // output
+        .sync_err        (sync_err_w),       // output
         .id              (segment_id),       // output[3:0]
-        .dbg_running     (dbg_running)       // output debug output for oscilloscope
-         
+        .dbg_running     (dbg_running),      // output debug output for oscilloscope
+        .dbg_vsync_rdy   (dbg_vsync_rdy),    // output[1:0]'
+        .dbg_segment_stb (dbg_segment_stb),  // output 
+        .dbg_will_sync   (dbg_will_sync),     // output
+        .dbg_state       (dbg_state) // output[4:0]         
+        
     );
-
-
     cmd_deser #(
         .ADDR        (SENSIO_ADDR),
         .ADDR_MASK   (SENSIO_ADDR_MASK),
@@ -660,35 +728,6 @@ module  sens_lepton3 #(
     );
     
  
-// for debug/test alive kept for debug if it will be needed
-/*   
-    pulse_cross_clock pulse_cross_clock_vact_a_mclk_i (
-        .rst         (irst),                     // input
-        .src_clk     (ipclk),                    // input
-        .dst_clk     (mclk),                     // input
-        .in_pulse    (vact_out_pre && !vact_r),  // input
-        .out_pulse   (vact_a_mclk),              // output
-        .busy() // output
-    );
-
-    pulse_cross_clock pulse_cross_clock_hact_ext_a_mclk_i (
-        .rst         (irst),                     // input
-        .src_clk     (ipclk),                    // input
-        .dst_clk     (mclk),                     // input
-        .in_pulse    (hact_ext && !hact_ext_r),  // input
-        .out_pulse   (hact_ext_a_mclk),          // output
-        .busy() // output
-    );
-
-    pulse_cross_clock pulse_cross_clock_hact_a_mclk_i (
-        .rst         (irst),                     // input
-        .src_clk     (ipclk),                    // input
-        .dst_clk     (mclk),                     // input
-        .in_pulse    (hact_r && !hact_r2),       // input
-        .out_pulse   (hact_a_mclk),              // output
-        .busy() // output
-    );
-*/
 
 endmodule
 

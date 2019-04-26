@@ -58,6 +58,9 @@ module  vospi_segment_61#(
     input  [3:0]  exp_segment,     // expected segment (1,2,3,4)
     input         segm0_ok,        // OK to read segment 0 instead of the current ( exp_segment still has to be 1..4)
     input         out_en,          // enable frame output generation (will finish current frame if disabled, single-pulse
+    input         vsync,           // from GPIO[3], 70 usec on, period ~10ms (should be re-sampled to pclk
+    input         vsync_use,       // if  set - wait for vsync to read a segment
+    input         resync_disable,  // disable re-synchronizing packets using discard signature @pclk
                                    // runs a single frame
     // SPI signals
     output        spi_clken,       // enable clock on spi_clk
@@ -67,14 +70,19 @@ module  vospi_segment_61#(
     output        in_busy,         // waiting for or receiving a segment
     output        out_busy,
     output reg    segment_done,    // finished receiving segment (good or bad). next after busy off
-    output        discard_segment, // segment was disc arded  
+    output        discard_segment, // segment was discarded  
     output [15:0] dout,            // 16-bit data received
     output        hact,            // data valid 
     output        sof,             // start of frame
     output        eof,             // end of frame
     output        crc_err,         // crc error happened for any packet (valid at eos)
+    output        sync_err,        // sync error happened for any packet (valid at eos)
     output  [3:0] id,               // segment number  (valid at eos)
-    output        dbg_running      // debug output for segment_running
+    output        dbg_running,      // debug output for segment_running
+    output  [1:0] dbg_vsync_rdy,
+    output        dbg_segment_stb,
+    output        dbg_will_sync,
+    output [ 4:0] dbg_state
 );
     localparam VOSPI_PACKETS_FRAME = (VOSPI_SEGMENT_LAST - VOSPI_SEGMENT_FIRST + 1) *
                                      (VOSPI_PACKET_LAST - VOSPI_PACKET_FIRST + 1);
@@ -91,7 +99,7 @@ module  vospi_segment_61#(
     reg   [ 7:0] segment_start_packet; // full packet number in a fragment for the start of the segment
     reg   [ 7:0] full_packet;          // current full packet number in a fragment
     reg   [ 7:0] full_packet_verified; // next packet verified (will not be discarded later)
-    reg          full_packet_frame;    // lsb of the input frame  // not needed?
+///    reg          full_packet_frame;    // lsb of the input frame  // not needed?
     reg          discard_set;          // start discard_segment_r
     wire         segment_good_w;       // recognized expected segment, OK to read FIFO
     reg          segment_good;         // recognized expected segment, OK to read FIFO
@@ -111,6 +119,7 @@ module  vospi_segment_61#(
     wire         segment_stb;
 //  reg          crc_err_r;
     wire         packet_crc_err;
+    wire         packet_sync_err;
     reg          packet_start;
     wire         we; // write data to buffer
     wire         segment_done_w;
@@ -118,6 +127,8 @@ module  vospi_segment_61#(
     reg          segment_running; // may be discarded
     reg    [3:0] segment_id_r;
     wire         frame_in_done;
+    
+    reg    [1:0] vsync_rdy;  
 //    reg          packet_running; // may be discarded
 
     assign is_first_segment_w = (exp_segment == VOSPI_SEGMENT_FIRST);
@@ -127,7 +138,11 @@ module  vospi_segment_61#(
     assign segment_good_w =     (segment_id == exp_segment) || ((packet_id[15:12] == 0) && segm0_ok);
     assign segment_stb =        id_stb && (packet_id[11:0] == VOSPI_PACKET_TTT);
     assign we =                 segment_running && !discard_segment_r && packet_dv;
-    assign crc_err =            packet_done && packet_crc_err; // crc_err_r;
+
+// these errors appear as pulses
+    assign crc_err =            packet_done && packet_crc_err;      // crc_err_r;
+    assign sync_err =           packet_done &&     packet_sync_err; // crc_err_r;
+
     assign segment_done_w =     segment_running && packet_done && (packet_id[11:0] == VOSPI_PACKET_LAST) ;
     assign id =                 segment_id_r;
     assign frame_in_done =      segment_done_w && last_segment_in;
@@ -136,10 +151,33 @@ module  vospi_segment_61#(
     assign discard_segment=     discard_segment_r;    // segment was disc arded  
     
     assign dbg_running =        segment_running;
+    assign dbg_vsync_rdy[1:0] = vsync_rdy[1:0];
+    assign dbg_segment_stb =    segment_stb;
+    
     // To Buffer
     always @ (posedge clk) begin
-//        if      (rst)   first_segment_in <= 0;
-//        else if (start) first_segment_in <= is_first_segment_w;
+    
+//        if      (rst)    vsync_rdy[0] <= 0;
+//        else if (start)  vsync_rdy[0] <= ~vsync_use; // bypass
+//        else if (!vsync) vsync_rdy[0] <= 1;
+
+        if      (rst)                   vsync_rdy[0] <= 0;
+        else if (!vsync_use)            vsync_rdy[0] <= 1;
+        else if (start)                 vsync_rdy[0] <= 0; // ~vsync_use; // bypass
+        else if (!vsync)                vsync_rdy[0] <= 1;
+
+        if      (rst)                   vsync_rdy[1] <= 0;
+        else if (!vsync_use)            vsync_rdy[1] <= 1;
+        else if (start)                 vsync_rdy[1] <= 0; // ~vsync_use; // bypass
+        else if (vsync && vsync_rdy[0]) vsync_rdy[1] <= 1;
+
+
+
+//        vsync_rdy[1] <= !rst && !start && vsync_rdy[0] && (vsync_rdy[1] || vsync || (start_d && !vsync_use)); // 1 - OK to read packets
+
+///        vsync_rdy[0] <= !rst && (!vsync_use || (!start));
+///        vsync_rdy[1] <= !rst && (!vsync_use || (!start && vsync_rdy[0] && (vsync_rdy[1] || vsync ))); // 1 - OK to read packets
+
 
         if      (rst)   last_segment_in <= 0;
         else if (start) last_segment_in <= is_last_segment_w;
@@ -181,15 +219,15 @@ module  vospi_segment_61#(
         if      (!segment_busy_r || start)                           segment_running <= 0;
         else if (id_stb && (packet_id[11:0] == VOSPI_PACKET_FIRST))  segment_running <= 1;
         
-//        packet_start <= !rst && !packet_busy && segment_busy_r;
-        packet_start <= !rst && !packet_busy && segment_busy_r && !packet_start;
+///        packet_start <= !rst && !packet_busy && segment_busy_r && !packet_start;
+        packet_start <= !rst && !packet_busy && segment_busy_r && !packet_start && vsync_rdy[1];
         
         if      (rst)            waddr <= 0;
         else if (discard_set)    waddr <= segment_start_waddr;
         else if (we)             waddr <= waddr + 1;
         
-        if      (rst)            full_packet_frame <= 0; // not needed?
-        else if (frame_in_done)  full_packet_frame <=~full_packet_frame;
+///        if      (rst)            full_packet_frame <= 0; // not needed?
+///        else if (frame_in_done)  full_packet_frame <=~full_packet_frame;
     end
 // From buffer, generating frame
     reg          out_request;
@@ -215,7 +253,9 @@ module  vospi_segment_61#(
     reg    [2:0] hact_r;
     reg          pend_eof_r;
     reg   [10:0] raddr;
-
+//    wire         sync_end;
+    wire         will_sync;
+//    wire  [ 4:0] dbg_state;
 
 
     assign start_out_frame_w = segment_good && is_first_segment_w && out_request;
@@ -231,7 +271,10 @@ module  vospi_segment_61#(
     assign hact =              hact_r[2];
     assign eof =               eof_r[2];
     assign sof =               sof_r;
-    assign out_busy =          out_request | out_frame;
+    assign out_busy =          resync_disable; // out_request | out_frame;
+    
+    
+    assign dbg_will_sync = will_sync;
     
     always @ (posedge clk) begin
         if (rst) hact_r <= 0;
@@ -273,25 +316,51 @@ module  vospi_segment_61#(
     
     end
     
+    reg    resync_disable_r;
+    wire   will_sync_masked;
+    assign will_sync_masked = !resync_disable_r && will_sync;
+
+    always @ (posedge clk) begin 
+        if (rst || !will_sync) resync_disable_r <= resync_disable;
+    end
+    
+    
     vospi_packet_80 #(
         .VOSPI_PACKET_WORDS  (VOSPI_PACKET_WORDS), // 80,
         .VOSPI_NO_INVALID    (VOSPI_NO_INVALID)    // 1
     ) vospi_packet_80_i (
+        .rst            (rst),             // input
+        .clk            (clk),             // input
+        .start          (packet_start),    // input
+        .spi_clken      (spi_clken),       // output
+        .spi_cs         (spi_cs),          // output
+        .miso           (miso),            // input
+        .will_sync      (will_sync_masked),// input
+        .dout           (packet_dout),     // output[15:0] 
+        .dv             (packet_dv),       // output
+        .packet_done    (packet_done),     // output
+        .packet_busy    (packet_busy),     // output
+        .crc_err        (packet_crc_err),  // output
+        .sync_err       (packet_sync_err), // output        
+        .id             (packet_id),       // output[15:0] 
+        .packet_invalid (packet_invalid),  // output - not used, processed internally, no dv generated
+        .id_stb         (id_stb)           // output reg 
+    );
+    
+    vospi_resync #(
+        .VOSPI_PACKET_WORDS(80),
+        .VOSPI_RESYNC_ZEROS(11)
+    ) vospi_resync_i (
         .rst            (rst),            // input
         .clk            (clk),            // input
-        .start          (packet_start),   // input
-        .spi_clken      (spi_clken),      // output
-        .spi_cs         (spi_cs),         // output
+        .spi_clken      (spi_clken),      // input
+        .spi_cs         (spi_cs),         // input
         .miso           (miso),           // input
-        .dout           (packet_dout),    // output[15:0] 
-        .dv             (packet_dv),      // output
-        .packet_done    (packet_done),    // output
-        .packet_busy    (packet_busy),    // output
-        .crc_err        (packet_crc_err), // output
-        .id             (packet_id),      // output[15:0] 
-        .packet_invalid (packet_invalid), // output - not used, processed internally, no dv generated
-        .id_stb         (id_stb)          // output reg 
+//        .sync_end       (sync_end),       // output
+        .will_sync      (will_sync),
+        .dbg_state      (dbg_state) // output[4:0] 
     );
+    
 
    ram_var_w_var_r #(
         .COMMENT("vospi_segment"),

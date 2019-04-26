@@ -1788,26 +1788,28 @@ assign axi_grst = axi_rst_pre;
         .SENS_LENS_POST_SCALE_MASK  (SENS_LENS_POST_SCALE_MASK),
         .SENSIO_RADDR               (SENSIO_RADDR),
         .SENSIO_ADDR_MASK           (SENSIO_ADDR_MASK),
+`ifdef LWIR
+`else        
         .SENSIO_CTRL                (SENSIO_CTRL),
         .SENS_CTRL_MRST             (SENS_CTRL_MRST),
         .SENS_CTRL_ARST             (SENS_CTRL_ARST),
         .SENS_CTRL_ARO              (SENS_CTRL_ARO),
         .SENS_CTRL_RST_MMCM         (SENS_CTRL_RST_MMCM),
-`ifdef HISPI                
+  `ifdef HISPI                
         .SENS_CTRL_IGNORE_EMBED     (SENS_CTRL_IGNORE_EMBED),
-`else                
+  `else                
         .SENS_CTRL_EXT_CLK          (SENS_CTRL_EXT_CLK),
-`endif                
+  `endif                
         .SENS_CTRL_LD_DLY           (SENS_CTRL_LD_DLY),
-`ifdef HISPI
+  `ifdef HISPI
         .SENS_CTRL_GP0              (SENS_CTRL_GP0),
         .SENS_CTRL_GP1              (SENS_CTRL_GP1),
-`else        
+  `else        
         .SENS_CTRL_QUADRANTS        (SENS_CTRL_QUADRANTS),
         .SENS_CTRL_ODD              (SENS_CTRL_ODD),
         .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
         .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
-`endif                
+  `endif                
         .SENSIO_STATUS              (SENSIO_STATUS),
         .SENSIO_JTAG                (SENSIO_JTAG),
         .SENS_JTAG_PGMEN            (SENS_JTAG_PGMEN),
@@ -1815,10 +1817,11 @@ assign axi_grst = axi_rst_pre;
         .SENS_JTAG_TCK              (SENS_JTAG_TCK),
         .SENS_JTAG_TMS              (SENS_JTAG_TMS),
         .SENS_JTAG_TDI              (SENS_JTAG_TDI),
-`ifndef HISPI
+  `ifndef HISPI
         .SENSIO_WIDTH               (SENSIO_WIDTH),
-`endif        
+  `endif
         .SENSIO_DELAYS              (SENSIO_DELAYS),
+`endif
         .SENSI2C_ABS_RADDR          (SENSI2C_ABS_RADDR),
         .SENSI2C_REL_RADDR          (SENSI2C_REL_RADDR),
         .SENSI2C_ADDR_MASK          (SENSI2C_ADDR_MASK),
@@ -1836,6 +1839,10 @@ assign axi_grst = axi_rst_pre;
         .SENSI2C_SLEW               (SENSI2C_SLEW),
 `ifdef HISPI
 `elsif LWIR
+        .VOSPI_DRIVE                (VOSPI_DRIVE),
+        .VOSPI_IBUF_LOW_PWR         (VOSPI_IBUF_LOW_PWR),
+        .VOSPI_IOSTANDARD           (VOSPI_IOSTANDARD),
+        .VOSPI_SLEW                 (VOSPI_SLEW),
         .VOSPI_MRST                 (VOSPI_MRST), //               0,
         .VOSPI_MRST_BITS            (VOSPI_MRST_BITS), //          2,
         .VOSPI_PWDN                 (VOSPI_PWDN), //               2,
@@ -1849,13 +1856,17 @@ assign axi_grst = axi_rst_pre;
         .VOSPI_OUT_EN               (VOSPI_OUT_EN), //            10,
         .VOSPI_OUT_EN_BITS          (VOSPI_OUT_EN_BITS), //        2,
         .VOSPI_OUT_EN_SINGL         (VOSPI_OUT_EN_SINGL), //      12,
-        .VOSPI_RESET_CRC            (VOSPI_RESET_CRC), //         13,
+        .VOSPI_RESET_ERR            (VOSPI_RESET_ERR), //         13,
         .VOSPI_SPI_CLK              (VOSPI_SPI_CLK), //           14,
         .VOSPI_SPI_CLK_BITS         (VOSPI_SPI_CLK_BITS), //       2,
         .VOSPI_GPIO                 (VOSPI_GPIO), //              16,
         .VOSPI_GPIO_BITS            (VOSPI_GPIO_BITS), //          8,
-        .VOSPI_FAKE_OUT             (VOSPI_FAKE_OUT), //          24, // to keep hardware
-        .VOSPI_MOSI                 (VOSPI_MOSI), //              25, // not used
+        .VOSPI_VSYNC                (VOSPI_VSYNC), //             24,
+        .VOSPI_VSYNC_BITS           (VOSPI_VSYNC_BITS), //         2,
+        .VOSPI_NORESYNC             (VOSPI_NORESYNC), //          26,
+        .VOSPI_NORESYNC_BITS        (VOSPI_NORESYNC_BITS), //      2,
+        .VOSPI_DBG_SRC              (VOSPI_DBG_SRC), // =         28, // source of the debug output
+        .VOSPI_DBG_SRC_BITS         (VOSPI_DBG_SRC_BITS), // =     4,
         .VOSPI_PACKET_WORDS         (VOSPI_PACKET_WORDS),//       80,
         .VOSPI_NO_INVALID           (VOSPI_NO_INVALID), //         1,
         .VOSPI_PACKETS_PER_LINE     (VOSPI_PACKETS_PER_LINE), //   2,
@@ -1887,20 +1898,30 @@ assign axi_grst = axi_rst_pre;
         .SENS_SYNC_LBITS            (SENS_SYNC_LBITS),
         .SENS_SYNC_LATE_DFLT        (SENS_SYNC_LATE_DFLT),
         .SENS_SYNC_MINBITS          (SENS_SYNC_MINBITS),
-        .SENS_SYNC_MINPER           (SENS_SYNC_MINPER),
-        .IDELAY_VALUE               (IDELAY_VALUE),
+        .SENS_SYNC_MINPER           (SENS_SYNC_MINPER)
+// start with comma
+
+`ifdef LWIR
+`else        
+       ,.IDELAY_VALUE               (IDELAY_VALUE),
         .PXD_DRIVE                  (PXD_DRIVE),
         .PXD_IBUF_LOW_PWR           (PXD_IBUF_LOW_PWR),
         .PXD_SLEW                   (PXD_SLEW),
         .SENS_REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
-        .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
+        .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
+`endif        
+
+// start with comma
 `ifdef HISPI
-        .PXD_CAPACITANCE            (PXD_CAPACITANCE),
+       ,.PXD_CAPACITANCE            (PXD_CAPACITANCE),
         .PXD_CLK_DIV                (PXD_CLK_DIV),
-        .PXD_CLK_DIV_BITS           (PXD_CLK_DIV_BITS),
+        .PXD_CLK_DIV_BITS           (PXD_CLK_DIV_BITS)
 `endif
-        .SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
-//        .SENS_PCLK_PERIOD           (SENS_PCLK_PERIOD),
+
+// start with comma
+`ifdef LWIR
+`else
+       ,.SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
         .SENS_BANDWIDTH             (SENS_BANDWIDTH),
         .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
         .CLKFBOUT_MULT_SENSOR       (CLKFBOUT_MULT_SENSOR),
@@ -1922,6 +1943,9 @@ assign axi_grst = axi_rst_pre;
         .SENS_SS_EN                 (SENS_SS_EN),
         .SENS_SS_MODE               (SENS_SS_MODE),
         .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
+`endif        
+        
+        
 `ifdef HISPI
        ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
         .HISPI_NUMLANES                (HISPI_NUMLANES),

@@ -275,16 +275,26 @@ module  simul_lwir160x120_vospi # (
     `endif
 `endif
 integer i;
+localparam DISCARD_GAP = 14;
 initial begin
 // $readmemh({`ROOTPATH,"/input_data/sensor_16.dat"},sensor_data);
   $readmemh(DATA_FILE,sensor_data,0);
   //    reg  [OUT_BITS-1:0] packet_bad [0: PACKET_WORDS-1];
-  packet_bad[0] = 'h0f00;
-  packet_bad[1] = 'h5220; // calculate and put crc?
+//  packet_bad[0] = 'h0f00;
+//  packet_bad[1] = 'h5220; // calculate and put crc?
+  packet_bad[0] = 'h0fff;
+  packet_bad[1] = 'hffff; // calculate and put crc?
+  
   for (i = 2; i < PACKET_WORDS; i = i+1) begin
-    packet_bad[i] = 0;
+    if      (i == (DISCARD_GAP + 0)) packet_bad[i] = 16'h0137;
+    else if (i == (DISCARD_GAP + 1)) packet_bad[i] = 16'hb7c2;
+    else if (i == (DISCARD_GAP + 2)) packet_bad[i] = 16'ha004;
+    else if (i == (DISCARD_GAP + 3)) packet_bad[i] = 16'hdd9d;
+    else if (i == (DISCARD_GAP + 4)) packet_bad[i] = 16'h0001;
+    else if (i == (DISCARD_GAP + 5)) packet_bad[i] = 16'h0001;
+    else                             packet_bad[i] = 0;
   end
-  packet_bad[1] = 'h5220; // calculate and put crc?
+//  packet_bad[1] = 'h5220; // calculate and put crc?
 end
 always @ (posedge mclk) begin
     if (rst || (ms_cntr == 0)) ms_cntr <= MS_PERIOD -1;

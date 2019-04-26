@@ -1890,14 +1890,13 @@ class X393ExportC(object):
         dw.append(("gpio_in",                4, 4,0,  "Input from GPIO0-GPIO3, only GPIO3 may be used as segment ready"))
         dw.append(("in_busy",                8, 1,0,  "Frame segments are waited for or received to FIFO"))
         dw.append(("out_busy",               9, 1,0,  "received frame is being transferred to video memory"))
-        dw.append(("crc_err",               10, 1,0,  "At least 1 CRC error happened since reset by command bit"))
-        dw.append(("fake_in",               11, 1,0,  "Just to keep hardware"))
+        dw.append(("crc_err",               10, 1,0,  "At least 1 CRC error happened since reset by the command bit"))
+        dw.append(("sync_err",              11, 1,0,  "At least 1 synchronization error happened since reset by the command bit"))
+        dw.append(("fake_in",               12, 1,0,  "Just to keep hardware"))
         dw.append(("senspgmin",             24, 1,0,  "senspgm pin state (0 means non-FPGA SFE is present)"))
         dw.append(("busy",                  25, 1,0,  "in_busy OR out_busy"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
         return dw
-
-
 
     def _enc_status_sens_i2c(self):
         dw=[]
@@ -2139,15 +2138,19 @@ class X393ExportC(object):
         dw.append(("out_en",       vrlg.VOSPI_OUT_EN,           1,   0,  "Enable output sensor data to memory"))
         dw.append(("out_en_set",   vrlg.VOSPI_OUT_EN + 1,       1,   0,  "Set enable sensor data to memory"))
         dw.append(("out_single",   vrlg.VOSPI_OUT_EN_SINGL,     1,   0,  "Enable single sensor frame to memory"))
-        dw.append(("reset_crc",    vrlg.VOSPI_RESET_CRC,        1,   0,  "Reset CRC error status bit"))
+        dw.append(("reset_err",    vrlg.VOSPI_RESET_ERR,        1,   0,  "Reset CRC and synchronization error status bits"))
         dw.append(("spi_clk",      vrlg.VOSPI_SPI_CLK,          1,   0,  "Enable continuous SPI clock (0 - only when SPI CS is active)"))
         dw.append(("spi_clk_set",  vrlg.VOSPI_SPI_CLK + 1,      1,   0,  "When set to 1, SPI CLK enable  is set  to the 'spi_clk' field value"))
         dw.append(("gpio0",        vrlg.VOSPI_GPIO  ,  2,   0, "Output control for GPIO0: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
         dw.append(("gpio1",        vrlg.VOSPI_GPIO+2,  2,   0, "Output control for GPIO1: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
         dw.append(("gpio2",        vrlg.VOSPI_GPIO+4,  2,   0, "Output control for GPIO2: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
         dw.append(("gpio3",        vrlg.VOSPI_GPIO+6,  2,   0, "Output control for GPIO3: 0 - nop, 1 - set low, 2 - set high, 3 - input"))
-        dw.append(("fake",         vrlg.VOSPI_FAKE_OUT,         1,   0,  "Just to keep I/O ports from optimization"))
-        dw.append(("mosi",         vrlg.VOSPI_MOSI,             1,   0,  "Just to keep I/O ports from optimization"))
+        dw.append(("vsync_use",    vrlg.VOSPI_VSYNC,            1,   0,  "Wait for the VSYNC (GPIO3). Should be enabled via i2c"))
+        dw.append(("vsync_use_set",vrlg.VOSPI_VSYNC+1,          1,   0,  "Enable vsync_use set/reset"))
+        dw.append(("noresync",     vrlg.VOSPI_NORESYNC,         1,   0,  "Disable re-synchronization by discard packets"))
+        dw.append(("noresync_set", vrlg.VOSPI_NORESYNC+1,       1,   0,  "Enable noresync set/reset"))
+        dw.append(("dbg_src",      vrlg.VOSPI_DBG_SRC,          3,   0,  "Hardware debug source:0-running,1-vsync_rdy[0],2-vsync_rdy[1],3-discard_segment,4-in_busy,5-out_busy,6-hact,7-sof"))
+        dw.append(("dbg_src_set",  vrlg.VOSPI_DBG_SRC+3,        1,   0,  "Enable write to dbg_src"))
         return dw
     
     def _enc_sensio_jtag(self):

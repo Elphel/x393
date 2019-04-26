@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Fri Apr 19 05:17:10 2019
+[*] Thu Apr 25 23:42:15 2019
 [*]
-[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190418181641542.fst"
-[dumpfile_mtime] "Fri Apr 19 04:43:12 2019"
-[dumpfile_size] 1314203898
+[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190425172733675.fst"
+[dumpfile_mtime] "Thu Apr 25 23:38:14 2019"
+[dumpfile_size] 13065486
 [savefile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/cocotb/x393_cocotb_lwir_04.sav"
-[timestart] 949964300
+[timestart] 34144200
 [size] 1804 1171
 [pos] -1 -1
-*-12.313575 949969888 1019686803 237352388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.717531 34226035 1019686803 237352388 855469045 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_lwir160x120_vospi1_i.
 [treeopen] x393_dut.x393_i.
@@ -68,9 +68,11 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_0_i.genblk1.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_0_i.genblk1.sens_hist_ram_snglclk_32_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_mux_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.crc16_x16x12x5x0_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.chn1wr_buf_i.
@@ -87,8 +89,8 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_sync_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.i_frsync_pclk0.
-[sst_width] 346
-[signals_width] 388
+[sst_width] 204
+[signals_width] 335
 [sst_expanded] 1
 [sst_vpaned_height] 459
 @820
@@ -3104,6 +3106,9 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.hact_start_w
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.hact_end_w
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.hact_r[2:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.running_good
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_stb
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_good
 @200
 -
 @28
@@ -3155,6 +3160,18 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 @800200
 -vospi_packet80_0
 @28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.will_sync
+[color] 1
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.sync_end
+[color] 3
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.last_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_invalid_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.set_id_r
+[color] 2
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.sync_err
+@200
+-
+@28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.pre_lsb_w
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.wcntr[6:0]
@@ -3170,8 +3187,13 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 -group_end
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.start
-@22
+@c00022
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.cs_r[1:0]
+@28
+(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.cs_r[1:0]
+(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.cs_r[1:0]
+@1401200
+-group_end
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.spi_clken
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.spi_cs
@@ -3206,7 +3228,15 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.d_r[15:0]
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.set_id_r
+@800028
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_end[2:0]
+@28
+(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_end[2:0]
+(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_end[2:0]
+(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_end[2:0]
+@1001200
+-group_end
+@28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_busy
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_done
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_invalid
@@ -3218,6 +3248,8 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_done
 [color] 6
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.crc_err
+[color] 7
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.sync_err
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.crc_r[15:0]
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.crc_w[15:0]
@@ -3231,6 +3263,73 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.dmask[15:0]
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.den_r
+@800200
+-vospi_resync
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.rst
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.clk
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.clken
+@8022
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.count_ones[4:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.count_tail[10:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.count_zeros[8:0]
+@28
+[color] 3
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.miso
+[color] 3
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.will_sync
+[color] 2
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.set_ending
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.spi_clken
+[color] 7
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.spi_cs
+@800022
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state[4:0]
+@28
+[color] 5
+(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state[4:0]
+[color] 5
+(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state[4:0]
+[color] 5
+(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state[4:0]
+[color] 5
+(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state[4:0]
+[color] 5
+(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state[4:0]
+@1001200
+-group_end
+@800022
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
+@28
+(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
+@29
+(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
+@28
+(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
+(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
+(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
+@1001200
+-group_end
+@800022
+[color] 3
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_set[4:0]
+@28
+[color] 3
+(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_set[4:0]
+[color] 3
+(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_set[4:0]
+[color] 3
+(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_set[4:0]
+[color] 3
+(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_set[4:0]
+[color] 3
+(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_set[4:0]
+@1001200
+-group_end
+@200
+-
+@1000200
+-vospi_resync
 @800200
 -crc
 @28
@@ -3257,8 +3356,6 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.cmd_we
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.crc_err_r
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.crc_err_w
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.crc_reset_mclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.crc_reset_pclk
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.data_r[31:0]
 @28
@@ -3268,7 +3365,6 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.exp_segment[3:0]
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.fake_in
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.fake_out
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.gpio[3:0]
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.gpio_en[3:0]
@@ -3337,12 +3433,10 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_miso
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_miso_int
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_mosi
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_mosi_int
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_nrst_mclk
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_nrst_pclk[1:0]
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_segment
 @22
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.status[13:0]
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.status_ad[7:0]
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.status_rq
@@ -8085,19 +8179,13 @@ x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.window_
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.window_width[13:0]
 @1000200
 -memsensor0
-@28
-x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.uncompressed
 @22
-x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_buf_ra[11:0]
-x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.buf_pxd[7:0]
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.window_height[16:0]
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.window_width[13:0]
 @28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.buf_we
-@23
+@22
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.buf_din[63:0]
-@8022
-x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ram_512x64w_1kx32r_i.waddr[8:0]
 @200
 -
 @800200

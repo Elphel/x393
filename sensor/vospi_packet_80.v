@@ -48,11 +48,14 @@ module  vospi_packet_80#(
     output        spi_clken,      // enable clock on spi_clk
     output        spi_cs,         // active low
     input         miso,           // input from the sensor
+    input         will_sync,      // discard packet detected, sync_end will follow (from resync module)
+
     output [15:0] dout,           // 16-bit data received,valid at dv and 15 cycles after
     output        dv,             // data valid strobe
     output        packet_done,    // packet received,
     output        packet_busy,    // packet busy (same as spi_clken, !spi_cs)
     output        crc_err,        // crc error, valid with packet_done
+    output        sync_err,       // synchronization error, valid with packet_done
     output [15:0] id,             // packet ID (0x*f** - invlaid, if packet index = 20, 4 MSb - segment (- 0 invalid) 
     output        packet_invalid, // set early, valid with packet done
     output reg    id_stb          // id, packet invalid are set 
@@ -66,6 +69,7 @@ module  vospi_packet_80#(
     
     reg  [1:0]  cs_r;
     wire        pre_last_w;
+    reg         last_r;
     reg  [ 2:0] packet_end;
     reg         set_id_r;
     reg         set_crc_r;
@@ -81,6 +85,11 @@ module  vospi_packet_80#(
     reg  [15:0] id_r;
     wire [15:0] dmask;
     reg         packet_invalid_r;
+    reg         will_sync_d;
+    wire        sync_end;       // last bit in a packet (turn off CS/spi_clken) (from resync module)
+    reg         sync_err_r;
+    
+    assign sync_end = !will_sync && will_sync_d; // trailing edge, so will fire if disabled
     
     assign packet_busy =    cs_r[0]; // clk_en_r;
     assign spi_clken =      cs_r[0]; // clk_en_r;
@@ -93,29 +102,37 @@ module  vospi_packet_80#(
     assign dmask =          packet_header[1] ? (packet_header[0] ? 16'h0fff: 16'h0) : 16'hffff ;
     
     assign crc_err =        packet_end[2] && (crc_r != crc_w);
+    assign sync_err =       packet_end[2] && sync_err_r;
+    
+    
+    
     assign dv =             dv_r;
     assign dout =           d_r;
     assign packet_invalid = packet_invalid_r;
     
     always @ (posedge clk) begin
-        if (rst || packet_end[0]) cs_r[0] <= 0;
-        else if (start)           cs_r[0] <= 1;
+        will_sync_d <= will_sync;
+    
+///        if (rst || packet_end[0]) cs_r[0] <= 0;
+        if (rst || packet_end[0] || sync_end) cs_r[0] <= 0;
+        else if (start)                       cs_r[0] <= 1;
         
         cs_r[1] <= cs_r[0];
         
         if (rst || !cs_r[0] || packet_end[0]) bcntr <= 0;
-        else                                  bcntr <= bcntr + 1;
+        else                                  bcntr <= bcntr + 1; // keep running even for sync
         
         if (rst || !cs_r[0] || packet_end[0]) lsb_r <= 0;
-        else                                  lsb_r <= pre_lsb_w;
+        else                                  lsb_r <= pre_lsb_w; // generate even for sync
         
         copy_word <= !rst && lsb_r;
         
         if (rst || !cs_r[0] || packet_end[0]) wcntr <= 0;
-        else if (lsb_r)                       wcntr <= wcntr + 1;
+        else if (lsb_r)                       wcntr <= wcntr + 1;  // keep running even for sync
         
         if (rst || !cs_r[0] ) packet_end[1:0] <= 0;
-        else                  packet_end[1:0] <= {packet_end[0], pre_last_w};
+///        else                  packet_end[1:0] <= {packet_end[0], pre_last_w};
+        else                  packet_end[1:0] <= {packet_end[0] | sync_end,  pre_last_w & ~will_sync}; // do not generate premature if running sync
 
         if (rst)              packet_end[2] <= 0;
         else                  packet_end[2] <= packet_end[1];
@@ -138,10 +155,18 @@ module  vospi_packet_80#(
         
         dv_r <=              set_d_r && !(packet_invalid_r && VOSPI_NO_INVALID);
         
-        if (rst || start)    packet_invalid_r <= 0;
-        else if (set_id_r)   packet_invalid_r <= (d_sr[11:8] == 4'hf);
+        if (rst || start)   packet_invalid_r <= 0;
+        else if (will_sync) packet_invalid_r <= 1; // Will_sync disqualifies even started (erroneously) a good packet
+        else if (set_id_r)  packet_invalid_r <= (d_sr[11:8] == 4'hf);
+        
+        
+        last_r <= pre_last_w;
+        
+        if (rst || start)               sync_err_r <= 0;
+        else if (sync_end && ! last_r)  sync_err_r <= 1;
         
         id_stb <= set_id_r;
+        
         if (rst || start || packet_done) packet_header <= 2'b11;
         else if (copy_word)              packet_header <= {packet_header[0], 1'b0};
         

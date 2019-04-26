@@ -559,13 +559,17 @@
     parameter VOSPI_OUT_EN =            10,
     parameter VOSPI_OUT_EN_BITS =        2,
     parameter VOSPI_OUT_EN_SINGL =      12,
-    parameter VOSPI_RESET_CRC =         13,
+    parameter VOSPI_RESET_ERR =         13,
     parameter VOSPI_SPI_CLK =           14,
     parameter VOSPI_SPI_CLK_BITS =       2,
     parameter VOSPI_GPIO =              16,
     parameter VOSPI_GPIO_BITS =          8,
-    parameter VOSPI_FAKE_OUT =          24, // to keep hardware
-    parameter VOSPI_MOSI =              25, // not used
+    parameter VOSPI_VSYNC =             24,
+    parameter VOSPI_VSYNC_BITS =         2,
+    parameter VOSPI_NORESYNC =          26, // disable re-sync
+    parameter VOSPI_NORESYNC_BITS =      2,
+    parameter VOSPI_DBG_SRC =           28,
+    parameter VOSPI_DBG_SRC_BITS =       4,
     parameter VOSPI_PACKET_WORDS =      80,
     parameter VOSPI_NO_INVALID =         1, // do not output invalid packets data
     parameter VOSPI_PACKETS_PER_LINE =   2,
@@ -616,6 +620,13 @@
     parameter integer PXD_DRIVE =        12,
     parameter PXD_IBUF_LOW_PWR =         "TRUE",
     parameter PXD_SLEW =                 "SLOW",
+
+    parameter integer VOSPI_DRIVE =        16, // 12, (4,8,12,16)
+    parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
+    parameter         VOSPI_IOSTANDARD =   "LVCMOS25",
+    parameter         VOSPI_SLEW =         "FAST", // "SLOW",
+
+
 `ifdef use200Mhz
     parameter real SENS_REFCLK_FREQUENCY = 300.0, // same as REFCLK_FREQUENCY
 `else
@@ -1017,8 +1028,8 @@
         parameter CLKOUT_DIV_PCLK =           2, //480 MHz  // 4, //  240 MHz
         parameter CLKOUT_DIV_PCLK2X =         1, //9060 MHz // 2, //  480 MHz
     `else
-        parameter CLKOUT_DIV_PCLK =           48, //  20 MHz
-        parameter CLKOUT_DIV_PCLK2X =         24, //  40 MHz
+        parameter CLKOUT_DIV_PCLK =           96, // 10MHz // 48, //  20 MHz
+        parameter CLKOUT_DIV_PCLK2X =         48, // 20 MHz // 24, //  40 MHz
     `endif
     
   `else
