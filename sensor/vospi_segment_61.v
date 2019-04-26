@@ -45,7 +45,7 @@ module  vospi_segment_61#(
     parameter VOSPI_SEGMENT_FIRST =    1,
     parameter VOSPI_SEGMENT_LAST =     4,
     parameter VOSPI_PACKET_FIRST =     0,
-    parameter VOSPI_PACKET_LAST =     60,
+    parameter VOSPI_PACKET_LAST =     60,  // with telemetry
     parameter VOSPI_PACKET_TTT =      20,  // line number where segment number is provided
     parameter VOSPI_SOF_TO_HACT =      2,  // clock cycles from SOF to HACT
     parameter VOSPI_HACT_TO_HACT_EOF = 2  // minimal clock cycles from HACT to HACT or to EOF
@@ -61,6 +61,7 @@ module  vospi_segment_61#(
     input         vsync,           // from GPIO[3], 70 usec on, period ~10ms (should be re-sampled to pclk
     input         vsync_use,       // if  set - wait for vsync to read a segment
     input         resync_disable,  // disable re-synchronizing packets using discard signature @pclk
+//    input         use_telemetry,   // use 61- packets per segment (last segment = 60), 0 - 60 packets
                                    // runs a single frame
     // SPI signals
     output        spi_clken,       // enable clock on spi_clk

@@ -304,12 +304,13 @@ module  sens_lepton3 #(
                              (dbg_sel[1]?( dbg_sel[0]? dbg_sources[3]:dbg_sources[2]):( dbg_sel[0]? dbg_sources[1]: dbg_sources[0]));
                              
     assign dbg_sources[0] =   dbg_running;
-    assign dbg_sources[2:1] = dbg_vsync_rdy;
-    assign dbg_sources[3] =   dbg_state[0]; //  discard_segment;
-    assign dbg_sources[4] =   dbg_state[1]; //  in_busy;
-    assign dbg_sources[5] =   dbg_state[2]; //  out_busy;
-    assign dbg_sources[6] =   dbg_state[3]; //  hact;
-    assign dbg_sources[7] =   dbg_state[4]; //  dbg_will_sync; // dbg_segment_stb; // sof;
+    assign dbg_sources[1] =   dbg_will_sync; //
+    assign dbg_sources[2] =   dbg_vsync_rdy[1]; //
+    assign dbg_sources[3] =   discard_segment;  // dbg_state[0]; //
+    assign dbg_sources[4] =   in_busy;          // dbg_state[1]; //
+    assign dbg_sources[5] =   out_busy;         // dbg_state[2]; //  
+    assign dbg_sources[6] =   hact;             // dbg_state[3]; //  
+    assign dbg_sources[7] =   sof;              // dbg_state[4]; //  
 
 //dbg_will_sync dbg_state
                              

@@ -48,6 +48,7 @@ module  simul_lwir160x120_vospi # (
     parameter FRAME_PERIOD    = 946969,  // 26.4 fps @25 MHz
     parameter SEGMENT_PERIOD  =  5100, // min 05063? // 10000,  // 236742,  // 26.4 fps @25 MHz
     parameter SEGMENTS_SEQ    =      8,  // 12 With ITAR
+    parameter SEGMENT_START   =      7, // 0,
     
     parameter FRAME_DELAY     =    100,  // mclk period to start first frame 1
     parameter MS_PERIOD       =     25   // ahould actually be 25000  
@@ -360,7 +361,7 @@ always @ (posedge mclk) begin
     if (segment_run) packed_data[copy_wa_full] <= copy_din; // copy_d;
 
     
-    if (rst)                  segments_cntr <= 0;
+    if (rst)                  segments_cntr <= SEGMENT_START;
     else if (segment_done)    segments_cntr <= (segments_cntr == (SEGMENTS_SEQ - 1)) ? 0: (segments_cntr + 1);
     
     
