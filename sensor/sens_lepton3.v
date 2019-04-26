@@ -113,20 +113,22 @@ module  sens_lepton3 #(
     parameter VOSPI_MCLK_BITS =       2,
     parameter VOSPI_EN =              6,
     parameter VOSPI_EN_BITS =         2,
-    parameter VOSPI_SEGM0_OK =        8,
-    parameter VOSPI_SEGM0_OK_BITS =   2,
-    parameter VOSPI_OUT_EN =         10,
+    parameter VOSPI_OUT_EN =          8,
     parameter VOSPI_OUT_EN_BITS =     2,
-    parameter VOSPI_OUT_EN_SINGL =   12,
-    parameter VOSPI_RESET_ERR =      13,
-    parameter VOSPI_SPI_CLK =        14,
+    parameter VOSPI_OUT_EN_SINGL =   10,
+    parameter VOSPI_RESET_ERR =      11,
+    parameter VOSPI_SPI_CLK =        12,
     parameter VOSPI_SPI_CLK_BITS =    2,
-    parameter VOSPI_GPIO =           16,
-    parameter VOSPI_GPIO_BITS =       8,
-    parameter VOSPI_VSYNC =          24,
+    parameter VOSPI_SEGM0_OK =       14,
+    parameter VOSPI_SEGM0_OK_BITS =   2,
+    parameter VOSPI_VSYNC =          16,
     parameter VOSPI_VSYNC_BITS =      2,
-    parameter VOSPI_NORESYNC =       26, // disable re-sync
+    parameter VOSPI_NORESYNC =       18, // disable re-sync
     parameter VOSPI_NORESYNC_BITS =   2,
+    parameter VOSPI_TELEMETRY =      20,
+    parameter VOSPI_TELEMETRY_BITS =  2,
+    parameter VOSPI_GPIO =           22,
+    parameter VOSPI_GPIO_BITS =       6,
     parameter VOSPI_DBG_SRC =        28, // source of the debug output
     parameter VOSPI_DBG_SRC_BITS =    4,
     
@@ -226,6 +228,7 @@ module  sens_lepton3 #(
     reg         spi_clk_en_mclk;
     reg         vsync_use_mclk;
     reg         noresync_mclk;
+    reg         use_telemetry_mclk;
     wire [ 3:0] gpio_out;     // only [3] may be used 
     wire [ 3:0] gpio_en;      // none currently used
 
@@ -240,6 +243,7 @@ module  sens_lepton3 #(
     reg  [ 1:0] spi_clk_en_pclk;
     reg  [ 1:0] vsync_use_pclk;
     reg  [ 1:0] noresync_pclk;
+    reg  [ 1:0] use_telemetry_pclk;
     reg  [ 1:0] vsync_pclk;
     wire        vsync;
     
@@ -355,6 +359,10 @@ module  sens_lepton3 #(
         if      (mrst)                                                           noresync_mclk <= 0;
         else if (set_ctrl_r && data_r[VOSPI_NORESYNC + VOSPI_NORESYNC_BITS - 1]) noresync_mclk <= data_r[VOSPI_NORESYNC]; 
 
+        if      (mrst)                                                             use_telemetry_mclk <= 0;
+        else if (set_ctrl_r && data_r[VOSPI_TELEMETRY + VOSPI_TELEMETRY_BITS - 1]) use_telemetry_mclk <= data_r[VOSPI_TELEMETRY]; 
+
+
 
         if      (mrst)                                                           dbg_sel <= 0;
         else if (set_ctrl_r && data_r[VOSPI_DBG_SRC + VOSPI_DBG_SRC_BITS - 1])   dbg_sel <= data_r[VOSPI_DBG_SRC +: VOSPI_DBG_SRC_BITS-1]; 
@@ -362,15 +370,16 @@ module  sens_lepton3 #(
     end 
     // resync to pclk    
     always @ (posedge pclk) begin
-        spi_nrst_pclk[1:0] <=    {spi_nrst_pclk[0],    spi_nrst_mclk};
-        spi_en_pclk[1:0] <=      {spi_en_pclk[0],      spi_en_mclk};
-        segm0_ok_pclk[1:0] <=    {segm0_ok_pclk[0],    segm0_ok_mclk};
-        out_en_pclk[1:0] <=      {out_en_pclk[0],      out_en_mclk};
-        lwir_mrst_pclk[1:0] <=   {lwir_mrst_pclk[0],   lwir_mrst_mclk};
-        lwir_pwdn_pclk[1:0] <=   {lwir_pwdn_pclk[0],   lwir_pwdn_mclk};
-        spi_clk_en_pclk[1:0] <=  {spi_clk_en_pclk[0],  spi_clk_en_mclk}; 
-        vsync_use_pclk[1:0] <=   {vsync_use_pclk[0],   vsync_use_mclk}; 
-        noresync_pclk[1:0] <=    {noresync_pclk[0],    noresync_mclk}; 
+        spi_nrst_pclk[1:0] <=      {spi_nrst_pclk[0],      spi_nrst_mclk};
+        spi_en_pclk[1:0] <=        {spi_en_pclk[0],        spi_en_mclk};
+        segm0_ok_pclk[1:0] <=      {segm0_ok_pclk[0],      segm0_ok_mclk};
+        out_en_pclk[1:0] <=        {out_en_pclk[0],        out_en_mclk};
+        lwir_mrst_pclk[1:0] <=     {lwir_mrst_pclk[0],     lwir_mrst_mclk};
+        lwir_pwdn_pclk[1:0] <=     {lwir_pwdn_pclk[0],     lwir_pwdn_mclk};
+        spi_clk_en_pclk[1:0] <=    {spi_clk_en_pclk[0],    spi_clk_en_mclk}; 
+        vsync_use_pclk[1:0] <=     {vsync_use_pclk[0],     vsync_use_mclk}; 
+        noresync_pclk[1:0] <=      {noresync_pclk[0],      noresync_mclk}; 
+        use_telemetry_pclk[1:0] <= {use_telemetry_pclk[0], use_telemetry_mclk};
         
         vsync_pclk[1:0] <=       {vsync_pclk[0],       vsync}; 
         
@@ -505,14 +514,29 @@ module  sens_lepton3 #(
                 .IOSTANDARD   (VOSPI_IOSTANDARD),
                 .SLEW         (VOSPI_SLEW)
             ) gpio_i (
-                .O  (gpio_in[i]),  // output - currently not used
+                .O  (gpio_in[i]),  // output
                 .IO (gpio[i]),     // inout I/O pad
                 .I  (gpio_out[i]), // input
-                .T  (!gpio_en[i])  // input - always on
+                .T  (!gpio_en[i])  // input
             );
         
         end
     endgenerate
+
+// No control bits left for GPIO[3] - it is hard-wired as input VSYNC (start of segment)    
+    iobuf #(
+        .DRIVE        (VOSPI_DRIVE),
+        .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
+        .IOSTANDARD   (VOSPI_IOSTANDARD),
+        .SLEW         (VOSPI_SLEW)
+    ) gpio3_i (
+        .O  (gpio_in[3]),  // output
+        .IO (gpio[3]),     // inout I/O pad
+        .I  (1'b0),        // input
+        .T  (1'b1)         // input - always off
+    );
+    
+    
 
 // for debug/test alive   
     iobuf #( // lwir_mrst
@@ -675,6 +699,7 @@ module  sens_lepton3 #(
         .vsync           (vsync_pclk[1]),    // input
         .vsync_use       (vsync_use_pclk[1]),// input
         .resync_disable  (noresync_pclk[1]), // input
+        .use_telemetry   (use_telemetry_pclk[1]), // input
         .spi_clken       (spi_clken),        // output
         .spi_cs          (spi_cs_int),       // output
         .miso            (spi_miso_int),     // input

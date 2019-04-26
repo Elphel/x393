@@ -466,9 +466,11 @@ class X393Sensor(object):
                                  gpio0 =      None, 
                                  gpio1 =      None, 
                                  gpio2 =      None, 
-                                 gpio3 =      None, 
+#                                 gpio3 =      None,
+                                 telemetry =  None, 
                                  vsync_use =  None,
                                  noresync =   None,
+                                 
                                  dbg_src =    None):
         """
         Combine sensor I/O control parameters into a control word
@@ -484,11 +486,11 @@ class X393Sensor(object):
         @param gpio0 =      Output control for GPIO0: 0 - nop, 1 - set low, 2 - set high, 3 - input
         @param gpio1 =      Output control for GPIO0: 1 - nop, 1 - set low, 2 - set high, 3 - input 
         @param gpio2 =      Output control for GPIO0: 2 - nop, 1 - set low, 2 - set high, 3 - input 
-        @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param telemetry =  Enable (1) /disable (0) telemetry data lines (should be set in the sensor too, or it will hang)
         @param vsync_use =  Wait for VSYNC (should be enabled over i2c) before reading each segment
         @param noresync =   Disable resynchronization by discard packets
         @param dbg_src =    source of the hardware debug output: 0 - dbg_running
-                                                                 1 - vsync_rdy[0]
+                                                                 1 - will_sync
                                                                  2 - vsync_rdy[1]
                                                                  3 - discard_segment
                                                                  4 - in_busy
@@ -522,8 +524,12 @@ class X393Sensor(object):
             rslt |= (gpio1 & 3) <<       (vrlg.VOSPI_GPIO + 2)
         if not gpio2 is None:
             rslt |= (gpio2 & 3) <<       (vrlg.VOSPI_GPIO + 4)
-        if not gpio3 is None:
-            rslt |= (gpio3 & 3) <<       (vrlg.VOSPI_GPIO + 6)
+            
+#        if not gpio3 is None:
+#            rslt |= (gpio3 & 3) <<       (vrlg.VOSPI_GPIO + 6)
+        if not telemetry is None:
+            rslt |= (2,3)[telemetry] <<  vrlg.VOSPI_TELEMETRY
+            
         if not vsync_use is None:
             rslt |= (2,3)[vsync_use] <<  vrlg.VOSPI_VSYNC
         if not noresync is None:
@@ -1074,7 +1080,8 @@ class X393Sensor(object):
                                  gpio0 =      None, 
                                  gpio1 =      None, 
                                  gpio2 =      None, 
-                                 gpio3 =      None, 
+#                                 gpio3 =      None,
+                                 telemetry =  None, 
                                  vsync_use =  None,
                                  noresync =   None,
                                  dbg_src =    None):
@@ -1093,7 +1100,7 @@ class X393Sensor(object):
         @param gpio0 =      Output control for GPIO0: 0 - nop, 1 - set low, 2 - set high, 3 - input
         @param gpio1 =      Output control for GPIO0: 1 - nop, 1 - set low, 2 - set high, 3 - input 
         @param gpio2 =      Output control for GPIO0: 2 - nop, 1 - set low, 2 - set high, 3 - input 
-        @param gpio3 =      Output control for GPIO0: 3 - nop, 1 - set low, 2 - set high, 3 - input 
+        @param telemetry =  Enable (1) /disable (0) telemetry data lines (should be set in the sensor too, or it will hang)
         @param vsync_use =  Wait for VSYNC (should be enabled over i2c) before reading each segment
         @param noresync =   Disable resynchronization by discard packets
         @param dbg_src =    source of the hardware debug output: 0 - dbg_running
@@ -1121,7 +1128,8 @@ class X393Sensor(object):
                            gpio0 =      gpio0, 
                            gpio1 =      gpio1, 
                            gpio2 =      gpio2, 
-                           gpio3 =      gpio3, 
+#                           gpio3 =      gpio3, 
+                           telemetry =  telemetry, 
                            vsync_use =  vsync_use,
                            noresync =   noresync,
                            dbg_src =    dbg_src)
@@ -1141,7 +1149,8 @@ class X393Sensor(object):
                            gpio0 =      gpio0, 
                            gpio1 =      gpio1, 
                            gpio2 =      gpio2, 
-                           gpio3 =      gpio3, 
+#                           gpio3 =      gpio3, 
+                           telemetry =  telemetry, 
                            vsync_use =  vsync_use,
                            noresync =   noresync,
                            dbg_src =    dbg_src)

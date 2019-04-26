@@ -61,7 +61,7 @@ module  vospi_segment_61#(
     input         vsync,           // from GPIO[3], 70 usec on, period ~10ms (should be re-sampled to pclk
     input         vsync_use,       // if  set - wait for vsync to read a segment
     input         resync_disable,  // disable re-synchronizing packets using discard signature @pclk
-//    input         use_telemetry,   // use 61- packets per segment (last segment = 60), 0 - 60 packets
+    input         use_telemetry,   // use 61- packets per segment (last segment = 60), 0 - 60 packets
                                    // runs a single frame
     // SPI signals
     output        spi_clken,       // enable clock on spi_clk
@@ -85,8 +85,16 @@ module  vospi_segment_61#(
     output        dbg_will_sync,
     output [ 4:0] dbg_state
 );
+    localparam VOSPI_PACKET_LAST_NOTEL = VOSPI_PACKET_LAST -1;
+
+
     localparam VOSPI_PACKETS_FRAME = (VOSPI_SEGMENT_LAST - VOSPI_SEGMENT_FIRST + 1) *
                                      (VOSPI_PACKET_LAST - VOSPI_PACKET_FIRST + 1);
+
+
+    localparam VOSPI_PACKETS_FRAME_NOTEL = (VOSPI_SEGMENT_LAST - VOSPI_SEGMENT_FIRST + 1) *
+                                           (VOSPI_PACKET_LAST_NOTEL - VOSPI_PACKET_FIRST + 1);
+                                     
     localparam VOSPI_LINE_WIDTH = VOSPI_PACKET_WORDS * VOSPI_PACKETS_PER_LINE;
     
     // save fifo write pointer, write packet full index (in the frame)
@@ -144,7 +152,7 @@ module  vospi_segment_61#(
     assign crc_err =            packet_done && packet_crc_err;      // crc_err_r;
     assign sync_err =           packet_done &&     packet_sync_err; // crc_err_r;
 
-    assign segment_done_w =     segment_running && packet_done && (packet_id[11:0] == VOSPI_PACKET_LAST) ;
+    assign segment_done_w =     segment_running && packet_done && (packet_id[11:0] == (use_telemetry?VOSPI_PACKET_LAST:VOSPI_PACKET_LAST_NOTEL)) ;
     assign id =                 segment_id_r;
     assign frame_in_done =      segment_done_w && last_segment_in;
     
@@ -257,12 +265,12 @@ module  vospi_segment_61#(
 //    wire         sync_end;
     wire         will_sync;
 //    wire  [ 4:0] dbg_state;
-
+    wire    [7:0] packets_frame = use_telemetry?VOSPI_PACKETS_FRAME:VOSPI_PACKETS_FRAME_NOTEL;
 
     assign start_out_frame_w = segment_good && is_first_segment_w && out_request;
     assign packets_avail =     {1'b0,full_packet_verified} - {1'b0,full_packet_out} - VOSPI_PACKETS_PER_LINE;
-//    assign frame_out_done_w =  packet_out_done && (full_packet_out == (VOSPI_PACKETS_FRAME - 1));
-    assign frame_out_done_w =  hact_end_w  &&  (full_packet_out == (VOSPI_PACKETS_FRAME - VOSPI_PACKETS_PER_LINE));
+//    assign frame_out_done_w =  hact_end_w  &&  (full_packet_out == (VOSPI_PACKETS_FRAME - VOSPI_PACKETS_PER_LINE));
+    assign frame_out_done_w =  hact_end_w  &&  (full_packet_out == (packets_frame - VOSPI_PACKETS_PER_LINE));
     
     assign frame_dav =         !packets_avail[8] || out_pending;
     assign hact_start_w =      out_frame && (duration_cntr == 0) && !hact_r[0] && frame_dav;

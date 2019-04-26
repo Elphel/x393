@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h0393012d;      // debugging - working sync
+        parameter FPGA_VERSION =          32'h0393012e;      // re-arranged control bits, added telemetry on/off
+//        parameter FPGA_VERSION =          32'h0393012d;      // debugging - working sync
 //        parameter FPGA_VERSION =          32'h0393012c;      // debugging - working sync
 //      parameter FPGA_VERSION =          32'h0393012b;      // debugging
 //      parameter FPGA_VERSION =          32'h0393012a;      // debugging

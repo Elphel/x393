@@ -101,7 +101,7 @@ module  vospi_packet_80#(
 //    assign dmask =          den_r ? 16'hffff: (wcntr[0]?16'h0: 16'h0fff);
     assign dmask =          packet_header[1] ? (packet_header[0] ? 16'h0fff: 16'h0) : 16'hffff ;
     
-    assign crc_err =        packet_end[2] && (crc_r != crc_w);
+    assign crc_err =        packet_end[2] && (crc_r != crc_w) && !packet_invalid_r; // discard packets have 16'hffff in CRC field, do not record error
     assign sync_err =       packet_end[2] && sync_err_r;
     
     
