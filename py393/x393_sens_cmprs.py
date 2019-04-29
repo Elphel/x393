@@ -1820,12 +1820,20 @@ class X393SensCmprs(object):
                 elif sensorType == x393_sensor.SENSOR_INTERFACE_VOSPI:
                     #slave address 0x2a(of 0x7f)
                     #address - 16bit, data 16 bits
-                    for page in (0,                         # Most of the commands
-                                 0xf8,0xf9,0xfa,0xfb,       # Block DATA Buffer 0 (page 10 of FLIR LEPTON(R) Software IDD)
+                    self.x393Sensor.set_sensor_i2c_table_reg_wr (
+                                    num_sensor = num_sensor,
+                                    page       = 0, # page0 - directly, Most of the commands
+                                    slave_addr = slave_addr,
+                                    rah        = 0,
+                                    num_bytes  = 4,
+                                    bit_delay  = i2c_delay,
+                                    verbose = verbose)
+                    for page in (0xf8,0xf9,0xfa,0xfb,       # Block DATA Buffer 0 (page 10 of FLIR LEPTON(R) Software IDD)
                                  0xfc,0xfd,0xfe,0xff):      # Block DATA Buffer 1 (page 10 of FLIR LEPTON(R) Software IDD)
+                        # will register to pages 0x01 ... 0x08
                         self.x393Sensor.set_sensor_i2c_table_reg_wr (
                                         num_sensor = num_sensor,
-                                        page       = page,
+                                        page       = page - 0xf7, 
                                         slave_addr = slave_addr,
                                         rah        = page,
                                         num_bytes  = 4,
@@ -1834,7 +1842,7 @@ class X393SensCmprs(object):
 
                     self.x393Sensor.set_sensor_i2c_table_reg_rd ( # last page used for read
                                     num_sensor =    num_sensor,
-                                    page       =    0x01,
+                                    page       =    0xff,
                                     two_byte_addr = 1,
                                     num_bytes_rd =  2,
                                     bit_delay  =    i2c_delay,
