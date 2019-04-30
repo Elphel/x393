@@ -582,10 +582,10 @@
     parameter VOSPI_PACKET_LAST =       60,
     parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
 `ifdef SIMULATION
-    parameter VOSPI_SOF_TO_HACT =        1000,  // clock cycles from SOF to HACT
-    parameter VOSPI_HACT_TO_HACT_EOF =   1000,  // pixel clock is 480 MHz, need to slow down for memory
+    parameter VOSPI_SOF_TO_HACT =     1000,  // clock cycles from SOF to HACT
+    parameter VOSPI_HACT_TO_HACT_EOF =1000,  // pixel clock is 480 MHz, need to slow down for memory
 `else
-    parameter VOSPI_SOF_TO_HACT =        10,  // clock cycles from SOF to HACT
+    parameter VOSPI_SOF_TO_HACT =      100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
 `endif    
     parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 

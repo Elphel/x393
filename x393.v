@@ -1879,7 +1879,7 @@ assign axi_grst = axi_rst_pre;
         .VOSPI_PACKET_FIRST         (VOSPI_PACKET_FIRST), //       0,
         .VOSPI_PACKET_LAST          (VOSPI_PACKET_LAST), //       60,
         .VOSPI_PACKET_TTT           (VOSPI_PACKET_TTT), //        20,
-        .VOSPI_SOF_TO_HACT          (VOSPI_SOF_TO_HACT), //        2,
+        .VOSPI_SOF_TO_HACT          (VOSPI_SOF_TO_HACT), //      100,
         .VOSPI_HACT_TO_HACT_EOF     (VOSPI_HACT_TO_HACT_EOF), //   2,
         .VOSPI_MCLK_HALFDIV         (VOSPI_MCLK_HALFDIV), //       4
         

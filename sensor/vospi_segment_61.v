@@ -47,7 +47,7 @@ module  vospi_segment_61#(
     parameter VOSPI_PACKET_FIRST =     0,
     parameter VOSPI_PACKET_LAST =     60,  // with telemetry
     parameter VOSPI_PACKET_TTT =      20,  // line number where segment number is provided
-    parameter VOSPI_SOF_TO_HACT =      2,  // clock cycles from SOF to HACT
+    parameter VOSPI_SOF_TO_HACT =    100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF = 2  // minimal clock cycles from HACT to HACT or to EOF
     
 //    parameter VOSPI_HACT_TO_EOF =      2   // clock cycles from HACT to EOF
@@ -83,8 +83,12 @@ module  vospi_segment_61#(
     output  [1:0] dbg_vsync_rdy,
     output        dbg_segment_stb,
     output        dbg_will_sync,
-    output [ 4:0] dbg_state
+    output [ 4:0] dbg_state,
+    output        dbg_frame_start,  // from receiving first packet to SOF
+    output        dbg_tel_sync,    // 2 words from Software revision
+    output        dbg_tel_sync_out    // 2 words from Software revision
 );
+
     localparam VOSPI_PACKET_LAST_NOTEL = VOSPI_PACKET_LAST -1;
 
 
@@ -137,7 +141,9 @@ module  vospi_segment_61#(
     reg    [3:0] segment_id_r;
     wire         frame_in_done;
     
-    reg    [1:0] vsync_rdy;  
+    reg    [1:0] vsync_rdy;
+    reg          dbg_frame_start_r; // set when starting the first packet in a frame, off with SOF 
+      
 //    reg          packet_running; // may be discarded
 
     assign is_first_segment_w = (exp_segment == VOSPI_SEGMENT_FIRST);
@@ -162,6 +168,9 @@ module  vospi_segment_61#(
     assign dbg_running =        segment_running;
     assign dbg_vsync_rdy[1:0] = vsync_rdy[1:0];
     assign dbg_segment_stb =    segment_stb;
+    assign dbg_frame_start =    dbg_frame_start_r;
+    assign dbg_tel_sync =       d8208;
+    assign dbg_tel_sync_out =   h8208;
     
     // To Buffer
     always @ (posedge clk) begin
@@ -228,6 +237,9 @@ module  vospi_segment_61#(
         if      (!segment_busy_r || start)                           segment_running <= 0;
         else if (id_stb && (packet_id[11:0] == VOSPI_PACKET_FIRST))  segment_running <= 1;
         
+        if      (rst || sof_w)                                                            dbg_frame_start_r <= 0;
+        else if (id_stb && (packet_id[11:0] == VOSPI_PACKET_FIRST) && is_first_segment_w) dbg_frame_start_r <= 1;
+        
 ///        packet_start <= !rst && !packet_busy && segment_busy_r && !packet_start;
         packet_start <= !rst && !packet_busy && segment_busy_r && !packet_start && vsync_rdy[1];
         
@@ -262,6 +274,8 @@ module  vospi_segment_61#(
     reg    [2:0] hact_r;
     reg          pend_eof_r;
     reg   [10:0] raddr;
+    reg  d6110, d8208;
+    reg  h6110, h8208; // output with hact
 //    wire         sync_end;
     wire         will_sync;
 //    wire  [ 4:0] dbg_state;
@@ -286,6 +300,23 @@ module  vospi_segment_61#(
     assign dbg_will_sync = will_sync;
     
     always @ (posedge clk) begin
+    
+//        .dout           (packet_dout),     // output[15:0] 
+//        .dv             (packet_dv),       // output
+        if (packet_dv) begin
+            d6110 <= packet_dout == 16'h6110; //
+            d8208 <= (packet_dout == 16'h8208) && d6110; //;
+        end
+
+        if (hact_r[2]) begin
+            h6110 <= dout == 16'h6110; //
+            h8208 <= (dout == 16'h8208) && h6110; //;
+        end
+        
+        //h6110, h8208
+        
+        
+        
         if (rst) hact_r <= 0;
         else     hact_r  <= {hact_r[1:0], hact_start_w | (hact_r[0] & ~hact_end_w)};
     

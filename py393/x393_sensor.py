@@ -1104,7 +1104,7 @@ class X393Sensor(object):
         @param vsync_use =  Wait for VSYNC (should be enabled over i2c) before reading each segment
         @param noresync =   Disable resynchronization by discard packets
         @param dbg_src =    source of the hardware debug output: 0 - dbg_running
-                                                                 1 - vsync_rdy[0]
+                                                                 1 - will_sync
                                                                  2 - vsync_rdy[1]
                                                                  3 - discard_segment
                                                                  4 - in_busy

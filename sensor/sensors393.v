@@ -269,7 +269,7 @@ module  sensors393 #(
     parameter VOSPI_PACKET_FIRST =       0,
     parameter VOSPI_PACKET_LAST =       60,
     parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
-    parameter VOSPI_SOF_TO_HACT =        2,  // clock cycles from SOF to HACT
+    parameter VOSPI_SOF_TO_HACT =      100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
     parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
     
@@ -753,9 +753,9 @@ module  sensors393 #(
                 .VOSPI_PACKET_FIRST            (VOSPI_PACKET_FIRST), //       0,
                 .VOSPI_PACKET_LAST             (VOSPI_PACKET_LAST), //       60,
                 .VOSPI_PACKET_TTT              (VOSPI_PACKET_TTT), //        20,
-                .VOSPI_SOF_TO_HACT             (VOSPI_SOF_TO_HACT), //        2,
+                .VOSPI_SOF_TO_HACT             (VOSPI_SOF_TO_HACT), //      100,
                 .VOSPI_HACT_TO_HACT_EOF        (VOSPI_HACT_TO_HACT_EOF), //   2,
-                .VOSPI_MCLK_HALFDIV            (VOSPI_MCLK_HALFDIV) //       4
+                .VOSPI_MCLK_HALFDIV            (VOSPI_MCLK_HALFDIV) //        4
                 
 `else
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),

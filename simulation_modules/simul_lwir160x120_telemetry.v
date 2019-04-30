@@ -68,7 +68,8 @@ module  simul_lwir160x120_telemetry(
             telemetry_rev             [15:0],  // word   0
             telemetry_time            [31:0],  // words  1.. 2
             telemetry_status          [31:0],  // words  3.. 4
-            {8{16'b0}},                        // words  5..12
+//            {8{16'b0}},                        // words  5..12
+            {16'h6110, 16'h8208, 16'h29a6, 16'h96a2, 16'h1045, 16'h076c, 16'h2400, 16'h0000 }, // words  5..12
             telemetry_srev            [63:0],  // words 13..16
             {3{16'b0}},                        // words 17..19
             telemetry_frame           [31:0],  // words 20..21

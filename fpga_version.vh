@@ -35,7 +35,12 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h0393012e;      // re-arranged control bits, added telemetry on/off
+        parameter FPGA_VERSION =          32'h03930133;      // Testing sof to hact delay
+//        parameter FPGA_VERSION =          32'h03930132;      // Sync from serial bumber start, added output (with hact)
+//        parameter FPGA_VERSION =          32'h03930131;      // Sync from serial bumber start
+//        parameter FPGA_VERSION =          32'h03930130;      // Adding output for receive start frame
+//        parameter FPGA_VERSION =          32'h0393012f;      // debugging resync on othjer sesnor
+//        parameter FPGA_VERSION =          32'h0393012e;      // re-arranged control bits, added telemetry on/off
 //        parameter FPGA_VERSION =          32'h0393012d;      // debugging - working sync
 //        parameter FPGA_VERSION =          32'h0393012c;      // debugging - working sync
 //      parameter FPGA_VERSION =          32'h0393012b;      // debugging

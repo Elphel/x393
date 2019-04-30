@@ -140,7 +140,7 @@ module  sens_lepton3 #(
     parameter VOSPI_PACKET_FIRST =     0,
     parameter VOSPI_PACKET_LAST =     60,
     parameter VOSPI_PACKET_TTT =      20,  // line number where segment number is provided
-    parameter VOSPI_SOF_TO_HACT =      2,  // clock cycles from SOF to HACT
+    parameter VOSPI_SOF_TO_HACT =    100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF = 2,  // minimal clock cycles from HACT to HACT or to EOF
     parameter VOSPI_MCLK_HALFDIV =     4   // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock
 )(
@@ -202,6 +202,7 @@ module  sens_lepton3 #(
     wire                         dbg_segment_stb;
     wire                         dbg_will_sync;
     wire                  [4:0]  dbg_state;
+    wire                         dbg_frame_start;   // output //from receiving first packet to SOF
     wire                         crc_err_w;  // single-cycle CRC error
     reg                          crc_err_r;  // at least one CRC error happened since reset
     wire                         sync_err_w;  // single-cycle synchronzation error
@@ -280,8 +281,8 @@ module  sens_lepton3 #(
     wire        mipi_dn_int;
     wire        mipi_clkp_int;
     wire        mipi_clkn_int;
-    
-    
+    wire        dbg_tel_sync; // certain 32 bits in the telemetry
+    wire        dbg_tel_sync_out;
 // temporary?
     assign fake_in = sns_ctl_int ^ mipi_dp_int ^ mipi_dn_int ^ mipi_clkp_int ^ mipi_clkn_int ^ fake_dp2 ^ fake_dn2 ^ fake_dn6;
 
@@ -308,13 +309,13 @@ module  sens_lepton3 #(
                              (dbg_sel[1]?( dbg_sel[0]? dbg_sources[3]:dbg_sources[2]):( dbg_sel[0]? dbg_sources[1]: dbg_sources[0]));
                              
     assign dbg_sources[0] =   dbg_running;
-    assign dbg_sources[1] =   dbg_will_sync; //
-    assign dbg_sources[2] =   dbg_vsync_rdy[1]; //
+    assign dbg_sources[1] =   dbg_will_sync;    //
+    assign dbg_sources[2] =   dbg_state[3];     // dbg_vsync_rdy[1]; //
     assign dbg_sources[3] =   discard_segment;  // dbg_state[0]; //
-    assign dbg_sources[4] =   in_busy;          // dbg_state[1]; //
-    assign dbg_sources[5] =   out_busy;         // dbg_state[2]; //  
+    assign dbg_sources[4] =   dbg_tel_sync_out; // in_busy;          // dbg_state[2];     // in_busy;          // dbg_state[1]; //
+    assign dbg_sources[5] =   dbg_frame_start;  // out_busy;         // dbg_state[2]; //  
     assign dbg_sources[6] =   hact;             // dbg_state[3]; //  
-    assign dbg_sources[7] =   sof;              // dbg_state[4]; //  
+    assign dbg_sources[7] =   dbg_tel_sync;     // sof;              // dbg_state[4]; //  
 
 //dbg_will_sync dbg_state
                              
@@ -687,7 +688,7 @@ module  sens_lepton3 #(
         .VOSPI_PACKET_FIRST     (VOSPI_PACKET_FIRST),     //  0
         .VOSPI_PACKET_LAST      (VOSPI_PACKET_LAST),      // 60
         .VOSPI_PACKET_TTT       (VOSPI_PACKET_TTT),       // 20
-        .VOSPI_SOF_TO_HACT      (VOSPI_SOF_TO_HACT),      //  2
+        .VOSPI_SOF_TO_HACT      (VOSPI_SOF_TO_HACT),      //100
         .VOSPI_HACT_TO_HACT_EOF (VOSPI_HACT_TO_HACT_EOF)  //  2
     ) vospi_segment_61_i (
         .rst             (!spi_nrst_pclk[1]),   // input
@@ -717,8 +718,12 @@ module  sens_lepton3 #(
         .dbg_running     (dbg_running),      // output debug output for oscilloscope
         .dbg_vsync_rdy   (dbg_vsync_rdy),    // output[1:0]'
         .dbg_segment_stb (dbg_segment_stb),  // output 
-        .dbg_will_sync   (dbg_will_sync),     // output
-        .dbg_state       (dbg_state) // output[4:0]         
+        .dbg_will_sync   (dbg_will_sync),    // output
+        .dbg_state       (dbg_state),        // output[4:0]
+        .dbg_frame_start (dbg_frame_start),  // output //from receiving first packet to SOF
+        .dbg_tel_sync    (dbg_tel_sync),      // output[4:0] certain 32 bits in telemetry data
+        .dbg_tel_sync_out(dbg_tel_sync_out)      // output[4:0] certain 32 bits in telemetry data
+                 
         
     );
     cmd_deser #(

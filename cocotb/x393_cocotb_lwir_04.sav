@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Thu Apr 25 23:42:15 2019
+[*] Tue Apr 30 17:21:50 2019
 [*]
-[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190425172733675.fst"
-[dumpfile_mtime] "Thu Apr 25 23:38:14 2019"
-[dumpfile_size] 13065486
+[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190430003141791.fst"
+[dumpfile_mtime] "Tue Apr 30 17:20:36 2019"
+[dumpfile_size] 1896466138
 [savefile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/cocotb/x393_cocotb_lwir_04.sav"
-[timestart] 34144200
+[timestart] 0
 [size] 1804 1171
 [pos] -1 -1
-*-14.717531 34226035 1019686803 237352388 855469045 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-28.897251 1413970273 1022561895 855534694 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_lwir160x120_vospi1_i.
 [treeopen] x393_dut.x393_i.
@@ -2771,7 +2771,9 @@ x393_dut.simul_lwir160x120_vospi1_i.start_segm_rd
 x393_dut.simul_lwir160x120_vospi1_i.readout_word_indx[6:0]
 @28
 x393_dut.simul_lwir160x120_vospi1_i.readout_pre_last_bit
+@22
 x393_dut.simul_lwir160x120_vospi1_i.readout_segment[1:0]
+@28
 x393_dut.simul_lwir160x120_vospi1_i.spi_cs
 x393_dut.simul_lwir160x120_vospi1_i.packet_sent
 x393_dut.simul_lwir160x120_vospi1_i.readout_last_packet
@@ -2808,6 +2810,7 @@ x393_dut.simul_lwir160x120_vospi1_i.readout_sr_good[15:0]
 @1401200
 -group_end
 @22
+[color] 2
 x393_dut.simul_lwir160x120_vospi1_i.readout_sr_good_dbg[15:0]
 @28
 x393_dut.simul_lwir160x120_vospi1_i.readout_good
@@ -3071,12 +3074,46 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 @800200
 -vospi_segment61_0
 @28
+[color] 3
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.start_d
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.we
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.waddr[10:0]
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.packet_dout[15:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_running
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.packet_dv
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.discard_segment_r
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_start_waddr[10:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_start_packet[7:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.full_packet[7:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_running
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.discard_segment_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_stb
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_good_w
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.discard_set
 @200
 -
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.sof_w
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.raddr[10:0]
+@29
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.hact_r[2:0]
+@800200
+-packet
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.dv_r
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.dout[15:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.set_d_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.packet_invalid
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_packet_80_i.will_sync
+@1000200
+-packet
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.start_out_frame_w
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.sof_w
@@ -3157,6 +3194,10 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 -group_end
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.packet_done
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.packet_dout[15:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.packet_dv
 @800200
 -vospi_packet80_0
 @28
@@ -3302,9 +3343,7 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
 @28
 (0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
-@29
 (1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
-@28
 (2)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
 (3)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
 (4)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.vospi_resync_i.state_reset[4:0]
