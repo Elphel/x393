@@ -236,8 +236,8 @@ module  sensors393 #(
     parameter         VOSPI_SLEW =         "FAST", // "SLOW",
     parameter VOSPI_MRST =               0,
     parameter VOSPI_MRST_BITS =          2,
-    parameter VOSPI_PWDN =               2,
-    parameter VOSPI_PWDN_BITS =          2,
+    parameter VOSPI_RST_SEQ =            2, // initiate reset cycle (master drives all sensors), generate frame start when ready 
+    parameter VOSPI_SPI_SEQ =            3, // initilate SPI re-sync (will automatically generate frame syncs when re-synced)
     parameter VOSPI_MCLK =               4,
     parameter VOSPI_MCLK_BITS =          2,
     parameter VOSPI_EN =                 6,
@@ -272,7 +272,9 @@ module  sensors393 #(
     parameter VOSPI_SOF_TO_HACT =      100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
     parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
-    
+    parameter VOSPI_MRST_MS =            5, // master reset duration in ms
+    parameter VOSPI_MRST_AFTER_MS =   2000,  // Wait after master reset and generate SOF pulse to advance sequencer
+    parameter VOSPI_SPI_TIMEOUT_MS =   185, // Wait to tymeout SPI when needed to re-sync
 `else
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
@@ -506,6 +508,7 @@ module  sensors393 #(
     ,output [2 * 4 - 1 : 0] dbg_rpage   
     ,output [2 * 4 - 1 : 0] dbg_wpage   
 `endif              
+   ,input                      khz                     // 1 KHz 50% @mclk
     
 `ifdef DEBUG_RING       
     ,output                       debug_do, // output to the debug ring
@@ -543,8 +546,13 @@ module  sensors393 #(
     wire  [4*NUM_FRAME_BITS-1:0] frame_num = {frame_num3, frame_num2, frame_num1, frame_num0};
     wire  [4*NUM_FRAME_BITS-1:0] hist_frame; // frame numbers of the histogram outputs
      
+    wire             ext_rst_in;
+    wire             ext_rstseq_in;
+    wire       [3:0] ext_rst_out;
+    wire       [3:0] ext_rstseq_out;
      
-     
+    assign ext_rst_in =    |ext_rst_out; 
+    assign ext_rstseq_in = |ext_rstseq_out; 
     
     always @ (posedge mclk) begin
         cmd_ad <= cmd_ad_in;
@@ -720,8 +728,8 @@ module  sensors393 #(
                 .VOSPI_SLEW                    (VOSPI_SLEW),
                 .VOSPI_MRST                    (VOSPI_MRST), //               0,
                 .VOSPI_MRST_BITS               (VOSPI_MRST_BITS), //          2,
-                .VOSPI_PWDN                    (VOSPI_PWDN), //               2,
-                .VOSPI_PWDN_BITS               (VOSPI_PWDN_BITS), //          2,
+                .VOSPI_RST_SEQ                 (VOSPI_RST_SEQ), //            2,
+                .VOSPI_SPI_SEQ                 (VOSPI_SPI_SEQ), //            3,
                 .VOSPI_MCLK                    (VOSPI_MCLK), //               4,
                 .VOSPI_MCLK_BITS               (VOSPI_MCLK_BITS), //          2,
                 .VOSPI_EN                      (VOSPI_EN), //                 6,
@@ -755,8 +763,10 @@ module  sensors393 #(
                 .VOSPI_PACKET_TTT              (VOSPI_PACKET_TTT), //        20,
                 .VOSPI_SOF_TO_HACT             (VOSPI_SOF_TO_HACT), //      100,
                 .VOSPI_HACT_TO_HACT_EOF        (VOSPI_HACT_TO_HACT_EOF), //   2,
-                .VOSPI_MCLK_HALFDIV            (VOSPI_MCLK_HALFDIV) //        4
-                
+                .VOSPI_MCLK_HALFDIV            (VOSPI_MCLK_HALFDIV), //       4
+                .VOSPI_MRST_MS                 (VOSPI_MRST_MS), //            5
+                .VOSPI_MRST_AFTER_MS           (VOSPI_MRST_AFTER_MS), //   2000
+                .VOSPI_SPI_TIMEOUT_MS          (VOSPI_SPI_TIMEOUT_MS) //    185
 `else
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),
                 .SENSOR_FIFO_2DEPTH            (SENSOR_FIFO_2DEPTH),
@@ -855,34 +865,42 @@ module  sensors393 #(
                 .sns_clkp     (sns_clkp[i]),           // inout
                 .sns_clkn     (sns_clkn[i]),           // inout
 `endif                
-                .sns_scl      (sns_scl[i]),            // inout
-                .sns_sda      (sns_sda[i]),            // inout
-                .sns_ctl      (sns_ctl[i]),            // inout
-                .sns_pg       (sns_pg[i]),             // inout
+                .sns_scl        (sns_scl[i]),            // inout
+                .sns_sda        (sns_sda[i]),            // inout
+                .sns_ctl        (sns_ctl[i]),            // inout
+                .sns_pg         (sns_pg[i]),             // inout
                 
-                .mclk         (mclk),                  // input
-                .cmd_ad_in    (cmd_ad),                // input[7:0] 
-                .cmd_stb_in   (cmd_stb),               // input
-                .status_ad    (status_ad_chn[i * 8 +: 8]), // output[7:0] 
-                .status_rq    (status_rq_chn[i]),      // output
-                .status_start (status_start_chn[i]),   // input
-                .trigger_mode (trigger_mode),          // input
-                .trig_in      (trig_in[i]),            // input
-                .frame_num_seq(frame_num[NUM_FRAME_BITS*i +:NUM_FRAME_BITS]), // input[3:0] 
-                .dout         (px_data[16 * i +: 16]), // output[15:0] 
-                .dout_valid   (px_valid[i]),           // output
-                .last_in_line (last_in_line[i]),       // output
-                .sof_out      (sof_out_pclk[i]),       // output
-                .eof_out      (eof_out_pclk[i]),       // output
-                .sof_out_mclk (sof_out_mclk[i]),       // output
-                .sof_late_mclk(sof_late_mclk[i]),      // output
-                .hist_request (hist_request[i]),       // output
-                .hist_frame   (hist_frame[NUM_FRAME_BITS*i +:NUM_FRAME_BITS]), // output[3:0] 
+                .mclk           (mclk),                  // input
+                .cmd_ad_in      (cmd_ad),                // input[7:0] 
+                .cmd_stb_in     (cmd_stb),               // input
+                .status_ad      (status_ad_chn[i * 8 +: 8]), // output[7:0] 
+                .status_rq      (status_rq_chn[i]),      // output
+                .status_start   (status_start_chn[i]),   // input
+                .trigger_mode   (trigger_mode),          // input
+                .trig_in        (trig_in[i]),            // input
+                .frame_num_seq  (frame_num[NUM_FRAME_BITS*i +:NUM_FRAME_BITS]), // input[3:0] 
+                .dout           (px_data[16 * i +: 16]), // output[15:0] 
+                .dout_valid     (px_valid[i]),           // output
+                .last_in_line   (last_in_line[i]),       // output
+                .sof_out        (sof_out_pclk[i]),       // output
+                .eof_out        (eof_out_pclk[i]),       // output
+                .sof_out_mclk   (sof_out_mclk[i]),       // output
+                .sof_late_mclk  (sof_late_mclk[i]),      // output
+                .hist_request   (hist_request[i]),       // output
+                .hist_frame     (hist_frame[NUM_FRAME_BITS*i +:NUM_FRAME_BITS]), // output[3:0] 
                 
-                .hist_grant   (hist_grant[i]),         // input
-                .hist_chn     (hist_chn[2 * i +: 2]),  // output[1:0] 
-                .hist_dvalid  (hist_dvalid[i]),        // output
-                .hist_data    (hist_data[i * 32 +: 32])// output[31:0] 
+                .hist_grant     (hist_grant[i]),         // input
+                .hist_chn       (hist_chn[2 * i +: 2]),  // output[1:0] 
+                .hist_dvalid    (hist_dvalid[i]),        // output
+                .hist_data      (hist_data[i * 32 +: 32])// output[31:0]
+`ifdef LWIR
+               ,.ext_rst_in     (ext_rst_in), // input
+                .ext_rstseq_in  (ext_rstseq_in), // input
+                .ext_rst_out    (ext_rst_out[i]), // output
+                .ext_rstseq_out (ext_rstseq_out[i]) // output
+`endif                
+               ,.khz            (khz)               // input  1 KHz 50% duty
+                 
 `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[i]),         // output
                 .debug_sl     (debug_sl),              // input

@@ -68,7 +68,8 @@ module  rtc393 #(
     input                         status_start, // Acknowledge of the first status packet byte (address)
     
     output                 [31:0] live_sec,
-    output                 [19:0] live_usec);
+    output                 [19:0] live_usec,
+    output                        khz);
 //    output reg                    snap);       // take a snapshot (externally)
     
     wire  [31:0] cmd_data;
@@ -85,6 +86,9 @@ module  rtc393 #(
     reg  [15:0] corr;
     
     reg  [RTC_BITC_PREDIV-1:0] pre_cntr = 0;
+    wire [RTC_BITC_PREDIV-1:0] pre_cntr_m1;
+    wire [RTC_BITC_PREDIV-1:0] RTC_MHZ_m1;
+
     reg   [3:0] halfusec = 0; // 1-hot running pulse with 0.5 usec period
     reg   [2:0] refclk_mclk;
     reg         refclk2x_mclk;   
@@ -98,6 +102,8 @@ module  rtc393 #(
 
     reg  [19:0] usec;
     reg  [31:0] sec;
+    
+    reg  [9:0]  khz_cntr;
 
     reg  [19:0] usec_plus1;
     reg  [31:0] sec_plus1;
@@ -106,7 +112,7 @@ module  rtc393 #(
     reg   [19:0] pio_usec;      // micro seconds snapshot to be read as PIO
     reg          pio_alt_snap;  // FF to invert after each PIO snapshot (used to generate status)
     
-    
+    assign khz = khz_cntr[9];
     assign set_usec_w = cmd_we && (cmd_a == RTC_SET_USEC);
     assign set_sec_w =  cmd_we && (cmd_a == RTC_SET_SEC);
     assign set_corr_w = cmd_we && (cmd_a == RTC_SET_CORR);
@@ -115,11 +121,17 @@ module  rtc393 #(
     
     assign live_sec = sec;
     assign live_usec = usec;
-    
+    assign pre_cntr_m1 = pre_cntr -1;
+    assign RTC_MHZ_m1 = RTC_MHZ - 1;
     always @ (posedge mclk) begin
         if      (mrst)         pio_alt_snap <= 0;
         else if (set_status_w) pio_alt_snap <= ~pio_alt_snap; 
     end 
+`ifdef SIMULATION
+    localparam CONST499 = 4; // 100 times faster, 10 1KHz will be 100 KHz
+`else
+    localparam CONST499 = 499;
+`endif
 
     always @ (posedge mclk) begin
         if (set_status_w) pio_sec <=  live_sec; 
@@ -146,7 +158,7 @@ module  rtc393 #(
 //        else             halfusec <= {halfusec[2:0], (|pre_cntr || !refclk2x_mclk)?1'b0:1'b1};
 
         if      (!enable_rtc)   pre_cntr <= RTC_MHZ-1;
-        else if (refclk2x_mclk) pre_cntr <= (|pre_cntr) ? (pre_cntr - 1) : (RTC_MHZ-1);
+        else if (refclk2x_mclk) pre_cntr <= (|pre_cntr) ? pre_cntr_m1 : RTC_MHZ_m1;
         
         if (!enable_rtc) halfusec <= 0;
         else             halfusec <= {halfusec[2:0], (|pre_cntr || !refclk2x_mclk)?1'b0:1'b1};
@@ -178,6 +190,16 @@ module  rtc393 #(
       
         if      (set_cntr)    sec[31:0] <= wsec[31:0];
         else if (inc_sec[1])  sec[31:0] <= sec_plus1[31:0];
+        
+//khz_cntr
+        if      (!enable_rtc)   khz_cntr[8:0] <= CONST499;
+        else if (inc_usec[1]) begin
+            if (khz_cntr[8:0] == 0)                     khz_cntr[8:0] <= CONST499;
+            else                                        khz_cntr[8:0] <= khz_cntr[8:0] - 1;
+        end
+        
+        if      (!enable_rtc)                           khz_cntr[9] <=   0;
+        else if (inc_usec[1] &&  (khz_cntr[8:0] == 0))  khz_cntr[9] <= ~khz_cntr[9];
         
     end
 

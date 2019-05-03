@@ -240,8 +240,8 @@ module  sensor_channel#(
 
     parameter VOSPI_MRST =               0,
     parameter VOSPI_MRST_BITS =          2,
-    parameter VOSPI_PWDN =               2,
-    parameter VOSPI_PWDN_BITS =          2,
+    parameter VOSPI_RST_SEQ =            2, // initiate reset cycle (master drives all sensors), generate frame start when ready 
+    parameter VOSPI_SPI_SEQ =            3, // initilate SPI re-sync (will automatically generate frame syncs when re-synced)
     parameter VOSPI_MCLK =               4,
     parameter VOSPI_MCLK_BITS =          2,
     parameter VOSPI_EN =                 6,
@@ -275,8 +275,10 @@ module  sensor_channel#(
     parameter VOSPI_PACKET_TTT =        20,  // line number where segment number is provided
     parameter VOSPI_SOF_TO_HACT =      100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
-    parameter VOSPI_MCLK_HALFDIV =       4  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
-    
+    parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
+    parameter VOSPI_MRST_MS =            5, // master reset duration in ms
+    parameter VOSPI_MRST_AFTER_MS =   2000,  // Wait after master reset and generate SOF pulse to advance sequencer  
+    parameter VOSPI_SPI_TIMEOUT_MS =   185 // Wait to tymeout SPI when needed to re-sync
 `else
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =       12,
@@ -437,6 +439,18 @@ module  sensor_channel#(
     output                [1:0] hist_chn,     // output[1:0] histogram (sub) channel, valid with request and transfer
     output                      hist_dvalid,  // output data valid - active when sending a burst
     output               [31:0] hist_data     // output[31:0] histogram data
+    
+`ifdef LWIR
+// reset synchronization
+   ,input                       ext_rst_in,
+    input                       ext_rstseq_in,    
+    output                      ext_rst_out,
+    output                      ext_rstseq_out    
+`endif    
+// currently used only for LWIR
+   ,input                      khz                     // 1 KHz 50% @mclk
+    
+    
 `ifdef DEBUG_RING       
     ,output                       debug_do, // output to the debug ring
      input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load
@@ -1000,65 +1014,19 @@ module  sensor_channel#(
         );
 `elsif LWIR
     sens_lepton3 #(
-            .SENSIO_ADDR           (SENSIO_ADDR),
-            .SENSIO_ADDR_MASK      (SENSIO_ADDR_MASK),
-            .SENSIO_CTRL           (SENSIO_CTRL),
-            .SENSIO_STATUS         (SENSIO_STATUS),
-/*            
-            .SENSIO_JTAG           (SENSIO_JTAG),
-            .SENSIO_WIDTH          (SENSIO_WIDTH),
-            .SENSIO_DELAYS         (SENSIO_DELAYS),
-*/            
-            .SENSIO_STATUS_REG     (SENSIO_STATUS_REG),
-/*            
-            .SENS_JTAG_PGMEN       (SENS_JTAG_PGMEN),
-            .SENS_JTAG_PROG        (SENS_JTAG_PROG),
-            .SENS_JTAG_TCK         (SENS_JTAG_TCK),
-            .SENS_JTAG_TMS         (SENS_JTAG_TMS),
-            .SENS_JTAG_TDI         (SENS_JTAG_TDI),
-            .SENS_CTRL_MRST        (SENS_CTRL_MRST),
-            .SENS_CTRL_ARST        (SENS_CTRL_ARST),
-            .SENS_CTRL_ARO         (SENS_CTRL_ARO),
-            .SENS_CTRL_RST_MMCM    (SENS_CTRL_RST_MMCM),
-            .SENS_CTRL_EXT_CLK     (SENS_CTRL_EXT_CLK),
-            .SENS_CTRL_LD_DLY      (SENS_CTRL_LD_DLY),
-            .SENS_CTRL_QUADRANTS   (SENS_CTRL_QUADRANTS),
-            .SENS_CTRL_ODD         (SENS_CTRL_ODD),
-            .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
-            .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
-            .IODELAY_GRP            (IODELAY_GRP),
-            .IDELAY_VALUE           (IDELAY_VALUE),
-            .PXD_DRIVE              (PXD_DRIVE),
-            .PXD_IOSTANDARD         (PXD_IOSTANDARD),
-            .PXD_SLEW               (PXD_SLEW),
-            .SENS_REFCLK_FREQUENCY  (SENS_REFCLK_FREQUENCY),
-            .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
-            .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
-            .SENS_BANDWIDTH         (SENS_BANDWIDTH),
-            .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
-            .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
-            .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
-            .IPCLK_PHASE            (IPCLK_PHASE),
-            .IPCLK2X_PHASE          (IPCLK2X_PHASE),
-            .PXD_IBUF_LOW_PWR       (PXD_IBUF_LOW_PWR),
-            .BUF_IPCLK              (BUF_IPCLK),
-            .BUF_IPCLK2X            (BUF_IPCLK2X),
-            .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),
-            .SENS_REF_JITTER1       (SENS_REF_JITTER1),
-            .SENS_REF_JITTER2       (SENS_REF_JITTER2),
-            .SENS_SS_EN             (SENS_SS_EN),
-            .SENS_SS_MODE           (SENS_SS_MODE),
-            .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
-            .STATUS_ALIVE_WIDTH     (STATUS_ALIVE_WIDTH),
-*/
+            .SENSIO_ADDR            (SENSIO_ADDR),
+            .SENSIO_ADDR_MASK       (SENSIO_ADDR_MASK),
+            .SENSIO_CTRL            (SENSIO_CTRL),
+            .SENSIO_STATUS          (SENSIO_STATUS),
+            .SENSIO_STATUS_REG      (SENSIO_STATUS_REG),
             .VOSPI_DRIVE            (VOSPI_DRIVE),
             .VOSPI_IBUF_LOW_PWR     (VOSPI_IBUF_LOW_PWR),
             .VOSPI_IOSTANDARD       (VOSPI_IOSTANDARD),
             .VOSPI_SLEW             (VOSPI_SLEW),
             .VOSPI_MRST             (VOSPI_MRST), //               0,
             .VOSPI_MRST_BITS        (VOSPI_MRST_BITS), //          2,
-            .VOSPI_PWDN             (VOSPI_PWDN), //               2,
-            .VOSPI_PWDN_BITS        (VOSPI_PWDN_BITS), //          2,
+            .VOSPI_RST_SEQ          (VOSPI_RST_SEQ), //            2,
+            .VOSPI_SPI_SEQ          (VOSPI_SPI_SEQ), //            3,
             .VOSPI_MCLK             (VOSPI_MCLK), //               4,
             .VOSPI_MCLK_BITS        (VOSPI_MCLK_BITS), //          2,
             .VOSPI_EN               (VOSPI_EN), //                 6,
@@ -1092,7 +1060,10 @@ module  sensor_channel#(
             .VOSPI_PACKET_TTT       (VOSPI_PACKET_TTT), //        20,
             .VOSPI_SOF_TO_HACT      (VOSPI_SOF_TO_HACT), //      100,
             .VOSPI_HACT_TO_HACT_EOF (VOSPI_HACT_TO_HACT_EOF), //   2,
-            .VOSPI_MCLK_HALFDIV     (VOSPI_MCLK_HALFDIV) //        4
+            .VOSPI_MCLK_HALFDIV     (VOSPI_MCLK_HALFDIV), //       4
+            .VOSPI_MRST_MS          (VOSPI_MRST_MS), //            5
+            .VOSPI_MRST_AFTER_MS    (VOSPI_MRST_AFTER_MS), //   2000
+            .VOSPI_SPI_TIMEOUT_MS   (VOSPI_SPI_TIMEOUT_MS) //    185
     ) sens_lepton3_i (
             .mrst                 (mrst),                   // input
             .mclk                 (mclk),                   // input
@@ -1126,7 +1097,13 @@ module  sensor_channel#(
             // not used PADS, keep for compatibility with PCB
             .dp2                  (sns_dp40[2]), // inout reserved - used for debug
             .dn2                  (sns_dn40[2]), // input reserved
-            .dn6                  (sns_dn76[6])  // input reserved
+            .dn6                  (sns_dn76[6]),  // input reserved
+// reset synchronization
+            .ext_rst_in           (ext_rst_in), // input
+            .ext_rstseq_in        (ext_rstseq_in), // input
+            .ext_rst_out          (ext_rst_out), // output
+            .ext_rstseq_out       (ext_rstseq_out), // output
+            .khz                  (khz)             // input  1 KHz 50% duty @ mclk
     );
     // sns_dn76[6] - not used
     // sns_dn40[2] - not used

@@ -35,7 +35,10 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h03930133;      // Testing sof to hact delay
+        parameter FPGA_VERSION =          32'h03930136;      // Fiixing spi_seq 
+//        parameter FPGA_VERSION =          32'h03930135;      // Adding multi-cam reset 
+//        parameter FPGA_VERSION =          32'h0393014;      // Adding multi-cam reset - buggy 
+//        parameter FPGA_VERSION =          32'h03930133;      // Works with linux kernel rocko commit of 05/01/2019 bd61276e05f7343415929112ae368230a9c472f0
 //        parameter FPGA_VERSION =          32'h03930132;      // Sync from serial bumber start, added output (with hact)
 //        parameter FPGA_VERSION =          32'h03930131;      // Sync from serial bumber start
 //        parameter FPGA_VERSION =          32'h03930130;      // Adding output for receive start frame

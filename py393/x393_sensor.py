@@ -454,8 +454,9 @@ class X393Sensor(object):
         return rslt
 
     def func_sensor_io_ctl_lwir (self,
-                                 mrst =       None,
-                                 pwdn =       None,
+                                 rst =        None,
+                                 rst_seq =    None,
+                                 spi_seq =    None,
                                  mclk  =      None,
                                  spi_en =     None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
                                  segm_zero =  None,
@@ -474,8 +475,9 @@ class X393Sensor(object):
                                  dbg_src =    None):
         """
         Combine sensor I/O control parameters into a control word
-        @param mrst -       True - activate MRST signal (low), False - deactivate MRST (high), None - no change
-        @param pwdn -       True - activate POWER_DOWN signal (low), False - deactivate POWER_DOWN (high), None - no change
+        @param rst -        Sensor reset/power down control (0 - NOP, 1 - power down + reset, 2 - no pwdn, reset, 3 - no pwdn, no reset
+        @param rst_seq      Initiate simultaneous all sensors reset, generate SOF after pause
+        @param spi_seq      Initiate VOSPI reset, will generate normal SOF if successful
         @param mclk -       True - enable master clock (25MHz) to sensor, False - disable, None - no change
         @param spi_en -     True - SPI reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable, None - no change 
         @param segm_zero =  True - allow receiving segment ID==0 (ITAR invalid), False - disallow, None - no change,
@@ -500,10 +502,12 @@ class X393Sensor(object):
         @return VOSPI sensor i/o control word
         """
         rslt = 0
-        if not mrst is None:
-            rslt |= (3,2)[mrst] <<       vrlg.VOSPI_MRST
-        if not pwdn is None:
-            rslt |= (3,2)[pwdn] <<       vrlg.VOSPI_PWDN
+        if not rst is None:
+            rslt |= (rst & 3) <<         vrlg.VOSPI_MRST
+        if rst_seq:
+            rslt |= 1 <<                 vrlg.VOSPI_RST_SEQ
+        if spi_seq:
+            rslt |= 1 <<                 vrlg.VOSPI_SPI_SEQ
         if not mclk is None:
             rslt |= (2,3)[mclk] <<       vrlg.VOSPI_MCLK
         if not spi_en is None:
@@ -1068,8 +1072,9 @@ class X393Sensor(object):
 
     def set_sensor_io_ctl_lwir (self,
                                  num_sensor,
-                                 mrst =       None,
-                                 pwdn =       None,
+                                 rst =        None,
+                                 rst_seq =    None,
+                                 spi_seq =    None,
                                  mclk  =      None,
                                  spi_en =     None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
                                  segm_zero =  None,
@@ -1085,11 +1090,11 @@ class X393Sensor(object):
                                  vsync_use =  None,
                                  noresync =   None,
                                  dbg_src =    None):
-
         """
         Combine sensor I/O control parameters into a control word
-        @param mrst -       True - activate MRST signal (low), False - deactivate MRST (high), None - no change
-        @param pwdn -       True - activate POWER_DOWN signal (low), False - deactivate POWER_DOWN (high), None - no change
+        @param rst -        Sensor reset/power down control (0 - NOP, 1 - power down + reset, 2 - no pwdn, reset, 3 - no pwdn, no reset
+        @param rst_seq      Initiate simultaneous all sensors reset, generate SOF after pause
+        @param spi_seq      Initiate VOSPI reset, will generate normal SOF if successful
         @param mclk -       True - enable master clock (25MHz) to sensor, False - disable, None - no change
         @param spi_en -     True - SPI reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable, None - no change 
         @param segm_zero =  True - allow receiving segment ID==0 (ITAR invalid), False - disallow, None - no change,
@@ -1116,8 +1121,9 @@ class X393Sensor(object):
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
                 for num_sensor in range(4):
                     self.set_sensor_io_ctl_lwir (num_sensor,
-                           mrst =       mrst,
-                           pwdn =       pwdn,
+                           rst =        rst,
+                           rst_seq =    rst_seq,
+                           spi_seq =    spi_seq,
                            mclk  =      mclk,
                            spi_en =     spi_en,
                            segm_zero =  segm_zero,
@@ -1137,8 +1143,9 @@ class X393Sensor(object):
         except:
             pass
         data = self.func_sensor_io_ctl_lwir (
-                           mrst =       mrst,
-                           pwdn =       pwdn,
+                           rst =        rst,
+                           rst_seq =    rst_seq,
+                           spi_seq =    spi_seq,
                            mclk  =      mclk,
                            spi_en =     spi_en,
                            segm_zero =  segm_zero,

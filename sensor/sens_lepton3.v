@@ -43,72 +43,18 @@ module  sens_lepton3 #(
     parameter SENSIO_ADDR_MASK =   'h7f8,
     parameter SENSIO_CTRL =        'h0,
     parameter SENSIO_STATUS =      'h1,
-/*    
-    parameter SENSIO_JTAG =        'h2,
-    parameter SENSIO_WIDTH =       'h3, // set line width (1.. 2^16) if 0 - use HACT
-    parameter SENSIO_DELAYS =      'h4, // 'h4..'h7 - each address sets 4 delays through 4 bytes of 32-bit data
-*/    
+
     parameter SENSIO_STATUS_REG =  'h21,
-/*
-    parameter SENS_JTAG_PGMEN =    8,
-    parameter SENS_JTAG_PROG =     6,
-    parameter SENS_JTAG_TCK =      4,
-    parameter SENS_JTAG_TMS =      2,
-    parameter SENS_JTAG_TDI =      0,
-    
-    parameter SENS_CTRL_MRST=      0,  //  1: 0
-    parameter SENS_CTRL_ARST=      2,  //  3: 2
-    parameter SENS_CTRL_ARO=       4,  //  5: 4
-    parameter SENS_CTRL_RST_MMCM=  6,  //  7: 6
-    parameter SENS_CTRL_EXT_CLK=   8,  //  9: 8
-    parameter SENS_CTRL_LD_DLY=   10,  // 10
-    parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
-    parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,
-    parameter SENS_CTRL_ODD =             6, //
-    parameter SENS_CTRL_QUADRANTS_EN =   20,  // 18:12, enable - 20 (1 bits reserved)
-     
-    
-    parameter LINE_WIDTH_BITS =   16,
-    
-    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
-    parameter integer IDELAY_VALUE = 0,
-    parameter integer PXD_DRIVE = 12,
-    parameter PXD_IBUF_LOW_PWR = "TRUE",
-    parameter PXD_IOSTANDARD = "DEFAULT",
-    parameter PXD_SLEW = "SLOW",
-    parameter real SENS_REFCLK_FREQUENCY =    300.0,
-    parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
-    
-    parameter SENS_PHASE_WIDTH=               8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_BANDWIDTH =                "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
-
-    parameter CLKIN_PERIOD_SENSOR =   10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
-    parameter CLKFBOUT_MULT_SENSOR =   8,  // 100 MHz --> 800 MHz
-    parameter CLKFBOUT_PHASE_SENSOR =  0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =            0.000,
-    parameter IPCLK2X_PHASE =          0.000,
-    parameter BUF_IPCLK =             "BUFR",
-    parameter BUF_IPCLK2X =           "BUFR",  
-    
-
-    parameter SENS_DIVCLK_DIVIDE =     1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter SENS_REF_JITTER1   =     0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
-    parameter SENS_REF_JITTER2   =     0.010,
-    parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
-    parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
-    parameter SENS_SS_MOD_PERIOD =     10000,        // integer 4000-40000 - SS modulation period in ns
-    parameter STATUS_ALIVE_WIDTH =     4,
-*/
     parameter integer VOSPI_DRIVE =        16, // 12, (4,8,12,16)    parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
     parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
     parameter         VOSPI_IOSTANDARD =   "LVCMOS25",
     parameter         VOSPI_SLEW =         "FAST", // "SLOW",
     
     // mode bits
-    parameter VOSPI_MRST =            0,
-    parameter VOSPI_MRST_BITS =       2,
-    parameter VOSPI_PWDN =            2,
-    parameter VOSPI_PWDN_BITS =       2,
+    parameter VOSPI_MRST =            0, // 0 - NOP, 1 - power down reset, 1 no power down reset, 3 - no power down , no reset 
+    parameter VOSPI_MRST_BITS =       2,  
+    parameter VOSPI_RST_SEQ =         2, // initiate reset cycle (master drives all sensors), generate frame start when ready 
+    parameter VOSPI_SPI_SEQ =         3, // initilate SPI re-sync (will automatically generate frame syncs when re-synced)
     parameter VOSPI_MCLK =            4,
     parameter VOSPI_MCLK_BITS =       2,
     parameter VOSPI_EN =              6,
@@ -139,10 +85,13 @@ module  sens_lepton3 #(
     parameter VOSPI_SEGMENT_LAST =     4,
     parameter VOSPI_PACKET_FIRST =     0,
     parameter VOSPI_PACKET_LAST =     60,
-    parameter VOSPI_PACKET_TTT =      20,  // line number where segment number is provided
+    parameter VOSPI_PACKET_TTT =      20, // line number where segment number is provided
     parameter VOSPI_SOF_TO_HACT =    100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
-    parameter VOSPI_HACT_TO_HACT_EOF = 2,  // minimal clock cycles from HACT to HACT or to EOF
-    parameter VOSPI_MCLK_HALFDIV =     4   // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock
+    parameter VOSPI_HACT_TO_HACT_EOF = 2, // minimal clock cycles from HACT to HACT or to EOF
+    parameter VOSPI_MCLK_HALFDIV =     4, // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock
+    parameter VOSPI_MRST_MS =          5, // master reset duration in ms
+    parameter VOSPI_MRST_AFTER_MS = 2000,  // Wait after master reset and generate SOF pulse to advance sequencer  
+    parameter VOSPI_SPI_TIMEOUT_MS = 185 // Wait to tymeout SPI when needed to re-sync
 )(
     // programming interface
     input         mrst,         // @posedge mclk, sync reset
@@ -186,10 +135,20 @@ module  sens_lepton3 #(
             // not used PADS, keep for compatibility with PCB
     inout         dp2, //  input reserved - used for hardware debug (output for oscilloscope)
     input         dn2, // input reserved
-    input         dn6  // input reserved
-    
+    input         dn6 , // input reserved
+// reset synchronization
+    input         ext_rst_in,
+    input         ext_rstseq_in,    
+    output        ext_rst_out,
+    output        ext_rstseq_out,
+    input         khz              // 1 KHz 50% duty @ mclk 
 );
-    localparam VOSPI_STATUS_BITS = 15;
+    localparam VOSPI_STATUS_BITS = 17;
+    localparam MRST_CNTR_BITS =        clogb2(VOSPI_MRST_MS + 1); // 3
+    localparam MRST_AFTER_CNTR_BITS =  clogb2(VOSPI_MRST_AFTER_MS+ 1); // 11
+    localparam SPI_TIMEOUT_CNTR_BITS = clogb2(VOSPI_SPI_TIMEOUT_MS+ 1); // 8
+    
+    
 // Status data (6 bits + 4)
     wire [VOSPI_STATUS_BITS-1:0] status;
     wire                  [ 3:0] segment_id;
@@ -223,7 +182,11 @@ module  sens_lepton3 #(
     reg         out_en_mclk;   // single paulse - single frame, level - continuous
     wire        out_en_single_mclk;
     wire        err_reset_mclk;
+    wire        start_rst_seq_mclk;
+    wire        start_spi_seq_mclk;
+    
     reg         lwir_mrst_mclk;
+    reg         ext_rst_in_mclk;
     reg         lwir_pwdn_mclk;
     reg         sns_mclk_en_mclk;
     reg         spi_clk_en_mclk;
@@ -247,9 +210,11 @@ module  sens_lepton3 #(
     reg  [ 1:0] use_telemetry_pclk;
     reg  [ 1:0] vsync_pclk;
     wire        vsync;
-    
+    reg  [ 3:0] khz_pclk;     
+    reg  [ 3:0] init_sof_pclk;     
     wire        out_en_single_pclk;
     wire        err_reset_pclk;
+    wire        sof_w;
 
 
 //    wire        fake_out;
@@ -283,17 +248,39 @@ module  sens_lepton3 #(
     wire        mipi_clkn_int;
     wire        dbg_tel_sync; // certain 32 bits in the telemetry
     wire        dbg_tel_sync_out;
+    
+    wire        ms;  // 1 millisecond pulses @pclk
+    wire        start_rst_seq_pclk;
+    wire        start_spi_seq_pclk;
+    reg        [MRST_CNTR_BITS-1:0] mrst_on_cntr;
+    reg  [MRST_AFTER_CNTR_BITS-1:0] mrst_after_cntr;
+    reg [SPI_TIMEOUT_CNTR_BITS-1:0] spi_timeout_cntr;
+    reg                       [1:0] mrst_seq;
+    reg                             spi_seq;
+    
+    assign ext_rst_out =     mrst_seq[0];
+    assign ext_rstseq_out =  mrst_seq[1];   
 // temporary?
     assign fake_in = sns_ctl_int ^ mipi_dp_int ^ mipi_dn_int ^ mipi_clkp_int ^ mipi_clkn_int ^ fake_dp2 ^ fake_dn2 ^ fake_dn6;
 
     assign out_en_single_mclk = set_ctrl_r && data_r[VOSPI_OUT_EN_SINGL] && !mrst;
     assign err_reset_mclk   =   set_ctrl_r && data_r[VOSPI_RESET_ERR] && !mrst;
+    assign start_rst_seq_mclk = set_ctrl_r && data_r[VOSPI_RST_SEQ] && !mrst;
+    assign start_spi_seq_mclk = set_ctrl_r && data_r[VOSPI_SPI_SEQ] && !mrst;
+    
+    
 
     assign prsts = prst | !lwir_mrst_pclk[1];
     assign vsync = gpio_in[3];
+    
+    assign ms = khz_pclk[3];
+    
+    assign sof = init_sof_pclk[3] | sof_w;
 
     assign status = {
        fake_in,
+       ext_rst_in,
+       ext_rstseq_in,
        sync_err_r,
        crc_err_r,
        out_busy,
@@ -321,6 +308,9 @@ module  sens_lepton3 #(
                              
     
     always @(posedge mclk) begin
+        if      (mrst)     ext_rst_in_mclk <= 0;
+        else               ext_rst_in_mclk <= ext_rst_in;
+    
         if      (mrst)     data_r <= 0;
         else if (cmd_we)   data_r <= cmd_data;
         
@@ -340,15 +330,20 @@ module  sens_lepton3 #(
         else if (set_ctrl_r && data_r[VOSPI_SEGM0_OK + VOSPI_SEGM0_OK_BITS - 1]) segm0_ok_mclk <= data_r[VOSPI_SEGM0_OK]; 
         
         if      (mrst)                                                           out_en_mclk <= 0;
-        else if (set_ctrl_r && data_r[VOSPI_OUT_EN + VOSPI_OUT_EN_BITS - 1])     out_en_mclk <= data_r[VOSPI_OUT_EN]; 
+        else if (set_ctrl_r && data_r[VOSPI_OUT_EN + VOSPI_OUT_EN_BITS - 1])     out_en_mclk <= data_r[VOSPI_OUT_EN];
         
-        if      (mrst)                                                           lwir_mrst_mclk <= 0;
-        else if (set_ctrl_r && data_r[VOSPI_MRST +  VOSPI_MRST_BITS - 1])        lwir_mrst_mclk <= data_r[VOSPI_MRST]; 
+        
         
         if      (mrst)                                                           lwir_pwdn_mclk <= 0;
-        else if (set_ctrl_r && data_r[VOSPI_PWDN + VOSPI_PWDN_BITS - 1])         lwir_pwdn_mclk <= data_r[VOSPI_PWDN]; 
+        else if (ext_rst_in_mclk)                                                lwir_pwdn_mclk <= 1; // turn off power down with external reset cycle
+        else if (set_ctrl_r && |data_r[VOSPI_MRST +: VOSPI_MRST_BITS])           lwir_pwdn_mclk <= data_r[VOSPI_MRST + 1]; 
+        
+        if      (mrst)                                                           lwir_mrst_mclk <= 0;
+        else if (ext_rst_in_mclk)                                                lwir_mrst_mclk <= 1; // turn off internal sensor reset with external reset cycle
+        else if (set_ctrl_r && |data_r[VOSPI_MRST +: VOSPI_MRST_BITS])           lwir_mrst_mclk <= &data_r[VOSPI_MRST +: 2];
         
         if      (mrst)                                                           sns_mclk_en_mclk <= 0;
+        else if (ext_rst_in_mclk)                                                sns_mclk_en_mclk <= 1; // enable sensor master clock with external reset cycle
         else if (set_ctrl_r && data_r[VOSPI_MCLK + VOSPI_MCLK_BITS - 1])         sns_mclk_en_mclk <= data_r[VOSPI_MCLK]; 
         
         if      (mrst)                                                           spi_clk_en_mclk <= 0;
@@ -371,18 +366,18 @@ module  sens_lepton3 #(
     end 
     // resync to pclk    
     always @ (posedge pclk) begin
-        spi_nrst_pclk[1:0] <=      {spi_nrst_pclk[0],      spi_nrst_mclk};
-        spi_en_pclk[1:0] <=        {spi_en_pclk[0],        spi_en_mclk};
+        spi_nrst_pclk[1:0] <=      {spi_nrst_pclk[0],      spi_nrst_mclk & ~spi_seq & ~ext_rstseq_in};
+        spi_en_pclk[1:0] <=        {spi_en_pclk[0],        spi_en_mclk & ~spi_seq &   ~ext_rstseq_in};
         segm0_ok_pclk[1:0] <=      {segm0_ok_pclk[0],      segm0_ok_mclk};
         out_en_pclk[1:0] <=        {out_en_pclk[0],        out_en_mclk};
-        lwir_mrst_pclk[1:0] <=     {lwir_mrst_pclk[0],     lwir_mrst_mclk};
+        lwir_mrst_pclk[1:0] <=     {lwir_mrst_pclk[0],     lwir_mrst_mclk & ~ext_rst_in};
         lwir_pwdn_pclk[1:0] <=     {lwir_pwdn_pclk[0],     lwir_pwdn_mclk};
         spi_clk_en_pclk[1:0] <=    {spi_clk_en_pclk[0],    spi_clk_en_mclk}; 
         vsync_use_pclk[1:0] <=     {vsync_use_pclk[0],     vsync_use_mclk}; 
         noresync_pclk[1:0] <=      {noresync_pclk[0],      noresync_mclk}; 
         use_telemetry_pclk[1:0] <= {use_telemetry_pclk[0], use_telemetry_mclk};
         
-        vsync_pclk[1:0] <=       {vsync_pclk[0],       vsync}; 
+        vsync_pclk[1:0] <=         {vsync_pclk[0],       vsync}; 
         
         out_en_r <=               out_en_single_pclk | out_en_pclk[1];
         
@@ -392,7 +387,44 @@ module  sens_lepton3 #(
         if (prst || err_reset_pclk) sync_err_r <= 0;
         else if (sync_err_w)        sync_err_r <= 1;
         
+        //    reg  [ 3:0] init_sof_pclk;     
+        
     end
+    
+// Reset sequence generation
+
+    always @ (posedge pclk) begin
+        if (prst)           khz_pclk <= 0;
+        else                khz_pclk <= {khz_pclk[1] & ~khz_pclk[2], khz_pclk[1:0], khz};
+        
+        if (prst)           init_sof_pclk <= 0;
+        else                init_sof_pclk <= {~init_sof_pclk[1] & init_sof_pclk[2], init_sof_pclk[1:0], ext_rstseq_in};
+
+        if      (prst)                       mrst_seq[0] <= 0;
+        else if (start_rst_seq_pclk)         mrst_seq[0] <= 1;
+        else if (ms && (mrst_on_cntr == 0))  mrst_seq[0] <= 0;
+
+        if      (prst)                   mrst_seq[1] <= 0;
+        else if (start_rst_seq_pclk)                           mrst_seq[1] <= 1;
+        else if (ms && !mrst_seq[0] && (mrst_after_cntr == 0)) mrst_seq[1] <= 0;
+        
+        if (!mrst_seq[0])                mrst_on_cntr <= (VOSPI_MRST_MS -1);
+        else if (ms)                      mrst_on_cntr <= mrst_on_cntr -1;
+
+        if (!mrst_seq[1] || mrst_seq[0]) mrst_after_cntr <= (VOSPI_MRST_AFTER_MS -1);
+        else if (ms)                     mrst_after_cntr <= mrst_after_cntr -1;
+        
+        // currently reset SPI does not try to sync with the frames being processed - they should be stopped/reenabled
+        if (!spi_seq)                     spi_timeout_cntr <= (VOSPI_SPI_TIMEOUT_MS -1);
+        else if (ms)                      spi_timeout_cntr <= spi_timeout_cntr -1;
+        
+        if      (prst)                           spi_seq <= 0;
+        else if (start_spi_seq_pclk)             spi_seq <= 1;
+        else if (ms && (spi_timeout_cntr == 0))  spi_seq <= 0;
+        
+    end
+    
+    
     
     always @(posedge mclk) begin
         if      (mrst)                           sns_mclk_r <= 0;
@@ -424,6 +456,26 @@ module  sens_lepton3 #(
         .out_pulse   (err_reset_pclk),           // output
         .busy() // output
     );
+
+     pulse_cross_clock pulse_cross_clock_start_rst_seq_i (
+        .rst         (mrst),                     // input
+        .src_clk     (mclk),                     // input
+        .dst_clk     (pclk),                     // input
+        .in_pulse    (start_rst_seq_mclk),       // input
+        .out_pulse   (start_rst_seq_pclk),       // output
+        .busy() // output
+    );
+
+     pulse_cross_clock pulse_cross_clock_start_spi_seq_i (
+        .rst         (mrst),                     // input
+        .src_clk     (mclk),                     // input
+        .dst_clk     (pclk),                     // input
+        .in_pulse    (start_spi_seq_mclk),       // input
+        .out_pulse   (start_spi_seq_pclk),       // output
+        .busy() // output
+    );
+
+
 
 // implement I/O ports, including fake ones, to be able to assign them I/O pads    
     // generate clocka to sesnor output, controlled by control word bits
@@ -548,7 +600,8 @@ module  sens_lepton3 #(
     ) lwir_mrst_i (
         .O  (),                  // output - currently not used
         .IO (lwir_mrst),         // inout I/O pad
-        .I  (lwir_mrst_pclk[0]), // input
+//        .I  (lwir_mrst_pclk[0]), // input
+        .I  (lwir_mrst_pclk[1]), // input
         .T  (1'b0)               // input - always on
     );
 
@@ -710,7 +763,7 @@ module  sens_lepton3 #(
         .discard_segment (discard_segment),  // output
         .dout            (pxd),              // output[15:0] 
         .hact            (hact),             // output
-        .sof             (sof),              // output
+        .sof             (sof_w),            // output
         .eof             (eof),              // output
         .crc_err         (crc_err_w),        // output
         .sync_err        (sync_err_w),       // output
@@ -758,7 +811,15 @@ module  sens_lepton3 #(
         .start      (status_start)  // input
     );
     
- 
+ function integer clogb2;
+    input [31:0] value;
+    begin
+        value = value - 1;
+        for (clogb2 = 0; value > 0; clogb2 = clogb2 + 1) begin // SuppressThisWarning VEditor - VDT bug
+            value = value >> 1;
+        end
+    end
+endfunction
 
 endmodule
 

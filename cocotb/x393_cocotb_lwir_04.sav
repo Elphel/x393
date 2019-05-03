@@ -1,19 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Tue Apr 30 17:21:50 2019
+[*] Fri May  3 04:06:38 2019
 [*]
-[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190430003141791.fst"
-[dumpfile_mtime] "Tue Apr 30 17:20:36 2019"
-[dumpfile_size] 1896466138
+[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190502213839545.fst"
+[dumpfile_mtime] "Fri May  3 04:06:09 2019"
+[dumpfile_size] 19575412
 [savefile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/cocotb/x393_cocotb_lwir_04.sav"
 [timestart] 0
 [size] 1804 1171
 [pos] -1 -1
-*-28.897251 1413970273 1022561895 855534694 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-25.245840 49300000 1022561895 855534694 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_lwir160x120_vospi1_i.
 [treeopen] x393_dut.x393_i.
-[treeopen] x393_dut.x393_i.compressor393_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.
@@ -87,9 +86,11 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.lens_flat393_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_sync_i.
+[treeopen] x393_dut.x393_i.timing393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.i_frsync_pclk0.
-[sst_width] 204
+[treeopen] x393_dut.x393_i.timing393_i.rtc393_i.
+[sst_width] 402
 [signals_width] 335
 [sst_expanded] 1
 [sst_vpaned_height] 459
@@ -3022,6 +3023,53 @@ x393_dut.sns1_sda
 @1401200
 -SENSOR3
 @800200
+-khz
+-timing
+@1000200
+-timing
+@800200
+-rtc393
+@28
+x393_dut.x393_i.timing393_i.rtc393_i.enable_rtc
+x393_dut.x393_i.timing393_i.rtc393_i.mclk
+x393_dut.x393_i.timing393_i.rtc393_i.khz
+@22
+x393_dut.x393_i.timing393_i.rtc393_i.khz_cntr[9:0]
+@28
+(0)x393_dut.x393_i.timing393_i.rtc393_i.inc_usec[1:0]
+@1000200
+-rtc393
+-khz
+@800200
+-reset_seq
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.set_ctrl_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.ms
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_rst_seq_mclk
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_rst_seq_pclk
+@800022
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_seq[1:0]
+@28
+(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_seq[1:0]
+(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_seq[1:0]
+@1001200
+-group_end
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_on_cntr
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_after_cntr[2:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_spi_seq_mclk
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_spi_seq_pclk
+@29
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_timeout_cntr[1:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_seq
+@200
+-
+@1000200
+-reset_seq
+@800200
 -sens_channel0
 -lepto3_0
 @28
@@ -3094,14 +3142,13 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_stb
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.segment_good_w
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.discard_set
-@200
--
-@28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.sof_w
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.raddr[10:0]
-@29
+@28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.vospi_segment_61_i.hact_r[2:0]
+@200
+-
 @800200
 -packet
 @28

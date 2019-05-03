@@ -548,8 +548,8 @@
 //`elsif LWIR
     parameter VOSPI_MRST =               0,
     parameter VOSPI_MRST_BITS =          2,
-    parameter VOSPI_PWDN =               2,
-    parameter VOSPI_PWDN_BITS =          2,
+    parameter VOSPI_RST_SEQ =            2, // initiate reset cycle (master drives all sensors), generate frame start when ready 
+    parameter VOSPI_SPI_SEQ =            3, // initilate SPI re-sync (will automatically generate frame syncs when re-synced)
     parameter VOSPI_MCLK =               4,
     parameter VOSPI_MCLK_BITS =          2,
     parameter VOSPI_EN =                 6,
@@ -588,7 +588,17 @@
     parameter VOSPI_SOF_TO_HACT =      100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
 `endif    
-    parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
+    parameter VOSPI_MCLK_HALFDIV =       4, // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock
+    `ifdef SIMULATION
+        parameter VOSPI_MRST_MS =            1, // master reset duration in ms
+        parameter VOSPI_MRST_AFTER_MS =      5, // Wait after master reset and generate SOF pulse to advance sequencer  
+        parameter VOSPI_SPI_TIMEOUT_MS =     3, // Wait to tymeout SPI when needed to re-sync
+    `else
+        parameter VOSPI_MRST_MS =            5, // master reset duration in ms
+        parameter VOSPI_MRST_AFTER_MS =   2000, // Wait after master reset and generate SOF pulse to advance sequencer  
+        parameter VOSPI_SPI_TIMEOUT_MS =   185, // Wait to tymeout SPI when needed to re-sync
+    `endif  
+     
 //`else
     //sensor_fifo parameters (for parallel12)
     parameter SENSOR_DATA_WIDTH =      12,

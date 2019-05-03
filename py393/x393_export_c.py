@@ -2126,10 +2126,9 @@ class X393ExportC(object):
     
     def _enc_sensio_ctrl_vospi(self):
         dw=[]
-        dw.append(("mrst",         vrlg.VOSPI_MRST,             1,   0,  "RESET signal level to the sensor (0 - low(active), 1 - high (inactive)"))
-        dw.append(("mrst_set",     vrlg.VOSPI_MRST + 1,         1,   0,  "When set to 1, RESET is set  to the 'rst' field value"))
-        dw.append(("pwdn",         vrlg.VOSPI_PWDN,             1,   0,  "POWER DOWN signal level to the sensor (0 - low(active), 1 - high (inactive)"))
-        dw.append(("pwdn_set",     vrlg.VOSPI_PWDN + 1,         1,   0,  "When set to 1, POWER DOWN is set  to the 'pwdn' field value"))
+        dw.append(("reset",        vrlg.VOSPI_MRST,             2,   0,  "Sensor reset/power down control (0 - NOP, 1 - power down + reset, 2 - no pwdn, reset, 3 - no pwdn, no reset"))
+        dw.append(("rst_seq",      vrlg.VOSPI_RST_SEQ,          1,   0,  "Initiate simultaneous all sensors reset, generate SOF after pause"))
+        dw.append(("spi_seq",      vrlg.VOSPI_SPI_SEQ,          1,   0,  "Initiate VOSPI reset, will generate normal SOF if successful"))
         dw.append(("mclk",         vrlg.VOSPI_MCLK,             1,   0,  "Enable master clock (25MHz) to sensor"))
         dw.append(("mclk_set",     vrlg.VOSPI_MCLK + 1,         1,   0,  "When set to 1, MCLK enable  is set  to the 'mclk' field value"))
         dw.append(("spi_en",       vrlg.VOSPI_EN,               2,   0,  "SPI reset/enable: 0 - NOP, 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable"))

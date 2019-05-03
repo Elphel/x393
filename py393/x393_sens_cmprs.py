@@ -763,8 +763,8 @@ class X393SensCmprs(object):
         elif sensorType ==  x393_sensor.SENSOR_INTERFACE_VOSPI:
             self.x393Sensor.set_sensor_io_ctl_lwir (
                                num_sensor = num_sensor,
-                               mrst =       True,
-                               pwdn =       False,
+                               rst  =       2, #  mrst, no power down
+                               # TODO - use rst_seq instead?
                                mclk  =      True, # None,
                                spi_en =     1, #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
                                segm_zero =  True, #None,
@@ -776,13 +776,10 @@ class X393SensCmprs(object):
             if  self.DRY_MODE:
                 self.x393Sensor.set_sensor_io_ctl_lwir (
                                    num_sensor = num_sensor,
-                                   mrst =       False)
+                                   rst  =       3) #  no mrst, no power down
                 self.x393Sensor.set_sensor_io_ctl_lwir (
                                    num_sensor = num_sensor,
                                    spi_en =     2) #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
-#                self.x393Sensor.set_sensor_io_ctl_lwir (
-#                                   num_sensor = num_sensor,
-#                                   spi_en =     2) #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
                 self.x393Sensor.set_sensor_io_ctl_lwir (
                                    num_sensor = num_sensor,
                                    spi_en =     3, #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
@@ -791,7 +788,7 @@ class X393SensCmprs(object):
                 self.sleep_ms(0.2) # 1 ms. TODO: For real camera turn off all channels simultaneously ***
                 self.x393Sensor.set_sensor_io_ctl_lwir (
                                    num_sensor = num_sensor,
-                                   mrst =       False,
+                                   rst  =       3, #  no mrst, no power down
                                    spi_en =     3, #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
                                    out_en =     True)
 

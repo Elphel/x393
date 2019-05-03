@@ -615,6 +615,7 @@ module  x393 #(
     wire                            ts_pre_logger_stb; // input logger timestamp sync (@logger_clk)
     wire                      [7:0] ts_logegr_data;    // input[7:0] loger timestamp data (@logger_clk) 
    
+    wire                            khz;                // 1 KHz 50% duty   
 // Compressor signals for interrupts generation    
     wire                      [3:0] eof_written_mclk;  // output // SuppressThisWarning VEditor - (yet) unused
     wire                      [3:0] stuffer_done_mclk; // output// SuppressThisWarning VEditor - (yet) unused
@@ -1846,8 +1847,8 @@ assign axi_grst = axi_rst_pre;
         
         .VOSPI_MRST                 (VOSPI_MRST), //               0,
         .VOSPI_MRST_BITS            (VOSPI_MRST_BITS), //          2,
-        .VOSPI_PWDN                 (VOSPI_PWDN), //               2,
-        .VOSPI_PWDN_BITS            (VOSPI_PWDN_BITS), //          2,
+        .VOSPI_RST_SEQ              (VOSPI_RST_SEQ), //            2,
+        .VOSPI_SPI_SEQ              (VOSPI_SPI_SEQ), //            3,
         .VOSPI_MCLK                 (VOSPI_MCLK), //               4,
         .VOSPI_MCLK_BITS            (VOSPI_MCLK_BITS), //          2,
         .VOSPI_EN                   (VOSPI_EN), //                 6,
@@ -1882,7 +1883,9 @@ assign axi_grst = axi_rst_pre;
         .VOSPI_SOF_TO_HACT          (VOSPI_SOF_TO_HACT), //      100,
         .VOSPI_HACT_TO_HACT_EOF     (VOSPI_HACT_TO_HACT_EOF), //   2,
         .VOSPI_MCLK_HALFDIV         (VOSPI_MCLK_HALFDIV), //       4
-        
+        .VOSPI_MRST_MS              (VOSPI_MRST_MS), //            5
+        .VOSPI_MRST_AFTER_MS        (VOSPI_MRST_AFTER_MS), //    2000
+        .VOSPI_SPI_TIMEOUT_MS       (VOSPI_SPI_TIMEOUT_MS), //    185
         
 `else
 
@@ -2067,7 +2070,7 @@ assign axi_grst = axi_rst_pre;
        ,.dbg_rpage          (dbg_rpage[7:0])       // output[7:0]   
        ,.dbg_wpage          (dbg_wpage[7:0])       // output[7:0]   
 `endif              
-        
+       ,.khz                (khz)                  // input 1 KHz 50% duty 
 `ifdef DEBUG_RING       
         ,.debug_do          (debug_ring[0]),       // output
         .debug_sl           (debug_sl),            // input
@@ -2428,7 +2431,8 @@ assign axi_grst = axi_rst_pre;
         .lrst           (lrst),                  // input
         .ts_logger_snap (logger_snap),           // input
         .ts_logger_stb  (ts_pre_logger_stb),     // output
-        .ts_logger_data (ts_logegr_data)         // output[7:0] 
+        .ts_logger_data (ts_logegr_data),        // output[7:0]
+        .khz            (khz)                    // output //  1 KHz 50% output 
     );
 
     event_logger #(

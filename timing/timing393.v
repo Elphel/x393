@@ -130,8 +130,8 @@ module  timing393       #(
     input                         lrst,           // @ posedge lclk - sync reset
     input                         ts_logger_snap, // request from the logger to take a snapshot
     output                        ts_logger_stb,  // one clock pulse before sending TS data
-    output                  [7:0] ts_logger_data  // timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
-    
+    output                  [7:0] ts_logger_data,  // timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
+    output                        khz             // 1 KHz 50% output
 );
 
     wire   [3:0] frame_sync;
@@ -180,7 +180,9 @@ module  timing393       #(
         .status_rq              (status_rq),    // output
         .status_start           (status_start), // input
         .live_sec               (live_sec),     // output[31:0] 
-        .live_usec              (live_usec)     // output[19:0] 
+        .live_usec              (live_usec),    // output[19:0]
+        .khz                    (khz)           // output
+         
     );
 
 
