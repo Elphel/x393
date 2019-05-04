@@ -1,6 +1,6 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Fri May  3 04:06:38 2019
+[*] Fri May  3 15:28:46 2019
 [*]
 [dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190502213839545.fst"
 [dumpfile_mtime] "Fri May  3 04:06:09 2019"
@@ -3061,16 +3061,44 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepto
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_spi_seq_mclk
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_spi_seq_pclk
-@29
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_timeout_cntr[1:0]
-@28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_seq
-@200
--
 @1000200
 -reset_seq
 @800200
 -sens_channel0
+-timestamping
+@22
+x393_dut.x393_i.timing393_i.frame_sync[3:0]
+@28
+x393_dut.x393_i.timing393_i.frsync_chn0
+x393_dut.x393_i.timing393_i.frsync_chn1
+x393_dut.x393_i.timing393_i.frsync_chn2
+x393_dut.x393_i.timing393_i.frsync_chn3
+@22
+x393_dut.x393_i.timing393_i.trig[3:0]
+@28
+x393_dut.x393_i.timing393_i.trig_chn0
+x393_dut.x393_i.timing393_i.trig_chn1
+x393_dut.x393_i.timing393_i.trig_chn2
+x393_dut.x393_i.timing393_i.trig_chn3
+x393_dut.x393_i.timing393_i.triggered_mode
+@22
+x393_dut.x393_i.timing393_i.ts_data_chn0[7:0]
+x393_dut.x393_i.timing393_i.ts_data_chn1[7:0]
+x393_dut.x393_i.timing393_i.ts_data_chn2[7:0]
+x393_dut.x393_i.timing393_i.ts_data_chn3[7:0]
+x393_dut.x393_i.timing393_i.ts_stb[3:0]
+@28
+x393_dut.x393_i.timing393_i.ts_stb_chn0
+x393_dut.x393_i.timing393_i.ts_stb_chn1
+x393_dut.x393_i.timing393_i.ts_stb_chn2
+x393_dut.x393_i.timing393_i.ts_stb_chn3
+@201
+-
+@1000200
+-timestamping
+@800200
 -lepto3_0
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.prst

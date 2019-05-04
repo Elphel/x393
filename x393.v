@@ -1883,7 +1883,7 @@ assign axi_grst = axi_rst_pre;
         .VOSPI_SOF_TO_HACT          (VOSPI_SOF_TO_HACT), //      100,
         .VOSPI_HACT_TO_HACT_EOF     (VOSPI_HACT_TO_HACT_EOF), //   2,
         .VOSPI_MCLK_HALFDIV         (VOSPI_MCLK_HALFDIV), //       4
-        .VOSPI_MRST_MS              (VOSPI_MRST_MS), //            5
+        .VOSPI_MRST_MS              (VOSPI_MRST_MS), //          200, // master reset duration in ms (so even all channels would overlap)
         .VOSPI_MRST_AFTER_MS        (VOSPI_MRST_AFTER_MS), //    2000
         .VOSPI_SPI_TIMEOUT_MS       (VOSPI_SPI_TIMEOUT_MS), //    185
         

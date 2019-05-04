@@ -89,7 +89,7 @@ module  sens_lepton3 #(
     parameter VOSPI_SOF_TO_HACT =    100, //  10,  // clock cycles from SOF to HACT (limited to 8 bits)
     parameter VOSPI_HACT_TO_HACT_EOF = 2, // minimal clock cycles from HACT to HACT or to EOF
     parameter VOSPI_MCLK_HALFDIV =     4, // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock
-    parameter VOSPI_MRST_MS =          5, // master reset duration in ms
+    parameter VOSPI_MRST_MS =        200, // master reset duration in ms (so even all channels would overlap)
     parameter VOSPI_MRST_AFTER_MS = 2000,  // Wait after master reset and generate SOF pulse to advance sequencer  
     parameter VOSPI_SPI_TIMEOUT_MS = 185 // Wait to tymeout SPI when needed to re-sync
 )(

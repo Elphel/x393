@@ -594,7 +594,7 @@
         parameter VOSPI_MRST_AFTER_MS =      5, // Wait after master reset and generate SOF pulse to advance sequencer  
         parameter VOSPI_SPI_TIMEOUT_MS =     3, // Wait to tymeout SPI when needed to re-sync
     `else
-        parameter VOSPI_MRST_MS =            5, // master reset duration in ms
+        parameter VOSPI_MRST_MS =          200, // master reset duration in ms (so even all channels would overlap)
         parameter VOSPI_MRST_AFTER_MS =   2000, // Wait after master reset and generate SOF pulse to advance sequencer  
         parameter VOSPI_SPI_TIMEOUT_MS =   185, // Wait to tymeout SPI when needed to re-sync
     `endif  
