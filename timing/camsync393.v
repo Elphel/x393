@@ -379,7 +379,16 @@ module camsync393       #(
     
     wire   [3:0] frsync_pclk; // time to copy timestamps from master/received to channels (will always be after it is available)
     wire   [3:0] dly_cntr_start; // start delay counters (added non-triggered mode option)
-      
+
+    // in triggered mode uses ts_master_stb, ts_master_data inputs (as was before), in free runnig - timestyamps from the master channel 
+    wire         ts_master_stb_with_free;    // 1 clk before ts_snd_data is valid
+    wire   [7:0] ts_master_data_with_free;   // byte-wide serialized timestamp message  
+
+    assign {ts_master_stb_with_free, ts_master_data_with_free} = triggered_mode_r?
+                                   {ts_master_stb, ts_master_data}:
+                                   (master_chn[1]?(master_chn[0]?{ts_snd_stb_chn3, ts_snd_data_chn3}:{ts_snd_stb_chn2, ts_snd_data_chn2}):
+                                                  (master_chn[0]?{ts_snd_stb_chn1, ts_snd_data_chn1}:{ts_snd_stb_chn0, ts_snd_data_chn0}));
+                                                  
     assign dly_cntr_start = triggered_mode_pclk? {4{start_dly}} : frsync_pclk; // each delay counter will be started in free running mode
     assign dly_cntr_non_zero = {(dly_cntr_chn3[31:0]!=0)?1'b1:1'b0,  
                                 (dly_cntr_chn2[31:0]!=0)?1'b1:1'b0,
@@ -449,12 +458,21 @@ module camsync393       #(
     wire [9:0] gpio_active_w =    ((gpio_active ^ pre_gpio_active) & output_mask) ^ gpio_active;
 
     always @(posedge mclk) begin
-        if (set_mode_reg_w) begin
+
+        if (mrst) begin
+                                                 en <=               0;
+                                                 triggered_mode_r <= 0;
+                                                 master_chn <=       0;
+                                                 ts_snd_en <=        0;
+        end else if (set_mode_reg_w) begin
             if (cmd_data[CAMSYNC_EN_BIT])        en <=               cmd_data[CAMSYNC_EN_BIT - 1];
-            if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=        cmd_data[CAMSYNC_SNDEN_BIT - 1];
-            if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external_m <=    cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
             if (cmd_data[CAMSYNC_TRIGGERED_BIT]) triggered_mode_r <= cmd_data[CAMSYNC_TRIGGERED_BIT - 1];
             if (cmd_data[CAMSYNC_MASTER_BIT])    master_chn <=       cmd_data[CAMSYNC_MASTER_BIT - 1 -: 2];
+            if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=        cmd_data[CAMSYNC_SNDEN_BIT - 1];
+        end
+
+        if (set_mode_reg_w) begin
+            if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external_m <=    cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
 // Making separate enables for each channel, so channel software will not disturb other channels
             if (cmd_data[CAMSYNC_CHN_EN_BIT-3])  chn_en_r[0] <= cmd_data[CAMSYNC_CHN_EN_BIT - 7];
             if (cmd_data[CAMSYNC_CHN_EN_BIT-2])  chn_en_r[1] <= cmd_data[CAMSYNC_CHN_EN_BIT - 6];
@@ -549,7 +567,8 @@ module camsync393       #(
         ts_master_snap_pclk <=  ts_snd_en_pclk? start_pclk2_masked: rcv_done;
                             
         ts_snd_en_pclk<=ts_snd_en;
-        input_use_intern <= pre_input_use_intern;
+//        input_use_intern <= pre_input_use_intern;
+        input_use_intern <= pre_input_use_intern || !triggered_mode_pclk;
         ts_external_pclk<= ts_external; //  && !input_use_intern;
      
         start_pclk[2:0] <= {(restart && rep_en_pclk) || 
@@ -576,14 +595,15 @@ module camsync393       #(
         start_out_pulse <= pre_start_out_pulse;
 /// Generating output pulse - 64* bit_length if timestamp is disabled or
 /// 64 bits with encoded timestamp, including pre/post magic for error detectrion
-        outsync <= start_en && (start_out_pulse || (outsync && !((bit_snd_duration[7:0]==0) &&(bit_snd_counter[5:0]==0))));
+//        outsync <= start_en && (start_out_pulse || (outsync && !((bit_snd_duration[7:0]==0) &&(bit_snd_counter[5:0]==0))));
+        outsync <= !pre_start_out_pulse && (start_en || (en & !triggered_mode_pclk)) && (start_out_pulse || (outsync && !((bit_snd_duration[7:0]==0) &&(bit_snd_counter[5:0]==0))));
         
         if (!outsync || (bit_snd_duration[7:0]==0)) bit_snd_duration[7:0] <= bit_length[7:0];
-        else  bit_snd_duration[7:0] <= bit_snd_duration[7:0] - 1;
+        else                                        bit_snd_duration[7:0] <= bit_snd_duration[7:0] - 1;
         
         bit_snd_duration_zero <= bit_snd_duration[7:0]==8'h1;
 
-        if (!outsync) bit_snd_counter[5:0] <=ts_snd_en_pclk?63:3; /// when no ts serial, send pulse 4 periods long (max 1024 pclk)
+        if (!outsync)                       bit_snd_counter[5:0] <=ts_snd_en_pclk?63:3; /// when no ts serial, send pulse 4 periods long (max 1024 pclk)
       /// Same bit length (1/4) is used in input filter/de-glitcher
         else if (bit_snd_duration[7:0]==0)  bit_snd_counter[5:0] <=  bit_snd_counter[5:0] -1;
 
@@ -833,12 +853,12 @@ module camsync393       #(
     );
 
     timestamp_to_parallel timestamp_to_parallel_master_i (
-        .clk        (mclk),             // input
-        .pre_stb    (ts_master_stb),    // input
-        .tdata      (ts_master_data),   // input[7:0] 
-        .sec        (ts_snd_sec),       // output[31:0] reg 
-        .usec       (ts_snd_usec),      // output[19:0] reg 
-        .done       (master_got)        // output
+        .clk        (mclk),                     // input
+        .pre_stb    (ts_master_stb_with_free),  // input
+        .tdata      (ts_master_data_with_free), // input[7:0] 
+        .sec        (ts_snd_sec),               // output[31:0] reg 
+        .usec       (ts_snd_usec),              // output[19:0] reg 
+        .done       (master_got)                // output
     );
 
 

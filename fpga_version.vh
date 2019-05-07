@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h03930137;       // longer reset, sync output 
+        parameter FPGA_VERSION =          32'h03930138;       // Fixing output trigger in free running mode 
+//        parameter FPGA_VERSION =          32'h03930137;       // longer reset, sync output 
 //        parameter FPGA_VERSION =          32'h03930136;      // Fiixing spi_seq 
 //        parameter FPGA_VERSION =          32'h03930135;      // Adding multi-cam reset 
 //        parameter FPGA_VERSION =          32'h0393014;      // Adding multi-cam reset - buggy 

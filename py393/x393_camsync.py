@@ -183,9 +183,11 @@ class X393Camsync(object):
         self.set_camsync_period  (SYNC_BIT_LENGTH) #set (bit_length -1) (should be 2..255), not the period
         if not isinstance(camsync_delay,list) or isinstance(camsync_delay,tuple):
             camsync_delay = (camsync_delay, camsync_delay, camsync_delay, camsync_delay)
+            
+        print ("camsync_delay=",camsync_delay)    
         for i, dly in enumerate (camsync_delay): 
             if not dly is None:
                 self.set_camsync_delay(sub_chn = i, delay = dly)
-
+                print ("set_camsync_delay(",i, dly,")")    
         if not camsync_period is None:
             self.set_camsync_period  (period = camsync_period) # set period (start generating) - in 353 was after everything else was set

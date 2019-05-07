@@ -2197,7 +2197,7 @@ assign x393_i.ps7_i.FCLKRESETN=     {RST,~RST,RST,~RST};
 `define TEST_IMU
 `define TEST_EXT_INT
 
-`define ODOMETER_PULSE_6
+//`define ODOMETER_PULSE_6 // conflicts with trigger output 
 assign #10 gpio_pins[7] = gpio_pins[8];
 `ifndef TEST_IMU
     assign #10 gpio_pins[9] = gpio_pins[6]; 

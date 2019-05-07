@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Fri May  3 15:28:46 2019
+[*] Tue May  7 14:26:47 2019
 [*]
-[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190502213839545.fst"
-[dumpfile_mtime] "Fri May  3 04:06:09 2019"
-[dumpfile_size] 19575412
+[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190506234557532.fst"
+[dumpfile_mtime] "Tue May  7 10:20:44 2019"
+[dumpfile_size] 1378118334
 [savefile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/cocotb/x393_cocotb_lwir_04.sav"
-[timestart] 0
+[timestart] 902240000
 [size] 1804 1171
 [pos] -1 -1
-*-25.245840 49300000 1022561895 855534694 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.528950 908793333 1022561895 855534694 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_lwir160x120_vospi1_i.
 [treeopen] x393_dut.x393_i.
@@ -90,8 +90,8 @@
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.i_frsync_pclk0.
 [treeopen] x393_dut.x393_i.timing393_i.rtc393_i.
-[sst_width] 402
-[signals_width] 335
+[sst_width] 314
+[signals_width] 265
 [sst_expanded] 1
 [sst_vpaned_height] 459
 @820
@@ -3032,10 +3032,6 @@ x393_dut.sns1_sda
 @28
 x393_dut.x393_i.timing393_i.rtc393_i.enable_rtc
 x393_dut.x393_i.timing393_i.rtc393_i.mclk
-x393_dut.x393_i.timing393_i.rtc393_i.khz
-@22
-x393_dut.x393_i.timing393_i.rtc393_i.khz_cntr[9:0]
-@28
 (0)x393_dut.x393_i.timing393_i.rtc393_i.inc_usec[1:0]
 @1000200
 -rtc393
@@ -3044,25 +3040,6 @@ x393_dut.x393_i.timing393_i.rtc393_i.khz_cntr[9:0]
 -reset_seq
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.set_ctrl_r
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.ms
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_rst_seq_mclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_rst_seq_pclk
-@800022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_seq[1:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_seq[1:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_seq[1:0]
-@1001200
--group_end
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_on_cntr
-@22
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.mrst_after_cntr[2:0]
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_spi_seq_mclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.start_spi_seq_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_timeout_cntr[1:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_lepton3_i.spi_seq
 @1000200
 -reset_seq
 @800200
@@ -3094,10 +3071,143 @@ x393_dut.x393_i.timing393_i.ts_stb_chn0
 x393_dut.x393_i.timing393_i.ts_stb_chn1
 x393_dut.x393_i.timing393_i.ts_stb_chn2
 x393_dut.x393_i.timing393_i.ts_stb_chn3
-@201
--
+@22
+x393_dut.x393_i.sof_out_mclk[3:0]
+x393_dut.x393_i.sof_late_mclk[3:0]
+x393_dut.x393_i.sof_out_pclk[3:0]
 @1000200
 -timestamping
+@800200
+-timing393
+@200
+-
+@1000200
+-timing393
+@28
+x393_dut.x393_i.timing393_i.ts_master_snap
+x393_dut.x393_i.timing393_i.ts_master_stb
+@800200
+-camsync
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.mrst
+x393_dut.x393_i.timing393_i.camsync393_i.triggered_mode
+@c00022
+x393_dut.x393_i.timing393_i.camsync393_i.frame_sync[3:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.frame_sync[3:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.frame_sync[3:0]
+(2)x393_dut.x393_i.timing393_i.camsync393_i.frame_sync[3:0]
+(3)x393_dut.x393_i.timing393_i.camsync393_i.frame_sync[3:0]
+@1401200
+-group_end
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.en
+x393_dut.x393_i.timing393_i.camsync393_i.ts_external_m
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_en
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.chn_en[3:0]
+x393_dut.x393_i.timing393_i.camsync393_i.gpio_active[9:0]
+x393_dut.x393_i.timing393_i.camsync393_i.gpio_out_en[9:0]
+x393_dut.x393_i.timing393_i.camsync393_i.gpio_out[9:0]
+@200
+-
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snap_mclk_chn0
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snap_mclk_chn1
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snap_mclk_chn2
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snap_mclk_chn3
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_stb_chn0
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_stb_chn1
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_stb_chn2
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_stb_chn3
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_data_chn0[7:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_data_chn1[7:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_data_chn2[7:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_data_chn3[7:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_sec_chn0[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_sec_chn1[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_sec_chn2[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_sec_chn3[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_usec_chn0[19:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_usec_chn1[19:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_usec_chn2[19:0]
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_usec_chn3[19:0]
+@200
+-
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.suppress_immediate
+x393_dut.x393_i.timing393_i.camsync393_i.start_pclk[2:0]
+x393_dut.x393_i.timing393_i.camsync393_i.start_pclk2_masked
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_en_pclk
+x393_dut.x393_i.timing393_i.camsync393_i.ts_master_snap_pclk
+x393_dut.x393_i.timing393_i.camsync393_i.ts_master_snap
+x393_dut.x393_i.timing393_i.camsync393_i.ts_master_stb
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.ts_snd_sec[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.sr_snd_first[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.sr_snd_second[31:0]
+@28
+[color] 3
+x393_dut.x393_i.timing393_i.camsync393_i.out_data
+x393_dut.x393_i.timing393_i.camsync393_i.outsync
+x393_dut.x393_i.timing393_i.camsync393_i.start_en
+x393_dut.x393_i.timing393_i.camsync393_i.start_out_pulse
+x393_dut.x393_i.timing393_i.camsync393_i.input_use_intern
+x393_dut.x393_i.timing393_i.camsync393_i.master_chn[1:0]
+@800022
+x393_dut.x393_i.timing393_i.camsync393_i.dly_cntr_end[3:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.dly_cntr_end[3:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.dly_cntr_end[3:0]
+(2)x393_dut.x393_i.timing393_i.camsync393_i.dly_cntr_end[3:0]
+(3)x393_dut.x393_i.timing393_i.camsync393_i.dly_cntr_end[3:0]
+@1001200
+-group_end
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.repeat_period[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.bit_length[7:0]
+x393_dut.x393_i.timing393_i.camsync393_i.input_dly_chn0[31:0]
+x393_dut.x393_i.timing393_i.camsync393_i.dly_cntr_chn0[31:0]
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.set_trig_period_w
+x393_dut.x393_i.timing393_i.camsync393_i.set_trig_delay0_w
+x393_dut.x393_i.timing393_i.camsync393_i.cmd_we
+x393_dut.x393_i.timing393_i.camsync393_i.set_mode_reg_w
+x393_dut.x393_i.timing393_i.camsync393_i.set_period
+x393_dut.x393_i.timing393_i.camsync393_i.set_trig_dst_w
+x393_dut.x393_i.timing393_i.camsync393_i.set_trig_src_w
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.bit_length[7:0]
+@c08022
+x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+(2)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+(3)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+(4)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+(5)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+(6)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+(7)x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_duration[7:0]
+@1401200
+-group_end
+@8022
+x393_dut.x393_i.timing393_i.camsync393_i.bit_snd_counter[5:0]
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.pre_start_out_pulse
+x393_dut.x393_i.timing393_i.camsync393_i.start_out_pulse
+@200
+-
+@28
+(3)x393_dut.gpio_pins[9:0]
+(5)x393_dut.gpio_pins[9:0]
+(3)x393_dut.x393_i.gpio_camsync[9:0]
+(5)x393_dut.x393_i.gpio_camsync[9:0]
+(3)x393_dut.x393_i.gpio_camsync_en[9:0]
+(5)x393_dut.x393_i.gpio_camsync_en[9:0]
+@1000200
+-camsync
 @800200
 -lepto3_0
 @28
