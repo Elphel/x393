@@ -645,7 +645,8 @@ module  sens_lepton3 #(
         .O(mipi_clkn_int),        // output - currently not used
         .I(mipi_clkn)             // inout I/O pad
     );
-
+    
+    mpullup i_senspgm_pullup(senspgm);
     iobuf #( // senspgm
         .DRIVE        (VOSPI_DRIVE),
         .IBUF_LOW_PWR (VOSPI_IBUF_LOW_PWR),
