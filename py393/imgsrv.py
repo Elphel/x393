@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import division
 from __future__ import print_function
 '''
@@ -32,7 +32,8 @@ __email__ = "andrey@elphel.com"
 __status__ = "Development"
 
 import os
-import urlparse
+#import urlparse
+import urllib
 import time
 import socket
 import shutil
@@ -50,7 +51,7 @@ def communicate(port,snd_str):
     sock.close()
     return reply
 try:
-    qs=urlparse.parse_qs(os.environ['QUERY_STRING'])
+    qs=urllib.parse.parse_qs(os.environ['QUERY_STRING'])
 except:
     print("failed  in os.environ['QUERY_STRING']")
     qs={}

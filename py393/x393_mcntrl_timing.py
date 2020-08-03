@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -205,7 +206,7 @@ class X393McntrlTiming(object):
             for i in range(8):
                 delay[0].append(vrlg.get_default_field("DLY_LANE0_IDELAY",i))
                 delay[1].append(vrlg.get_default_field("DLY_LANE1_IDELAY",i))
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=(delay,delay)
         elif len(delay) % 8 == 0 :
             delay2=[]
@@ -235,7 +236,7 @@ class X393McntrlTiming(object):
             for i in range(8):
                 delay[0].append(vrlg.get_default_field("DLY_LANE0_ODELAY",i))
                 delay[1].append(vrlg.get_default_field("DLY_LANE1_ODELAY",i))
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=(delay,delay)
         elif len(delay) % 8 == 0 :
             delay2=[]
@@ -259,7 +260,7 @@ class X393McntrlTiming(object):
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_IDELAY",8),vrlg.get_default_field("DLY_LANE1_IDELAY",8))
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=(delay,delay)
         if quiet < 2:
             print("SET DQS IDELAY="+hexMultiple(delay)) # hexMultiple
@@ -279,7 +280,7 @@ class X393McntrlTiming(object):
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_ODELAY",8),vrlg.get_default_field("DLY_LANE1_ODELAY",8))
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=(delay,delay)
         if quiet < 2:
             print("SET DQS ODELAY="+hexMultiple(delay)) # hexMultiple
@@ -298,7 +299,7 @@ class X393McntrlTiming(object):
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_ODELAY",9),vrlg.get_default_field("DLY_LANE1_ODELAY",9))
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=(delay,delay)
         if quiet < 2:
             print("SET DQM IDELAY="+hexMultiple(delay)) # hexMultiple
@@ -325,7 +326,7 @@ class X393McntrlTiming(object):
                     delay.append(vrlg.get_default_field("DLY_CMDA",i))
                 else:
                     delay.append(None)
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=[delay]*32 # all address/commands
             if not indx is None:
                 for i in range(len(delay)):
@@ -355,7 +356,7 @@ class X393McntrlTiming(object):
                     delay.append(vrlg.get_default_field("DLY_CMDA",i))
                 else:
                     delay.append(None)
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=[delay]*vrlg.ADDRESS_NUMBER
             if not indx is None:
                 for i in range(len(delay)):
@@ -387,7 +388,7 @@ class X393McntrlTiming(object):
                     delay.append(vrlg.get_default_field("DLY_CMDA",i+bank_offset))
                 else:
                     delay.append(None)
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=[delay]*3
             if not indx is None:
                 for i in range(len(delay)):
@@ -418,7 +419,7 @@ class X393McntrlTiming(object):
                     delay.append(vrlg.get_default_field("DLY_CMDA",i+command_offset))
                 else:
                     delay.append(None)
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=[delay]*5
             if not indx is None:
                 for i in range(len(delay)):
@@ -447,7 +448,7 @@ class X393McntrlTiming(object):
         """
 #        print ("===axi_set_multiple_delays(0x%x,%d,%s"%(reg_addr,number,delay))
         if delay is None: return # Do nothing, that's OK
-        if isinstance(delay,(int,long)):
+        if isinstance(delay,(int,)):
             delay=[delay]*number
         if len(delay) < number:
             delay= delay + [None]*(number-len(delay)) #

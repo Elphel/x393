@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -236,7 +237,7 @@ class X393LMA(object):
                 isNone=np.isnan
 #                print ("using np.isnan")
 #        print("filtered=",filtered)
-        n=len(v)/32
+        n=len(v)//32
         if 'A' in showMode.upper():
             av=[]
             for dly in range(n):
@@ -880,7 +881,7 @@ class X393LMA(object):
         @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
                 each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
         """
-        if not isinstance(lane,(int, long)): # ignore content, process both lanes
+        if not isinstance(lane,(int,)): # ignore content, process both lanes
             lane_rslt=[]
             numLanes=2
             parametersKey='parameters'
@@ -1709,7 +1710,7 @@ class X393LMA(object):
                 print ("SX=",SX)
             return minVal+bin_size_ps*(SX+0.5) # ps
         
-        if not isinstance(lane,(int, long)): # ignore content, process both lanes
+        if not isinstance(lane,(int,)): # ignore content, process both lanes
             rslt_names=("dqs_optimal_ps","dqs_phase","dqs_phase_multi","dqs_phase_err","dqs_min_max_periods")
             rslt= {}
             for name in rslt_names:

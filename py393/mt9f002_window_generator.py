@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+from __future__ import division
+from __future__ import print_function
 
 '''
   Generates window settings for driverless mode
@@ -104,8 +106,8 @@ y_end   = y_start + y_output_size - 1 + compressor_margin
 frame_length_lines = y_output_size + min_frame_blanking_lines
 
 llp0 = min_line_length_pck
-llp1 = x_output_size/2+min_line_blanking_pck/2
-llp2 = x_output_size/2+0x5e
+llp1 = x_output_size//2+min_line_blanking_pck//2
+llp2 = x_output_size//2+0x5e
 
 line_length_pck = max(llp0,llp1,llp2)
 

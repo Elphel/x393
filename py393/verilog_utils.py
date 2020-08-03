@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+
 '''
 # Copyright (C) 2015, Elphel.inc.
 # Methods that mimic Verilog tasks used for simulation  
@@ -57,7 +59,7 @@ def concat(items):
     width=0
     for vw in reversed(items):
         v=vw[0]
-        if not isinstance(v,(int,long)):
+        if not isinstance(v,(int,)):
             if v:
                 v=1 # So True/False will also work, not just 0/1
             else:
@@ -151,7 +153,7 @@ def checkIntArgs(names,var_dict):
             v=var_dict[name]
         except:
             raise Exception("ERROR: '%s' is not among %s"%(name,str(var_dict.keys())))    
-        if not isinstance(v,(int,long)):
+        if not isinstance(v,(int,)):
             print ("Expected an integer for '%s', got '%s"%(name,v))
             try:
                 d=int(v,16)
@@ -207,7 +209,7 @@ def combine_delay(dly):
     try:
         if isinstance(dly,float):
             dly=int(dly+0.5)
-        return ((dly/NUM_FINE_STEPS)<<3)+(dly%NUM_FINE_STEPS)
+        return ((dly//NUM_FINE_STEPS)<<3)+(dly%NUM_FINE_STEPS)
     except:
         return None
 

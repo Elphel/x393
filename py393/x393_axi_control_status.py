@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 '''
 # Copyright (C) 2015, Elphel.inc.
 # Methods that mimic Verilog tasks used for simulation  

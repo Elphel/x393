@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 from __future__ import division
 from __future__ import print_function
@@ -38,18 +38,18 @@ import sys
 import numpy as np
 
 try:
-  fname = sys.argv[1]
+    fname = sys.argv[1]
 except IndexError:
-  fname = "/data_ssd/nc393/elphel393/fpga-elphel/x393/attic/hor-pairs-12b-1044x36.tiff"
+    fname = "/data_ssd/nc393/elphel393/fpga-elphel/x393/attic/hor-pairs-12b-1044x36.tiff"
 
 try:
-  digits = int(sys.argv[2])
+    digits = int(sys.argv[2])
 except:
-  digits = 3
+    digits = 3
 try:
-  outname = sys.argv[3]
+    outname = sys.argv[3]
 except IndexError:
-  outname = fname.replace(".tiff",".dat")  
+    outname = fname.replace(".tiff",".dat")  
 
 tif = Image.open(fname)
 

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 """
 # Copyright (C) 2016, Elphel.inc.
 # Simulation code for cocotb simulation for x393 project
@@ -86,15 +87,18 @@ class x393Client():
         self.PORT = port
         self.HOST = host   # Symbolic name meaning all available interfaces
         self.cmd= SocketCommand()
+ #       print("HOST=%s"%(self.HOST))
+ #       print("PORT=%d"%(self.PORT))
     def communicate(self, snd_str):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.HOST, self.PORT))
-        sock.send(snd_str)
-        reply = sock.recv(16384)  # limit reply to 16K
+        sock.send(snd_str.encode('iso-8859-1'))
+        reply = sock.recv(16384).decode('iso-8859-1')  # limit reply to 16K
         sock.close()
         return reply
     def start(self):
         self.cmd.setStart()
+#        print(self.cmd.toJSON()) #{"cmd": "start", "args": null}
         print("start->",self.communicate(self.cmd.toJSON()))
     def stop(self):
         self.cmd.setStop()

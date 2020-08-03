@@ -568,7 +568,7 @@ class X393SensCmprs(object):
         width_in_bursts = window_width >> 4
         if (window_width & 0xf):
             width_in_bursts += 1
-        compressor_left_margin = window_left % 32
+        ##compressor_left_margin = window_left % 32
 
         num_burst_in_line = (window_left >> 4) + width_in_bursts
         num_pages_in_line = num_burst_in_line // align_to_bursts;
@@ -1240,7 +1240,7 @@ class X393SensCmprs(object):
         window_left =    window["left"]
         window_top =     window["top"]
         cmode =          window["cmode"]
-        COLOR_MARGINS = 2
+        ##COLOR_MARGINS = 2
         num_sensor = chn # 1:1 sensor - compressor
 
         align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
@@ -1996,7 +1996,7 @@ class X393SensCmprs(object):
 
         """
 
-        frame_full_width =  FRAME_FULL_WIDTH # Made it fixed width
+        ##frame_full_width =  FRAME_FULL_WIDTH # Made it fixed width
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
@@ -2288,7 +2288,7 @@ class X393SensCmprs(object):
                 print (("%03x.%02x: %"+str(maximal_name_length)+"s")%(l // 32, l % 32, p[0]))
                 l += p[1]
             print("total bits: ", l)
-            print("total words32: ", l / 32)
+            print("total words32: ", l // 32)
             return
 
         if (self.DRY_MODE):
@@ -2348,7 +2348,7 @@ class X393SensCmprs(object):
         @param huffman_data - list of table 512 items or a file path
                              with the same data, same as for Verilog $readmemh
         """
-        if isinstance(huffman_data, (unicode,str)):
+        if isinstance(huffman_data, (str,)):
             with open(huffman_data) as f:
                 tokens=f.read().split()
             huffman_data = []
@@ -2372,7 +2372,7 @@ class X393SensCmprs(object):
         @param verbose - verbose level
                              with the same data, same as for Verilog $readmemh
         """
-        if isinstance(quantization_data, (unicode,str)):
+        if isinstance(quantization_data, (str,)):
             with open(quantization_data) as f:
                 tokens=f.read().split()
             quantization_data = []
@@ -2394,7 +2394,7 @@ class X393SensCmprs(object):
         @param coring_data - list of table 64/128/256 items or a file path (file has 256-entry table)
                              with the same data, same as for Verilog $readmemh
         """
-        if isinstance(coring_data, (unicode,str)):
+        if isinstance(coring_data, (str,)):
             with open(coring_data) as f:
                 tokens=f.read().split()
             coring_data = []
@@ -2416,7 +2416,7 @@ class X393SensCmprs(object):
         @param focus_data - list of table 128 items or a file path
                              with the same data, same as for Verilog $readmemh
         """
-        if isinstance(focus_data, (unicode,str)):
+        if isinstance(focus_data, (str,)):
             with open(focus_data) as f:
                 tokens=f.read().split()
             focus_data = []

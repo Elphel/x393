@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -392,7 +393,7 @@ class X393McntrlAdjust(object):
             if not item is None:
                 if isinstance(item,float):
                     maxErrPS=item
-                elif isinstance(item,(int,long,tuple)):
+                elif isinstance(item,(int,tuple)):
                     periods_set.add(item)
                 elif isinstance(item,str) and (len(item)>0) and (item.upper()[0] in "EBLA"):
                     if item.upper()[0] == "L":
@@ -714,7 +715,7 @@ class X393McntrlAdjust(object):
         if quiet < 2:                     
             print("maxPhaseErrorsPS=",maxPhaseErrorsPS)
         if maxPhaseErrorsPS:
-            if isinstance (maxPhaseErrorsPS, (float, int,long)):
+            if isinstance (maxPhaseErrorsPS, (float, int)):
                 maxPhaseErrorsPS=(maxPhaseErrorsPS,maxPhaseErrorsPS,maxPhaseErrorsPS)
             if maxPhaseErrorsPS[0]:
                 phaseTolerances[CMDA_KEY]= int(round(maxPhaseErrorsPS[0]/phaseStep))
@@ -1143,7 +1144,7 @@ class X393McntrlAdjust(object):
             print("--- write_levelling_allbits--- ")
         delay_dflt=(split_delay(vrlg.get_default_field("DLY_LANE0_IDELAY",8)),
                     split_delay(vrlg.get_default_field("DLY_LANE1_IDELAY",8)))
-        delay_up = ((delay_dflt[0]+(NUM_DLY_STEPS/4))%NUM_DLY_STEPS, (delay_dflt[1]+(NUM_DLY_STEPS/4))%NUM_DLY_STEPS)
+        delay_up = ((delay_dflt[0]+(NUM_DLY_STEPS//4))%NUM_DLY_STEPS, (delay_dflt[1]+(NUM_DLY_STEPS//4))%NUM_DLY_STEPS)
         self.x393_mcntrl_timing.axi_set_dqs_idelay((combine_delay(delay_dflt[0]),combine_delay(delay_dflt[1])),quiet=quiet)
         wlev_rslt=self.x393_pio_sequences.write_levelling(wait_complete, nburst, quiet)
         if quiet < 1:
@@ -1294,7 +1295,7 @@ class X393McntrlAdjust(object):
 #start_phase
         cmda_marg_dly=[None]*numPhaseSteps
         cmda_dly=0
-        safe_early=split_delay(recover_cmda_dly_step)/2
+        safe_early=split_delay(recover_cmda_dly_step)//2
 #        print ("safe_early=%d(0x%x), recover_cmda_dly_step=%d(0x%x)"%(safe_early,safe_early,recover_cmda_dly_step,recover_cmda_dly_step))
         if reinits>0:
             self.x393_pio_sequences.restart_ddr3()
@@ -1833,7 +1834,7 @@ class X393McntrlAdjust(object):
                              data_set_number=2,        # not number - use measured data
                              max_phase_err=0.1,
                              quiet=1):
-        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+        if isinstance (data_set_number,(int,)) and (data_set_number>=0) :
             if quiet < 4:
                 print("Using hard-coded data set ")
                 wlev_dqs_delays=get_test_dq_dqs_data.get_wlev_dqs_delays()
@@ -2856,11 +2857,11 @@ class X393McntrlAdjust(object):
                     phase_dqso.append(None)
                     continue
                 else:
-                    diff_per= max(best_phases)-min(best_phases) > numPhaseSteps/2 # different ends
+                    diff_per= max(best_phases)-min(best_phases) > numPhaseSteps//2 # different ends
                         #find which one is closer to last_phase, modify the other one by +/- period
                     sp=0.0
                     for lane in range(num_lanes):
-                        if diff_per and (best_phases[lane] >= numPhaseSteps/2):
+                        if diff_per and (best_phases[lane] >= numPhaseSteps//2):
                             best_phases[lane] -= numPhaseSteps
                         sp+=best_phases[lane]
                     sp /= num_lanes # average phase for all lanes
@@ -3885,7 +3886,7 @@ class X393McntrlAdjust(object):
             for phase in range(numPhaseSteps):
                 if wlev_lane[phase] is None:
                     otherPhase=None
-                    for p in range(phase-numPhaseSteps/8,phase+numPhaseSteps/8+1):
+                    for p in range(phase-numPhaseSteps//8,phase+numPhaseSteps//8+1):
                         if not wlev_lane[p % numPhaseSteps] is None:
                             if (otherPhase is None) or (abs(phase-p) < abs(phase-otherPhase)):
                                 otherPhase=p
@@ -3915,7 +3916,7 @@ class X393McntrlAdjust(object):
             for phase in range(numPhaseSteps):
                 if wlev_p_l[phase][lane] is None:
                     otherPhase=None
-                    for p in range(phase-numPhaseSteps/8,phase+numPhaseSteps/8+1):
+                    for p in range(phase-numPhaseSteps//8,phase+numPhaseSteps//8+1):
                         if not wlev_p_l[p % numPhaseSteps][lane] is None:
                             if (otherPhase is None) or (abs(phase-p) < abs(phase-otherPhase)):
                                 otherPhase=p
@@ -5216,7 +5217,7 @@ write_settings= {
         for variant in adj_vars:
             if quiet < 2:
                 print ("Testing variant %s to write and read data"%(variant))
-            start_phase=variant['']    
+            #start_phase=variant['']    
                 
                 
                 
@@ -5623,7 +5624,7 @@ write_settings= {
         """
         if quiet < 3:
             print ("proc_dqi_dqsi(): scale_w=%f"%(scale_w))
-        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+        if isinstance (data_set_number,(int,)) and (data_set_number>=0) :
             if quiet < 4:
                 print("Using hard-coded data set #%d"%data_set_number)
             compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps_in(data_set_number)
@@ -5709,7 +5710,7 @@ write_settings= {
         """
         if quiet < 3:
             print ("proc_dqsi_phase(): scale_w=%f"%(scale_w))
-        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+        if isinstance (data_set_number,(int,)) and (data_set_number>=0) :
             self.load_hardcoded_data()
             if quiet < 4:
                 print("Using hard-coded data set #%d"%data_set_number)
@@ -5817,7 +5818,7 @@ write_settings= {
             print("}")
         if quiet < 3:
             print ("proc_dqso_phase(): scale_w=%f"%(scale_w))
-        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+        if isinstance (data_set_number,(int,)) and (data_set_number>=0) :
 #            self.load_hardcoded_data()
             if quiet < 4:
                 print("Using hard-coded data set #%d"%data_set_number)
@@ -5923,7 +5924,7 @@ write_settings= {
         """
         if quiet < 3:
             print ("proc_dqi_dqsi(): scale_w=%f"%(scale_w))
-        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+        if isinstance (data_set_number,(int,)) and (data_set_number>=0) :
             if quiet < 4:
                 print("Using hard-coded data set #%d"%data_set_number)
             compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps_out(data_set_number)

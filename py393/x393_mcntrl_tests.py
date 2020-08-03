@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -325,7 +326,7 @@ class X393McntrlTests(object):
                 
             print("########### test_scanline_write block %d: channel=%d"%(ii, channel));
             startx=window_left + ((ii % pages_per_row) << vrlg.NUM_XFER_BITS)
-            starty=window_top + (ii / pages_per_row);
+            starty=window_top + (ii // pages_per_row);
             self.x393_mcntrl_buffers.write_block_scanline_chn(
                                                               channel,
                                                               (ii & 3),
@@ -353,7 +354,7 @@ class X393McntrlTests(object):
                     
                 print("########### test_scanline_write block %d: channel=%d"%(ii, channel));
                 startx=window_left + ((ii % pages_per_row) << vrlg.NUM_XFER_BITS);
-                starty=window_top + (ii / pages_per_row);
+                starty=window_top + (ii // pages_per_row);
                 self.x393_mcntrl_buffers.write_block_scanline_chn(
                                                                   channel,
                                                                   (ii & 3),
@@ -525,8 +526,8 @@ class X393McntrlTests(object):
         """
         
 #        tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
-        tiles_per_row= (window_width/tile_width)+  (0,1)[(window_width % tile_width)==0]
-        tile_rows_per_window= ((window_height-1)/tile_vstep) + 1
+        tiles_per_row= (window_width//tile_width)+  (0,1)[(window_width % tile_width)==0]
+        tile_rows_per_window= ((window_height-1)//tile_vstep) + 1
         tile_size= tile_width*tile_height;
         channel=   (0,1)[channel]
         keep_open= (0,1)[keep_open]
@@ -599,7 +600,7 @@ class X393McntrlTests(object):
         for ii in range(vrlg.TEST_INITIAL_BURST): # for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
             print("########### test_tiled_write block %d: channel=%d"%( ii, channel))
             startx = window_left + ((ii % tiles_per_row) * tile_width)
-            starty = window_top + (ii / tile_rows_per_window)         # SCANLINE_CUR_Y);
+            starty = window_top + (ii // tile_rows_per_window)         # SCANLINE_CUR_Y);
             self.x393_mcntrl_buffers.write_block_scanline_chn( # TODO: Make a different tile buffer data, matching the order
                                                                channel, # channel
                                                                (ii & 3),
@@ -619,7 +620,7 @@ class X393McntrlTests(object):
                                                            (0,1)[ii == vrlg.TEST_INITIAL_BURST]); # synchronize sequence number - only first time, next just wait fro auto update
                 print("########### test_tiled_write block %d: channel=%d"%(ii, channel))
                 startx = window_left + ((ii % tiles_per_row) * tile_width);
-                starty = window_top + (ii / tile_rows_per_window);
+                starty = window_top + (ii // tile_rows_per_window);
                 self.x393_mcntrl_buffers.write_block_scanline_chn( # TODO: Make a different tile buffer data, matching the order
                                                                    channel,  # channel
                                                                    (ii & 3),
@@ -669,8 +670,8 @@ class X393McntrlTests(object):
         """
         result=[] # will be a 2-d array
 #        tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
-        tiles_per_row= (window_width/tile_width)+  (0,1)[(window_width % tile_width)==0]
-        tile_rows_per_window= ((window_height-1)/tile_vstep) + 1
+        tiles_per_row= (window_width//tile_width)+  (0,1)[(window_width % tile_width)==0]
+        tile_rows_per_window= ((window_height-1)//tile_vstep) + 1
         tile_size= tile_width*tile_height;
         channel=   (0,1)[channel]
         keep_open= (0,1)[keep_open]

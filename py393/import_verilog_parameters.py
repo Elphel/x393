@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 '''
 # Copyright (C) 2015, Elphel.inc.
 # Parsing Verilog parameters from the header files
@@ -198,7 +200,8 @@ class ImportVerilogParameters(object):
             c=getNextChar()
             if c is None:
                 return None
-            c=string.lower(c)
+#            c=string.lower(c)
+            c=c.lower()
             if not (c in "bodh"):
                 return None
             if c=="b":
@@ -265,7 +268,8 @@ class ImportVerilogParameters(object):
                     c=getNextChar()
                     if c is None:
                         break
-                    c=string.lower(c)
+#                   c=string.lower(c)
+                    c=c.lower()
                     if not c in nChars:
                         cp[0]-=1
                         break
@@ -317,7 +321,10 @@ class ImportVerilogParameters(object):
         def binop_mult(exp1,exp2):
             return (exp1[0] * exp2[0],exp1[1]+exp2[1])
         def binop_div(exp1,exp2):
-            return (exp1[0] / exp2[0],exp1[1])
+            if isinstance(exp1[0], (int,)) and isinstance(exp2[0], (int,)):
+                return (exp1[0] // exp2[0], exp1[1])
+            else: 
+                return (exp1[0] / exp2[0],exp1[1]) 
         def binop_mod(exp1,exp2):
             return (exp1[0] % exp2[0],exp2[1])
         def binop_lshift(exp1,exp2):
@@ -440,7 +447,7 @@ class ImportVerilogParameters(object):
                             print ("line=%s"%(line))
                             print ()
 #                        print ("exp=%s"%(str(exp)))
-                        if isinstance(exp[0],(int,long)):
+                        if isinstance(exp[0],(int,)):
                             width=getParWidth(exp[1])
                         elif isinstance(exp[0],str):
                             width=8*len(exp[0])

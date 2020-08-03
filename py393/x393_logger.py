@@ -373,7 +373,7 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         """
         lmessage = list(message)
         if len(lmessage) < 56:
-            lmessage +=chnr(0)*(56-len(lmessage))
+            lmessage +=chr(0)*(56-len(lmessage))
         lmessage = lmessage[:56]
         print("Setting odometer message %56s"%(self.zterm(lmessage)))
 

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 
 
 """
@@ -254,7 +255,7 @@ class SAXIWrSim(BusDriver):
                 bv = self.bus.wr_data.value
                 bv.binstr = re.sub("[^1]","0",bv.binstr)
                 data = bv.integer
-            sdata=struct.pack(self._fmt,data)
+            sdata=struct.pack(self._fmt,data).decode('iso-8859-1')
             bv = self.bus.wr_data.value    
             bv.binstr= re.sub("[^0]","1",bv.binstr) # only 0 suppresses write to this byte
             while len(bv.binstr) < self._data_bytes: # very unlikely

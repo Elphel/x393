@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -88,7 +89,7 @@ class X393Utils(object):
                data can also be a list/tuple of integers, then it will be applied
                in sequence (0,0xe) will turn reset on, then off
         """
-        if isinstance(data, (int,long)):
+        if isinstance(data, (int,)):
             self.x393_mem.write_mem(FPGA_RST_CTRL,data)
         else:
             for d in data:
@@ -131,7 +132,7 @@ class X393Utils(object):
             bitfile=DEFAULT_BITFILE
         print ("Sensor ports power off")
 #        POWER393_PATH = '/sys/devices/elphel393-pwr.1'
-        POWER393_PATH = '/sys/devices/soc0/elphel393-pwr@0'
+        ##POWER393_PATH = '/sys/devices/soc0/elphel393-pwr@0'
         
 #        with open (POWER393_PATH + "/channels_dis","w") as f:
 #            print("vcc_sens01 vp33sens01 vcc_sens23 vp33sens23", file = f)
@@ -258,7 +259,7 @@ class X393Utils(object):
             declWidth=max(declWidth,len(p['decl_width']))
         txt=""
         for p in self.getParTmpl(): # parTmpl:
-            numDigits = (p["width"]+3)/4
+            numDigits = (p["width"]+3)//4
             frmt="localparam %%%ds %%%ds %3d'h%%0%dx;\n"%(declWidth,nameLen+2,p["width"],numDigits)
             try:
                 pv=vrlg.__dict__[p['name']]

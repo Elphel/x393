@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -96,7 +97,7 @@ class X393McntrlBuffers(object):
             xor=num_words_or_data_list[1]
             num_words_or_data_list=num_words_or_data_list[0]
                     
-        if isinstance (num_words_or_data_list,(int,long)):
+        if isinstance (num_words_or_data_list,(int,)):
             data=[]
             for i in range(num_words_or_data_list):
                 data.append(xor ^(i | (((i + 7) & 0xff) << 8)  | (((i + 23) & 0xff) << 16) | (((i + 31) & 0xff) << 24)))

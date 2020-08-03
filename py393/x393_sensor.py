@@ -43,7 +43,7 @@ import time
 import vrlg
 import x393_mcntrl
 
-import subprocess
+##import subprocess
 
 #import x393_sens_cmprs
 SENSOR_INTERFACE_PARALLEL = "PAR12"
@@ -77,6 +77,7 @@ class X393Sensor(object):
         if  self.DRY_MODE is True:
             print ("===== Running in dry mode, using parallel sensor======")
             return SENSOR_INTERFACE_PARALLEL
+        print(self.x393_axi_tasks.read_status(address=0xfe))
         sens_type = (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI,SENSOR_INTERFACE_VOSPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
         print ("===== Sensor type read from FPGA = >>> %s <<< ======"%(sens_type))
         return sens_type
@@ -324,7 +325,7 @@ class X393Sensor(object):
         def parse_sda_scl(val):
             if val is None:
                 return 0
-            elif isinstance(val, (unicode,str)):
+            elif isinstance(val, (str,)):
                 if not val:
                     return 0
                 if val[0] in "lL0":
@@ -1423,7 +1424,7 @@ class X393Sensor(object):
 
 # /dev/sfpgabscan0
     def readbscan(self, filename):
-        ffs=struct.pack("B",0xff)*97
+        ffs=(struct.pack("B",0xff)*97).decode('iso-8859-1')
         with open(filename,'r+') as jtag:
             jtag.write(ffs)
             jtag.seek (0,0)
@@ -1965,7 +1966,7 @@ input               mem                 mtd4                ram1                
             self.x393_axi_tasks.write_control_register(reg_addr, data18 & ((1 << 18) - 1))
 
 
-        if isinstance(curves_data, (unicode,str)):
+        if isinstance(curves_data, (str,)):
             with open(curves_data) as f:
                 tokens=f.read().split()
             curves_data = []
@@ -2264,56 +2265,47 @@ input               mem                 mtd4                ram1                
         """
 
         def thp_set_phase(num_sensor,phase):
-          path = "/sys/devices/soc0/elphel393-sensor-i2c@0/i2c"+str(num_sensor)
-          f = open(path,'w')
-          f.write("mt9f002 0 0x31c0 "+str(phase))
-          f.close()
+            path = "/sys/devices/soc0/elphel393-sensor-i2c@0/i2c"+str(num_sensor)
+            f = open(path,'w')
+            f.write("mt9f002 0 0x31c0 "+str(phase))
+            f.close()
 
         def thp_reset_flags(num_sensor):
-          self.x393_axi_tasks.write_control_register(0x40e+0x40*num_sensor,0x0)
-          #self.x393_axi_tasks.write_control_register(0x40f+0x40*num_sensor,0x0)
+            self.x393_axi_tasks.write_control_register(0x40e+0x40*num_sensor,0x0)
 
         def thp_read_flags(num_sensor,shift):
+            switched = False
+            value = 0
+            count = 0
+            timeout = 512
+            # reset bits
+            thp_reset_flags(num_sensor)
 
-          switched = False
-          value = 0
-          count = 0
-          timeout = 512
+            # wait until hact alives with a timeout
+            t = 0
+            hact_alive = 0
 
-          # reset bits
-          thp_reset_flags(num_sensor)
+            while not hact_alive:
+                status = int(self.x393_axi_tasks.read_status(0x21+2*num_sensor) & 0x01ffffff)
+                hact_alive = (status>>13)&0x1
+                t += 1
+                if t==timeout:
+                    break
+                time.sleep(0.1)
 
-          # wait until hact alives with a timeout
-          t = 0
-          hact_alive = 0
+            barrel = (status>>14)&0xff
+            barrel = (barrel>>(2*shift))&0x3
 
-          while not hact_alive:
-            status = int(self.x393_axi_tasks.read_status(0x21+2*num_sensor) & 0x01ffffff)
-            hact_alive = (status>>13)&0x1
-            t += 1
-            if t==timeout:
-              break
-            time.sleep(0.1)
-
-          barrel = (status>>14)&0xff
-          barrel = (barrel>>(2*shift))&0x3
-
-          for j in range(4):
-            v = (status>>14)&0xff
-            v = (v>>(2*(3-j)))&0x3
-            print(str(v),end='')
-
-          print(".",end='')
-
-              #print(str(barrel)+" ",end='')
-
-          return barrel
+            for j in range(4):
+                v = (status>>14)&0xff
+                v = (v>>(2*(3-j)))&0x3
+                print(str(v),end='')
+                print(".",end='')
+            return barrel
 
 
         def thp_run(num_sensor,phase0,shift,bitshift):
-
             shift = shift*3
-
             switched = False
             value = 0
             i1 = 0
@@ -2321,56 +2313,45 @@ input               mem                 mtd4                ram1                
             im = 0
 
             for i in range(16):
-
                 if (i==0):
-                  phase0 += 0x4000
-
+                    phase0 += 0x4000
                 if (i==8):
-                  phase0 -= 0x4000
-                  print("| ",end="")
-
+                    phase0 -= 0x4000
+                    print("| ",end="")
                 # set phase
                 phase = phase0+((i%8)<<shift)
                 thp_set_phase(num_sensor,phase)
                 phase_read = int(self.print_sensor_i2c(num_sensor,0x31c0,0xff,0x10,0))&0xffff
-
                 if phase_read!=phase:
                     print("ERROR: phase_read ("+("{:04x}".format(phase_read))+") != phase ("+("{:04x}".format(phase))+")")
-
                 barrel = thp_read_flags(num_sensor,bitshift)
-
                 if ((i==0)or(i==8)):
-                  value = barrel
-                  switched = False
+                    value = barrel
+                    switched = False
                 else:
-                  if (value!=barrel):
-                    if i<8:
-                      if not switched:
-                        switched = True
-                        value = barrel
-                        i1 = i
-                      else:
-                        print("Unexpected phase shift at "+str(i))
-                    else:
-                      if not switched:
-                        switched = True
-                        value = barrel
-                        i2 = i
-                      else:
-                        print("Unexpected phase shift at "+str(i))
-
+                    if (value!=barrel):
+                        if i<8:
+                            if not switched:
+                                switched = True
+                                value = barrel
+                                i1 = i
+                            else:
+                                print("Unexpected phase shift at "+str(i))
+                        else:
+                            if not switched:
+                                switched = True
+                                value = barrel
+                                i2 = i
+                            else:
+                                print("Unexpected phase shift at "+str(i))
             i1 = i1&0x7
             i2 = i2&0x7
 
             if (abs(i2-i1)<2):
-              print("Error?")
-
+                print("Error?")
             target_phase = phase0 + (i1<<shift)
             thp_set_phase(num_sensor,target_phase)
-
             return target_phase
-
-
         chn = num_sensor
 
         print("Test HiSPI phases")
@@ -2389,48 +2370,38 @@ input               mem                 mtd4                ram1                
         phase0 = 0x8000
 
         for i in range(4):
-          print("D"+str(i))
-          phase0 = thp_run(num_sensor,phase0,i,i)
-          print(" Updated phase = 0x"+"{:04x}".format(phase0))
-
+            print("D"+str(i))
+            phase0 = thp_run(num_sensor,phase0,i,i)
+            print(" Updated phase = 0x"+"{:04x}".format(phase0))
         print("Done")
 
 
 
     def hispi_test_i2c_write(self,num_sensor):
-      """
-      Test i2c writes
-      @param num_sensor - sensor port number (0..3)
-      """
+        """
+        Test i2c writes
+        @param num_sensor - sensor port number (0..3)
+        """
 
-      for i in range(10000000):
-
-        if (i%10000==0):
-          print("iteration: "+str(i))
-
-        fname = "/sys/devices/soc0/elphel393-sensor-i2c@0/i2c"+str(num_sensor)
-
-        val = str(hex(0x8000+(i&0xfff)))
-
-        f = open(fname,'w')
-        f.write("mt9f002 0 0x31c0 "+val)
-        f.close()
-
-        #time.sleep(0.5)
-
-        # initiate read
-        f = open(fname,'w')
-        f.write("mt9f002 0 0x31c0")
-        f.close()
-
-        # read
-        f = open(fname,'r')
-        res = int(f.read())
-        f.close()
-
-        if (res!=int(val,0)):
-          print(res+" vs "+val)
-          break
+        for i in range(10000000):
+            if (i%10000==0):
+                print("iteration: "+str(i))
+            fname = "/sys/devices/soc0/elphel393-sensor-i2c@0/i2c"+str(num_sensor)
+            val = str(hex(0x8000+(i&0xfff)))
+            f = open(fname,'w')
+            f.write("mt9f002 0 0x31c0 "+val)
+            f.close()
+            # initiate read
+            f = open(fname,'w')
+            f.write("mt9f002 0 0x31c0")
+            f.close()
+            # read
+            f = open(fname,'r')
+            res = int(f.read())
+            f.close()
+            if (res!=int(val,0)):
+                print(res+" vs "+val)
+                break
 
 
     def mt9f002_read_regs(self,num_sensor):

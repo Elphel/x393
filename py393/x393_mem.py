@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -69,7 +70,6 @@ class X393Mem(object):
         self.DRY_MODE=dry_mode
         if (dry_mode) and (X393_CLIENT is None):
             if ":" in dry_mode:
-                print("Creating X393_CLIENT")
                 try:
                     X393_CLIENT= x393Client(host=dry_mode.split(":")[0], port=int(dry_mode.split(":")[1]))
                     print("Created X393_CLIENT")
@@ -186,7 +186,7 @@ class X393Mem(object):
             page_addr=addr & (~(self.PAGE_SIZE-1))
             page_offs=addr-page_addr
             mm = self.wrap_mm(f, page_addr)
-            packedData=struct.pack(self.ENDIAN+"L",data)
+            packedData=struct.pack(self.ENDIAN+"L",data).decode('iso-8859-1')
             d=struct.unpack(self.ENDIAN+"L",packedData)[0]
             mm[page_offs:page_offs+4]=packedData
             if quiet < 1:
@@ -345,7 +345,7 @@ class X393Mem(object):
         if self.DRY_MODE:
             print ("Write memory to file is not implemented in non-target mode")
             return
-        patt=str(bytearray(((word32 & 0xff), ((word32 >> 8) & 0xff), ((word32 >> 16) & 0xff), ((word32 >> 24) & 0xff)))*(self.PAGE_SIZE/4))
+        patt=str(bytearray(((word32 & 0xff), ((word32 >> 8) & 0xff), ((word32 >> 16) & 0xff), ((word32 >> 24) & 0xff)))*(self.PAGE_SIZE//4))
         with open("/dev/mem", "r+b") as f:
             first_page = start_addr // self.PAGE_SIZE
             last_page = (start_addr + length - 1) // self.PAGE_SIZE

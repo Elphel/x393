@@ -116,7 +116,7 @@ class X393CmprsAfi(object):
             else:
                 return self.x393_mem.read_mem(addr)
 
-        if isinstance(port_afi, (unicode,str)):
+        if isinstance(port_afi, (str,)):
             data_file = port_afi%channel # for simulated mode
             ba_data=bytearray()
             try:

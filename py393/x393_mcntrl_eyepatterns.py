@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -138,7 +139,7 @@ class X393McntrlEyepattern(object):
                 for w in range (4*num):
                     lane=w%2
                     for wb in range(32):
-                        g=(wb/8)%2
+                        g=(wb//8)%2
                         b=wb%8+lane*8+16*g
                         if (buf[w+2] & (1<<wb) != 0):
                             data[b]+=1
@@ -215,7 +216,7 @@ class X393McntrlEyepattern(object):
                 for w in range (4*num):    # read 32-bit word number
                     lane=w%2               # even words - lane 0, odd - lane 1
                     for wb in range(32):
-                        g=(wb/8)%2
+                        g=(wb//8)%2
                         b=wb%8+lane*8+16*g
                         if (buf[w+2] & (1<<wb) != 0):# buf[w+2] - skip first 2 words
                             data[b]+=1

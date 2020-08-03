@@ -363,7 +363,8 @@ class X393Cmprs(object):
         except:
             pass
         return self.x393_axi_tasks.read_status(
-                    address=(vrlg.CMPRS_HIFREQ_REG_BASE + num_sensor * vrlg.CMPRS_STATUS_REG_INC))       
+#                    address=(vrlg.CMPRS_HIFREQ_REG_BASE + num_sensor * vrlg.CMPRS_STATUS_REG_INC))       
+                    address=(vrlg.CMPRS_HIFREQ_REG_BASE + chn * vrlg.CMPRS_STATUS_REG_INC))       
 
 
     def control_compressor_memory(self,

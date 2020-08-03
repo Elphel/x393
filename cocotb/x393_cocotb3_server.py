@@ -24,6 +24,7 @@ to the simulator and sends back data from the model.
 @license:    GPLv3.0+
 @contact:    andrey@elphel.coml
 """
+import asyncio
 import os
 import cocotb
 import socket
@@ -54,7 +55,7 @@ def hex_list(lst, max_items=0, frmt="0x%08x"):
         hs += " "+frmt%(d)
     return hs+"]"    
     
-class X393_cocotb_server(object):
+class X393_cocotb3_server(object):
     INTR_ADDRESS = 0xfffffff0 #temporary address
     INTM_ADDRESS = 0xfffffff4 #temporary address
     RESERVED = (INTR_ADDRESS,INTM_ADDRESS)
@@ -189,7 +190,7 @@ class X393_cocotb_server(object):
             self.soc_conn, soc_addr = self.socket_conn.accept()
             self.dut._log.debug ("Connected with %s"%(soc_addr[0] + ':' + str(soc_addr[1])))
             #Sending message to connected client
-            line = self.soc_conn.recv(4096) # or make it unlimited?
+            line = self.soc_conn.recv(4096).decode('iso-8859-1') # or make it unlimited? for str/byte
             self.dut._log.debug("Received from socket: %s"%(line))
         except:
             self.logErrorTerminate("Socket seems to have died :-(")
@@ -220,13 +221,13 @@ class X393_cocotb_server(object):
             self.saxihp1w_thread = cocotb.fork(self.saxihp1w.saxi_wr_run())    
             self.saxigp0_thread =  cocotb.fork(self.saxigp0.saxi_wr_run())    
             self.saxigp1_thread =  cocotb.fork(self.saxigp1.saxi_wr_run())    
-            self.soc_conn.send(self.cmd.toJSON(0)+"\n")
+            self.soc_conn.send((self.cmd.toJSON(0)+"\n").encode('iso-8859-1')) #.encode - Python3 (a bytes-like object is required, not 'str') 
             self.dut._log.debug('Sent 0 to the socket')
             started=True
 
         elif self.cmd.getStop():
             self.dut._log.info('Received STOP, closing...')
-            self.soc_conn.send(self.cmd.toJSON(0)+"\n")
+            self.soc_conn.send((self.cmd.toJSON(0)+"\n").encode('iso-8859-1')) #.encode - Python3 (a bytes-like object is required, not 'str') 
             self.soc_conn.close()
             yield Timer(10000) # small pause for the wave output
 
@@ -247,7 +248,7 @@ class X393_cocotb_server(object):
                 addr = ad[0]
                 self._memfile.seek(addr)
                 for data in ad[1]: # currently only single word is supported
-                    sdata=struct.pack("<L",data) # little-endian, u32
+                    sdata=struct.pack("<L",data).decode('iso-8859-1') # little-endian, u32
                     self._memfile.write(sdata)
                     self.dut._log.debug("Written 'system memory': 0x%08x => 0x%08x"%(data,addr))
                     addr += 4
@@ -270,7 +271,7 @@ class X393_cocotb_server(object):
                 self.dut._log.info('Write address 0x%08x is outside of maxgp0, not yet supported'%(ad[0]))
                 rslt = 0
             self.dut._log.info('WRITE 0x%08x <= %s'%(ad[0],hex_list(ad[1], max_items = 4)))
-            self.soc_conn.send(self.cmd.toJSON(rslt)+"\n")
+            self.soc_conn.send((self.cmd.toJSON(rslt)+"\n").encode('iso-8859-1')) #.encode - Python3 (a bytes-like object is required, not 'str') 
             self.dut._log.debug('Sent rslt to the socket')
         elif self.cmd.getRead():
             ad = self.cmd.getRead()
@@ -319,13 +320,13 @@ class X393_cocotb_server(object):
             else:
                 self.dut._log.info('Read address 0x%08x is outside of maxgp0, not yet supported'%(ad[0]))
                 dval = [0]    
-            self.soc_conn.send(self.cmd.toJSON(dval)+"\n")
+            self.soc_conn.send((self.cmd.toJSON(dval)+"\n").encode('iso-8859-1')) #.encode - Python3 (a bytes-like object is required, not 'str') 
             self.dut._log.debug('Sent dval to the socket')
             self.dut._log.info("READ 0x%08x =>%s"%(ad[0],hex_list(dval, max_items = 4)))
         elif self.cmd.getFlush():
             self.dut._log.info('Received flush')
             self.flush_all()
-            self.soc_conn.send(self.cmd.toJSON(0)+"\n")
+            self.soc_conn.send((self.cmd.toJSON(0)+"\n").encode('iso-8859-1'))  #.encode - Python3 (a bytes-like object is required, not 'str') 
             self.dut._log.debug('Sent 0 to the socket')
             
         elif self.cmd.getWait():
@@ -346,12 +347,12 @@ class X393_cocotb_server(object):
                 if (self.int_mask & irq_r):
                     break
                 n += 1
-            self.soc_conn.send(self.cmd.toJSON(n)+"\n")
+            self.soc_conn.send((self.cmd.toJSON(n)+"\n").encode('iso-8859-1'))  #.encode - Python3 (a bytes-like object is required, not 'str') 
             self.dut._log.debug('Sent %d to the socket'%(n))
             self.dut._log.info(' WAIT over, passed %d ns'%((n * 1000000000)//self.ACLK_FREQ))
         else:
             self.dut._log.warning('Received unknown command: '+str(self.cmd))
-            self.soc_conn.send(self.cmd.toJSON(1)+"\n")
+            self.soc_conn.send((self.cmd.toJSON(1)+"\n").encode('iso-8859-1')) #.encode - Python3 (a bytes-like object is required, not 'str') 
             self.dut._log.debug('Sent 1 to the socket')
             
 def convert_string(txt):
@@ -360,10 +361,11 @@ def convert_string(txt):
         number = (number << 8) + ord(c)
     return number   
 
-@cocotb.coroutine
+@cocotb.test()
 def run_test(dut, port=7777):
-    tb = X393_cocotb_server(dut=dut, host = "", port=7777)
-    dut._log.warn("Waiting for commnad on socket port %s"%(port))
+    tb = X393_cocotb3_server(dut=dut, host = "", port=7777)
+#    dut._log.warn("Waiting for commnad on socket port %s"%(port)) #depreceted
+    dut._log.warning("Waiting for commnad on socket port %s"%(port))
     while True:
         try:
             rslt= yield tb.receiveCommandFromSocket()

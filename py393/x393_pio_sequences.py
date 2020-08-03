@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -1225,7 +1226,7 @@ class X393PIOSequences(object):
         for w in range (4 * nrep):
             lane=w%2
             for wb in range(32):
-                g=(wb/8)%2
+                g=(wb//8)%2
                 b=wb%8+lane*8+16*g
                 if (buf[w+2] & (1<<wb) != 0):
                     data[b]+=1

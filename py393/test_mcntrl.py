@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 '''
 # Copyright (C) 2015, Elphel.inc.
@@ -23,7 +23,8 @@
 @deffield    updated: Updated
 '''
 from __future__ import print_function
-from __builtin__ import str
+from __future__ import division
+#from __builtin__ import str
 __author__ = "Andrey Filippov"
 __copyright__ = "Copyright 2015, Elphel, Inc."
 __license__ = "GPL"
@@ -37,7 +38,7 @@ __status__ = "Development"
 
 '''
 
-import readline
+#import readline
 import sys
 import os
 import inspect
@@ -102,20 +103,10 @@ class CLIError(Exception):
 def extractTasks(obj,inst):
     for name in obj.__dict__:
         if hasattr((obj.__dict__[name]), '__call__') and not (name[0]=='_'):
-#            print (name+" -->"+str(obj.__dict__[name]))
-#            print (obj.__dict__[name].func_code)
-#            print ("COMMENTS:"+str(inspect.getcomments(obj.__dict__[name])))
-#            print ("DOCS:"+str(inspect.getdoc(obj.__dict__[name])))
-            func_args=obj.__dict__[name].func_code.co_varnames[1:obj.__dict__[name].func_code.co_argcount]
-#            print("%s: %d, varnames=%s func_args=%s, defaults=%s"%
-#                  (name,
-#                   obj.__dict__[name].func_code.co_argcount,
-#                   str(obj.__dict__[name].func_code.co_varnames),
-#                   str(func_args),
-#                   obj.__dict__[name].func_defaults))
+            func_args=obj.__dict__[name].__code__.co_varnames[1:obj.__dict__[name].__code__.co_argcount]
             callableTasks[name]={'func':obj.__dict__[name],
                                  'args':func_args,
-                                 'dflts':obj.__dict__[name].func_defaults,
+                                 'dflts':obj.__dict__[name].__defaults__,
                                  'inst':inst,
                                  'docs':inspect.getdoc(obj.__dict__[name])}
 def execTask(commandLine):
@@ -301,7 +292,7 @@ USAGE
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
-    except Exception, e:
+    except Exception as e:
         if DEBUG or TESTRUN: 
             raise(e)
         indent = len(program_name) * " "
@@ -373,7 +364,7 @@ USAGE
         print ("----------------------")
         for name in x393_mem.X393Mem.__dict__:
             if hasattr((x393_mem.X393Mem.__dict__[name]), '__call__') and not (name[0]=='_'):
-                func_args=x393_mem.X393Mem.__dict__[name].func_code.co_varnames[1:x393_mem.X393Mem.__dict__[name].func_code.co_argcount]
+                func_args=x393_mem.X393Mem.__dict__[name].__code__.co_varnames[1:x393_mem.X393Mem.__dict__[name].__code__.co_argcount]
                 print (name+": "+str(func_args))
     extractTasks(x393_mem.X393Mem,x393mem)
     extractTasks(x393_utils.X393Utils,                         x393utils)
@@ -443,7 +434,8 @@ USAGE
                           [],         # potential_writers,
                           [])         # potential_errs,
                 if (not args.socket_port) and (sys.stdin in ready_to_read):
-                    line=raw_input()
+#                   line=raw_input()#python2
+                    input()
 #                    print ("stdin: ", line)
                 elif socket_conn in ready_to_read:
                     try:
@@ -460,9 +452,9 @@ USAGE
                     continue
             else: # No sockets, just command line input
                 if (not args.socket_port):
-                    line=raw_input(prompt)
+#                   line=raw_input(prompt) #python2
+                    line=input(prompt)
                         
-#            line=raw_input('x393%s +%3.3fs--> '%(('','(simulated)')[args.simulated],(time.time()-tim))).strip()
             line=line.strip() # maybe also remove comment?
 
             # Process command, return result to a socket if it was a socket, not stdin
@@ -541,8 +533,8 @@ USAGE
                             print('=== %s ==='%name)
                             print('defined in %s.%s, %s: %d)'%(str(callableTasks[name]['inst'].__class__.__module__),
                                                        callableTasks[name]['inst'].__class__.__name__,
-                                                       callableTasks[name]['func'].func_code.co_filename,
-                                                       callableTasks[name]['func'].func_code.co_firstlineno
+                                                       callableTasks[name]['func'].__code__.co_filename,
+                                                       callableTasks[name]['func'].__code__.co_firstlineno
                                   ))
                             sFuncArgs=getFuncArgsString(name)
                             docs=callableTasks[name]['docs']
@@ -595,7 +587,7 @@ USAGE
                         typ="None"
                     predefines += "%s = %s\n"%(k,typ)
 #                    print ("%s = %s"%(k,typ))
-                vrlg_path=vrlg.__dict__["init_vars"].func_code.co_filename
+                vrlg_path=vrlg.__dict__["init_vars"].__code__.co_filename
 #                print ("vrlg path: %s"%(vrlg_path))
                 try:
                     magic="#### PyDev predefines"
