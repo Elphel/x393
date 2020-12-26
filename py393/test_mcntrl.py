@@ -580,7 +580,8 @@ USAGE
                     print("    'defines' command accepts regular expression as a second parameter to filter the list")
             elif (lineList[0] == 'pydev_predefines'):
                 predefines=""
-                for k,v in ivp.parsToDict(parameters).items():
+#               for k,v in ivp.parsToDict(parameters).items():
+                for k,v in list(sorted(ivp.parsToDict(parameters).items(), key=lambda item:item[0])):
                     typ=str(type(v))
                     typ=typ[typ.find("'")+1:typ.rfind("'")]
                     if "None" in typ:

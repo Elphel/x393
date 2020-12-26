@@ -104,7 +104,8 @@ module  status_read#(
         ram [DATA_2DEPTH-1] = 1; //0 - parallel sensor, 1 - HiSPi sensor, 2 - LWIR 160x120 sensor
 `elsif LWIR
         ram [DATA_2DEPTH-1] = 2; //0 - parallel sensor, 1 - HiSPi sensor, 2 - LWIR 160x120 sensor
-        
+`elsif BOSON
+        ram [DATA_2DEPTH-1] = 3; //0 - parallel sensor, 1 - HiSPi sensor, 2 - LWIR 160x120 sensor 3- BOSON 640x512
 `endif         
     end
     always @ (posedge axi_clk) begin

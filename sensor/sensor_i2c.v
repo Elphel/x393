@@ -74,6 +74,8 @@ module  sensor_i2c#(
     parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
     parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
     parameter SENSI2C_TBL_DLY_BITS=      8,
+    parameter SENSI2C_TBL_EXTIF =       30, // extrenal interface mode (0 - i2c, 1 uart for boson)
+    parameter SENSI2C_TBL_EXTIF_BITS=    2,
     parameter NUM_FRAME_BITS =           4
 )(
     input                       mrst,         // @ posedge mclk
@@ -95,10 +97,14 @@ module  sensor_i2c#(
     output                      scl_out,     // i2c SCL output
     output                      sda_out,     // i2c SDA output
     output                      scl_en,      // i2c SCL enable
-    output                      sda_en       // i2c SDA enable
-//    output        busy,
-//    output  [3:0] frame_num
-
+    output                      sda_en,      // i2c SDA enable
+    // interface for uart in write-only mode for short commands
+    output                      extif_dav,  // data byte available for external interface 
+//    output                      extif_last, // last byte for  external interface (with extif_dav)
+    output                [1:0] extif_sel,  // interface type (0 - internal, 1 - uart, 2,3 - reserved)
+    output                [7:0] extif_byte, // data to external interface (first - extif_sa)
+    input                       extif_ready, // acknowledges extif_dav
+    output                      extif_rst
 );
 // TODO: Make sure that using more than 64 commands will just send them during next frame, not loose?
 // 0x0..0xf write directly to the frame number [3:0] modulo 16, except if you write to the frame
@@ -116,12 +122,12 @@ module  sensor_i2c#(
 //     [8]    - set duration of quarter i2c cycle in system clock cycles - nominal value 100 (0x64)
 //     [7:0]  - duration of quater i2c cycle (applied if [8] is set)
 
-     wire           we_abs;
-     wire           we_rel;
-     wire           we_cmd;
-     wire           wen;
-     wire    [31:0] di;
-     wire     [3:0] wa; 
+     wire          we_abs;
+     wire          we_rel;
+     wire          we_cmd;
+     wire          wen;
+     wire   [31:0] di;
+     wire    [3:0] wa; 
      reg   [31:0]  di_r; // 32 bit command takes 6 cycles, so di_r can hold data for up to this long
      reg    [3:0]  wpage0;     // FIFO page where ASAP writes go
      reg    [3:0]  wpage_prev;     // unused page, currently being cleared
@@ -230,7 +236,7 @@ module  sensor_i2c#(
      assign sda_out = i2c_enrun?  sda_hard:    sda_soft ;
      assign sda_en =  i2c_enrun?  sda_en_hard: sda_en_soft ;
      assign fifo_wr_pointers_next = wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1);
-
+     assign extif_rst = reset_cmd;
 
 /*    
     reg alive_fs;
@@ -451,7 +457,9 @@ module  sensor_i2c#(
         .SENSI2C_TBL_NBRD_BITS   (SENSI2C_TBL_NBRD_BITS),
         .SENSI2C_TBL_NABRD       (SENSI2C_TBL_NABRD), // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
         .SENSI2C_TBL_DLY         (SENSI2C_TBL_DLY),   // bit delay (number of mclk periods in 1/4 of SCL period)
-        .SENSI2C_TBL_DLY_BITS    (SENSI2C_TBL_DLY_BITS)
+        .SENSI2C_TBL_DLY_BITS    (SENSI2C_TBL_DLY_BITS),
+        .SENSI2C_TBL_EXTIF       (SENSI2C_TBL_EXTIF),
+        .SENSI2C_TBL_EXTIF_BITS  (SENSI2C_TBL_EXTIF_BITS)
     ) sensor_i2c_prot_i(
         .mrst            (mrst),            // input
         .mclk            (mclk),            // input
@@ -460,7 +468,8 @@ module  sensor_i2c#(
         .active_sda      (active_sda),      // input
         .early_release_0 (early_release_0), // input
         .tand            (di_r[SENSI2C_CMD_TAND]),        // input
-        .td              (di_r[SENSI2C_CMD_TAND-1:0]),      // input[27:0] 
+//        .td              (di_r[SENSI2C_CMD_TAND-1:0]),      // input[27:0] 
+        .td              (di_r),           // input[27:0] 
         .twe             (twe),             // input
         .sda_in          (sda_in),          // input
         .sda             (sda_hard),        // output
@@ -472,7 +481,13 @@ module  sensor_i2c#(
         .seq_mem_re      (seq_mem_re),      // output[1:0] 
         .seq_rd          (i2c_data),        // input[7:0] 
         .rdata           (i2c_rdata),       // output[7:0] 
-        .rvalid          (i2c_rvalid)       // output
+        .rvalid          (i2c_rvalid),       // output
+        // interface for uart in write-only mode for short commands
+        .extif_dav       (extif_dav), // output
+//        .extif_last      (extif_last), // output
+        .extif_sel       (extif_sel), // output[1:0] 
+        .extif_byte      (extif_byte), // output[7:0] 
+        .extif_ready     (extif_ready) // input
     );
     
     

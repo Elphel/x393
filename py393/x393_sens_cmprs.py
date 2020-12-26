@@ -131,13 +131,17 @@ FRAME_START_ADDRESS_INC = 0x80000
 # for now - single sensor type per interface
 SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
                    x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"},
-                   x393_sensor.SENSOR_INTERFACE_VOSPI:    {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"}}
+                   x393_sensor.SENSOR_INTERFACE_VOSPI:    {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
+                   x393_sensor.SENSOR_INTERFACE_BOSON:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}} # see if freq is not needed 
 #                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":2500, "freq":24.444, "iface":"1V8_LVDS"}}
 #slave is 7 bit
+#BOSON: add parameters for uart instead of the i2C
+#Use 'hardware' dimensions here, simulation ones will be overwritten
 SENSOR_DEFAULTS= { x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
                    x393_sensor.SENSOR_INTERFACE_HISPI:    {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2},
 #                   x393_sensor.SENSOR_INTERFACE_VOSPI:     {"width":160,  "height":120,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
-                   x393_sensor.SENSOR_INTERFACE_VOSPI:    {"width":160,  "height":122,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
+                   x393_sensor.SENSOR_INTERFACE_VOSPI:    {"width":160,  "height":122,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2},
+                   x393_sensor.SENSOR_INTERFACE_BOSON:    {"width":640,  "height":513,  "top":0, "left":0, "slave":0x2a, "i2c_delay":100, "bayer":2}}
 
 #SENSOR_DEFAULTS_SIMULATION= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
 #                             x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
@@ -187,8 +191,10 @@ class X393SensCmprs(object):
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 0
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["width"]=     vrlg.WOI_WIDTH + 0 #4
                         SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 0
-                    
-                    
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_VOSPI]["width"]=     vrlg.WOI_WIDTH + 0 #4
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_VOSPI]["height"]=    vrlg.WOI_HEIGHT + 0
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_BOSON]["width"]=     vrlg.WOI_WIDTH + 0 #4
+                        SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_BOSON]["height"]=    vrlg.WOI_HEIGHT + 0
                     print ("Using simulation size sensor defaults ",SENSOR_DEFAULTS)
 
             except:
@@ -791,6 +797,37 @@ class X393SensCmprs(object):
                                    rst  =       3, #  no mrst, no power down
                                    spi_en =     3, #None, # 1 - reset+disable, 2 - noreset, disable, 3 - noreset, enable
                                    out_en =     True)
+
+        elif sensorType ==  x393_sensor.SENSOR_INTERFACE_BOSON:
+            self.x393Sensor.set_sensor_io_ctl_boson (
+                               num_sensor = num_sensor,
+                               mrst =       True,
+                               mmcm_rst =   True,   #reset mmcm
+                               set_delays = False)
+
+            self.x393Sensor.func_sensor_uart_ctl_boson (
+                            uart_extif_en =   False,
+                            uart_xmit_rst =   True,
+                            uart_recv_rst =   True,
+                            uart_xmit_start = False,
+                            uart_recv_next =  False)
+            
+            self.x393Sensor.set_sensor_io_ctl_boson (
+                               num_sensor = num_sensor,
+                               mrst =       False,
+                               mmcm_rst =   True,   #reset mmcm
+                               set_delays = False)
+            self.x393Sensor.set_sensor_io_ctl_boson (
+                               num_sensor = num_sensor,
+                               mrst =       False,
+                               mmcm_rst =   False, 
+                               set_delays = False)
+            self.x393Sensor.func_sensor_uart_ctl_boson (
+                            uart_extif_en =   True,
+                            uart_xmit_rst =   False,
+                            uart_recv_rst =   False,
+                            uart_xmit_start = False,
+                            uart_recv_next =  False)
 
         if exit_step == 17: return False
 
@@ -1844,7 +1881,8 @@ class X393SensCmprs(object):
                                     num_bytes_rd =  2,
                                     bit_delay  =    i2c_delay,
                                     verbose =       verbose)
-
+                elif sensorType ==  x393_sensor.SENSOR_INTERFACE_BOSON:
+                    pass
                 else:
                     raise ("Unknown sensor type: %s"%(sensorType))
 

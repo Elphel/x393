@@ -51,11 +51,23 @@ while { [gets $infile line] >= 0 } {
     }
 }
 
+set BOSON 0
+seek $infile 0 start
+while { [gets $infile line] >= 0 } {
+    if { [regexp {(.*)`define(\s*)BOSON} $line matched prematch] } {
+	if {[regexp "//" $prematch] != 0} { continue }
+	set BOSON 1
+	break
+    }
+}
+
 close $infile
 if       { $LWIR} {
     puts "x393_timing.tcl: using LWIR sensors"
 } elseif { $HISPI} {
     puts "x393_timing.tcl: using HISPI sensors"
+} elseif { $BOSON} {
+    puts "x393_placement.tcl: using Boson640 sensors"
 } else {
     puts "x393_timing.tcl: using parallel sensors"
 }
@@ -77,7 +89,9 @@ create_clock -name ffclk0 -period 41.667 [get_ports {ffclk0p}]
 
 #Generated clocks are assumed to be tied to clkin1 (not 2), so until external ffclk0 is constrained, derivative clocks are not generated
 create_generated_clock -name pclk      [get_nets clocks393_i/dual_clock_pclk_i/clk1x_pre ]
-if       { $LWIR} {
+if { $BOSON} {
+# Nothing here yet	
+} elseif       { $LWIR} {
 # Nothing here yet	
 } elseif {$HISPI} {
 #WARNING: [Vivado 12-4777] Setting CLOCK_DEDICATED_ROUTE constraint on the PARENT net instead of the specified net segment (net name: sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in). Placer only honors CLOCK_DEDICATED_ROUTE when set on the PARENT net, e.g. net segment directly connected to the driver. To eliminate this message, please update your constraint to specify the PARENT net instead. [/home/xilinx/vdt/x393/x393_timing.tcl:68]

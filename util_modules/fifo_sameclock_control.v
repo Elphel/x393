@@ -4,7 +4,7 @@
  * @date 2016-01-20  
  * @author Andrey Filippov     
  *
- * @brief BRAM-based fifo control, uses BARM output registers
+ * @brief BRAM-based fifo control, uses BRAM output registers
  *
  * @copyright Copyright (c) 2016 Elphel, Inc .
  *

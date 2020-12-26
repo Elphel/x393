@@ -87,6 +87,51 @@ module  x393 #(
     inout                        sns4_sda,
     inout                        sns4_ctl,
     inout                        sns4_pg,
+`elsif BOSON
+    input                  [3:0] sns1_dp,
+    input                  [3:0] sns1_dn,
+    inout                  [7:4] sns1_dp74, // other non-diff signals
+    inout                  [7:4] sns1_dn74, // other non-diff signals
+    input                        sns1_clkp,
+    input                        sns1_clkn,
+    inout                        sns1_scl,
+    inout                        sns1_sda,
+    inout                        sns1_ctl,
+    inout                        sns1_pg,
+    
+    input                  [3:0] sns2_dp,
+    input                  [3:0] sns2_dn,
+    inout                  [7:4] sns2_dp74, // other non-diff signals
+    inout                  [7:4] sns2_dn74, // other non-diff signals
+    input                        sns2_clkp,
+    input                        sns2_clkn,
+    inout                        sns2_scl,
+    inout                        sns2_sda,
+    inout                        sns2_ctl,
+    inout                        sns2_pg,
+
+    input                  [3:0] sns3_dp,
+    input                  [3:0] sns3_dn,
+    inout                  [7:4] sns3_dp74, // other non-diff signals
+    inout                  [7:4] sns3_dn74, // other non-diff signals
+    input                        sns3_clkp,
+    input                        sns3_clkn,
+    inout                        sns3_scl,
+    inout                        sns3_sda,
+    inout                        sns3_ctl,
+    inout                        sns3_pg,
+
+    input                  [3:0] sns4_dp,
+    input                  [3:0] sns4_dn,
+    inout                  [7:4] sns4_dp74, // other non-diff signals
+    inout                  [7:4] sns4_dn74, // other non-diff signals
+    input                        sns4_clkp,
+    input                        sns4_clkn,
+    inout                        sns4_scl,
+    inout                        sns4_sda,
+    inout                        sns4_ctl,
+    inout                        sns4_pg,
+    
 `elsif LWIR
     inout                  [4:0] sns1_dp40,
     inout                  [4:0] sns1_dn40,
@@ -314,8 +359,16 @@ module  x393 #(
    
     // sensor pixel rate clock likely to originate from the external clock
  //TODO: Create missing clocks   
-    
+`ifdef PCLK_MASTER
+    wire     [3:0] pclk;   // global clock, sensor pixel rate (96 MHz)
+    wire     [3:0] prst;   // @ posedge pclk
+    wire     [3:0] locked_pclk; // display all/any?
+`else   
     wire           pclk;   // global clock, sensor pixel rate (96 MHz)
+    wire           prst;   // @ posedge pclk
+    wire           locked_pclk; 
+`endif    
+ 
 `ifdef USE_PCLK2X    
     wire           pclk2x; // global clock, sensor double pixel rate (192 MHz)
 `endif
@@ -330,7 +383,7 @@ module  x393 #(
     assign logger_clk = camsync_clk;
     
     wire           mrst; // @ posedge mclk
-    wire           prst; // @ posedge pclk
+//    wire           prst; // @ posedge pclk
     wire           xrst; // @ posedge xclk
     wire           crst; // @ posedge camsync_clk
     wire           lrst; // @ posedge logger_clk;
@@ -339,7 +392,7 @@ module  x393 #(
     
     wire           locked_sync_clk;
     wire           locked_xclk;
-    wire           locked_pclk;
+//    wire           locked_pclk;
     wire           locked_hclk;
     
     wire           idelay_ctrl_reset; // to reset idelay_cntrl
@@ -614,8 +667,9 @@ module  x393 #(
 // Timestamp messages (@mclk) - combine to a single ts_data?    
     wire                            ts_pre_logger_stb; // input logger timestamp sync (@logger_clk)
     wire                      [7:0] ts_logegr_data;    // input[7:0] loger timestamp data (@logger_clk) 
-   
+`ifdef LWIR    
     wire                            khz;                // 1 KHz 50% duty   
+`endif    
 // Compressor signals for interrupts generation    
     wire                      [3:0] eof_written_mclk;  // output // SuppressThisWarning VEditor - (yet) unused
     wire                      [3:0] stuffer_done_mclk; // output// SuppressThisWarning VEditor - (yet) unused
@@ -1702,8 +1756,9 @@ assign axi_grst = axi_rst_pre;
     wire [ 1:0] saxi1_bresp; 
 
     sensors393 #(
-        .SENSOR_GROUP_ADDR          (SENSOR_GROUP_ADDR),
-        .SENSOR_BASE_INC            (SENSOR_BASE_INC),
+        // moving to the end to be always present
+//        .SENSOR_GROUP_ADDR          (SENSOR_GROUP_ADDR),
+//        .SENSOR_BASE_INC            (SENSOR_BASE_INC),
         .HIST_SAXI_ADDR_REL         (HIST_SAXI_ADDR_REL),
         .HIST_SAXI_MODE_ADDR_REL    (HIST_SAXI_MODE_ADDR_REL),
         .SENSI2C_STATUS_REG_BASE    (SENSI2C_STATUS_REG_BASE),
@@ -1793,11 +1848,15 @@ assign axi_grst = axi_rst_pre;
 `else        
         .SENSIO_CTRL                (SENSIO_CTRL),
         .SENS_CTRL_MRST             (SENS_CTRL_MRST),
+`ifndef BOSON        
         .SENS_CTRL_ARST             (SENS_CTRL_ARST),
         .SENS_CTRL_ARO              (SENS_CTRL_ARO),
+`endif        
         .SENS_CTRL_RST_MMCM         (SENS_CTRL_RST_MMCM),
   `ifdef HISPI                
         .SENS_CTRL_IGNORE_EMBED     (SENS_CTRL_IGNORE_EMBED),
+  `elsif BOSON
+  //??      
   `else                
         .SENS_CTRL_EXT_CLK          (SENS_CTRL_EXT_CLK),
   `endif                
@@ -1805,6 +1864,16 @@ assign axi_grst = axi_rst_pre;
   `ifdef HISPI
         .SENS_CTRL_GP0              (SENS_CTRL_GP0),
         .SENS_CTRL_GP1              (SENS_CTRL_GP1),
+  `elsif BOSON
+        .SENS_CTRL_GP0              (SENS_CTRL_GP0),
+        .SENS_CTRL_GP1              (SENS_CTRL_GP1),
+        .SENS_CTRL_GP2              (SENS_CTRL_GP2),
+        .SENS_CTRL_GP3              (SENS_CTRL_GP3),
+        .SENS_UART_EXTIF_EN         (SENS_UART_EXTIF_EN),
+        .SENS_UART_XMIT_RST         (SENS_UART_XMIT_RST),
+        .SENS_UART_RECV_RST         (SENS_UART_RECV_RST),
+        .SENS_UART_XMIT_START       (SENS_UART_XMIT_START),
+        .SENS_UART_RECV_NEXT        (SENS_UART_RECV_NEXT),
   `else        
         .SENS_CTRL_QUADRANTS        (SENS_CTRL_QUADRANTS),
         .SENS_CTRL_ODD              (SENS_CTRL_ODD),
@@ -1812,13 +1881,17 @@ assign axi_grst = axi_rst_pre;
         .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
   `endif                
         .SENSIO_STATUS              (SENSIO_STATUS),
+  `ifndef BOSON        
         .SENSIO_JTAG                (SENSIO_JTAG),
         .SENS_JTAG_PGMEN            (SENS_JTAG_PGMEN),
         .SENS_JTAG_PROG             (SENS_JTAG_PROG),
         .SENS_JTAG_TCK              (SENS_JTAG_TCK),
         .SENS_JTAG_TMS              (SENS_JTAG_TMS),
         .SENS_JTAG_TDI              (SENS_JTAG_TDI),
-  `ifndef HISPI
+  `endif
+  `ifdef HISPI
+  `elsif BOSON
+  `else
         .SENSIO_WIDTH               (SENSIO_WIDTH),
   `endif
         .SENSIO_DELAYS              (SENSIO_DELAYS),
@@ -1839,6 +1912,7 @@ assign axi_grst = axi_rst_pre;
         .SENSI2C_IOSTANDARD         (SENSI2C_IOSTANDARD),
         .SENSI2C_SLEW               (SENSI2C_SLEW),
 `ifdef HISPI
+`elsif BOSON
 `elsif LWIR
         .VOSPI_DRIVE                (VOSPI_DRIVE),
         .VOSPI_IBUF_LOW_PWR         (VOSPI_IBUF_LOW_PWR),
@@ -1886,12 +1960,10 @@ assign axi_grst = axi_rst_pre;
         .VOSPI_MRST_MS              (VOSPI_MRST_MS), //          200, // master reset duration in ms (so even all channels would overlap)
         .VOSPI_MRST_AFTER_MS        (VOSPI_MRST_AFTER_MS), //    2000
         .VOSPI_SPI_TIMEOUT_MS       (VOSPI_SPI_TIMEOUT_MS), //    185
-        
 `else
-
         .SENSOR_DATA_WIDTH          (SENSOR_DATA_WIDTH),
         .SENSOR_FIFO_2DEPTH         (SENSOR_FIFO_2DEPTH),
-        .SENSOR_FIFO_DELAY         (SENSOR_FIFO_DELAY),
+        .SENSOR_FIFO_DELAY          (SENSOR_FIFO_DELAY),
 `endif                
         .HIST_SAXI_ADDR_MASK        (HIST_SAXI_ADDR_MASK),
         .HIST_SAXI_MODE_WIDTH       (HIST_SAXI_MODE_WIDTH),
@@ -1905,30 +1977,27 @@ assign axi_grst = axi_rst_pre;
         .SENS_SYNC_LBITS            (SENS_SYNC_LBITS),
         .SENS_SYNC_LATE_DFLT        (SENS_SYNC_LATE_DFLT),
         .SENS_SYNC_MINBITS          (SENS_SYNC_MINBITS),
-        .SENS_SYNC_MINPER           (SENS_SYNC_MINPER)
-// start with comma
+        .SENS_SYNC_MINPER           (SENS_SYNC_MINPER),
 
 `ifdef LWIR
 `else        
-       ,.IDELAY_VALUE               (IDELAY_VALUE),
+        .IDELAY_VALUE               (IDELAY_VALUE),
         .PXD_DRIVE                  (PXD_DRIVE),
         .PXD_IBUF_LOW_PWR           (PXD_IBUF_LOW_PWR),
         .PXD_SLEW                   (PXD_SLEW),
         .SENS_REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
-        .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
+        .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
 `endif        
 
-// start with comma
 `ifdef HISPI
-       ,.PXD_CAPACITANCE            (PXD_CAPACITANCE),
+        .PXD_CAPACITANCE            (PXD_CAPACITANCE),
         .PXD_CLK_DIV                (PXD_CLK_DIV),
-        .PXD_CLK_DIV_BITS           (PXD_CLK_DIV_BITS)
+        .PXD_CLK_DIV_BITS           (PXD_CLK_DIV_BITS),
 `endif
 
-// start with comma
 `ifdef LWIR
 `else
-       ,.SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
+        .SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
         .SENS_BANDWIDTH             (SENS_BANDWIDTH),
         .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
         .CLKFBOUT_MULT_SENSOR       (CLKFBOUT_MULT_SENSOR),
@@ -1949,12 +2018,10 @@ assign axi_grst = axi_rst_pre;
         .SENS_REF_JITTER2           (SENS_REF_JITTER2),
         .SENS_SS_EN                 (SENS_SS_EN),
         .SENS_SS_MODE               (SENS_SS_MODE),
-        .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
+        .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD),
 `endif        
-        
-        
 `ifdef HISPI
-       ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
+        .HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
         .HISPI_NUMLANES                (HISPI_NUMLANES),
         .HISPI_DELAY_CLK0              (HISPI_DELAY_CLK0),
         .HISPI_DELAY_CLK1              (HISPI_DELAY_CLK1),
@@ -1975,21 +2042,28 @@ assign axi_grst = axi_rst_pre;
         .HISPI_IBUF_DELAY_VALUE        (HISPI_IBUF_DELAY_VALUE),
         .HISPI_IBUF_LOW_PWR            (HISPI_IBUF_LOW_PWR),
         .HISPI_IFD_DELAY_VALUE         (HISPI_IFD_DELAY_VALUE),
-        .HISPI_IOSTANDARD              (HISPI_IOSTANDARD)
+        .HISPI_IOSTANDARD              (HISPI_IOSTANDARD),
 `endif    
 `ifdef DEBUG_RING
-        ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
-`endif        
+        .DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY), 
+`endif 
+        .SENSOR_GROUP_ADDR          (SENSOR_GROUP_ADDR),
+        .SENSOR_BASE_INC            (SENSOR_BASE_INC)
     ) sensors393_i (
 //        .rst                (axi_rst),           // input
-        .pclk               (pclk),                //  input
+`ifdef PCLK_MASTER
+        .pclk               (pclk),                // output [3:0]
+        .locked_pclk        (locked_pclk),         // output [3:0] 
+`else
+        .pclk               (pclk),                // input / output [3:0]
+`endif        
 `ifdef USE_PCLK2X    
         .pclk2x             (pclk2x),              // input
 `endif        
         .ref_clk            (ref_clk),             // input
         .dly_rst            (idelay_ctrl_reset),   // input 
         .mrst               (mrst),                // input
-        .prst               (prst),                // input
+        .prst               (prst),                // input / input [3:0]
         .arst               (arst),                // input
         
         .mclk               (mclk),                // input
@@ -1999,6 +2073,11 @@ assign axi_grst = axi_rst_pre;
         .status_rq          (status_sensor_rq),    // output
         .status_start       (status_sensor_start), // input
 `ifdef HISPI
+        .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // input[3:0] 
+        .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // input[3:0] 
+        .sns_dp74          ({sns4_dp74, sns3_dp74, sns2_dp74, sns1_dp74}),     // inout[7:4] @SuppressThisWarning VEditor vdt-bug
+        .sns_dn74          ({sns4_dn74, sns3_dn74, sns2_dn74, sns1_dn74}),     // inout[7:4] @SuppressThisWarning VEditor vdt-bug
+`elsif BOSON        
         .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // input[3:0] 
         .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // input[3:0] 
         .sns_dp74          ({sns4_dp74, sns3_dp74, sns2_dp74, sns1_dp74}),     // inout[7:4] @SuppressThisWarning VEditor vdt-bug
@@ -2069,8 +2148,10 @@ assign axi_grst = axi_rst_pre;
 `ifdef DEBUG_SENS_MEM_PAGES
        ,.dbg_rpage          (dbg_rpage[7:0])       // output[7:0]   
        ,.dbg_wpage          (dbg_wpage[7:0])       // output[7:0]   
-`endif              
+`endif
+`ifdef LWIR    
        ,.khz                (khz)                  // input 1 KHz 50% duty 
+`endif       
 `ifdef DEBUG_RING       
         ,.debug_do          (debug_ring[0]),       // output
         .debug_sl           (debug_sl),            // input
@@ -2432,7 +2513,11 @@ assign axi_grst = axi_rst_pre;
         .ts_logger_snap (logger_snap),           // input
         .ts_logger_stb  (ts_pre_logger_stb),     // output
         .ts_logger_data (ts_logegr_data),        // output[7:0]
+`ifdef LWIR    
         .khz            (khz)                    // output //  1 KHz 50% output 
+`else
+        .khz            ()                       // output //  1 KHz 50% output 
+`endif
     );
 
     event_logger #(
@@ -2654,7 +2739,11 @@ assign axi_grst = axi_rst_pre;
         .ffclk1n_pad     (ffclk1n),             // input
         .aclk            (axi_aclk),            // output
         .hclk            (hclk),                // output
+`ifdef PCLK_MASTER
+        .pclk            (),                    // output // generated by each sensor
+`else
         .pclk            (pclk),                // output
+`endif        
 `ifdef USE_PCLK2X    
         .pclk2x          (pclk2x),              // output
 `endif    
@@ -2668,17 +2757,25 @@ assign axi_grst = axi_rst_pre;
         .extra_status    ({1'b0,idelay_ctrl_rdy}), // input[1:0] 
         .locked_sync_clk (locked_sync_clk),     // output // always 1
         .locked_xclk     (locked_xclk),         // output // always 1
+`ifdef PCLK_MASTER
+        .locked_pclk     (),                    // output 
+`else
         .locked_pclk     (locked_pclk),         // output 
+`endif        
         .locked_hclk     (locked_hclk)          // output
     );
     sync_resets #(
-        .WIDTH(7),
+`ifdef PCLK_MASTER
+        .WIDTH(10), // pclk[3:0], prst[3:0], locked_pclk[3:0]
+`else
+        .WIDTH(7), // pclk, prst, locked_pclk
+`endif
         .REGISTER(4)
     ) sync_resets_i (
         .arst   (axi_rst_pre), // input
         .locked ({locked_hclk, 1'b1,     locked_sync_clk, locked_sync_clk, locked_xclk, locked_pclk, mcntrl_locked}), // input
         .clk    ({hclk,        axi_aclk, logger_clk,      camsync_clk,     xclk,        pclk,        mclk}),          // input[6:0] 
-        .rst    ({hrst,        arst,     lrst,            crst,            xrst,        prst,        mrst})          // output[6:0] 
+        .rst    ({hrst,        arst,     lrst,            crst,            xrst,        prst,        mrst})           // output[6:0] 
     );
 
 // Changed aclk to master (it is the source of most orthers)

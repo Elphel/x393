@@ -52,11 +52,23 @@ while { [gets $infile line] >= 0 } {
     }
 }
 
+set BOSON 0
+seek $infile 0 start
+while { [gets $infile line] >= 0 } {
+    if { [regexp {(.*)`define(\s*)BOSON} $line matched prematch] } {
+	if {[regexp "//" $prematch] != 0} { continue }
+	set BOSON 1
+	break
+    }
+}
+
 close $infile
 if       { $LWIR} {
     puts "x393_global.tcl: using LWIR sensors"
 } elseif { $HISPI} {
     puts "x393_global.tcl: using HISPI sensors"
+} elseif { $BOSON} {
+    puts "x393_placement.tcl: using Boson640 sensors"
 } else {
     puts "x393_global.tcl: using parallel sensors"
 }

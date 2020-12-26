@@ -73,6 +73,8 @@ module  sensor_i2c_io#(
     parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
     parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
     parameter SENSI2C_TBL_DLY_BITS=      8,
+    parameter SENSI2C_TBL_EXTIF =       30, // extrenal interface mode (0 - i2c, 1 uart for boson)
+    parameter SENSI2C_TBL_EXTIF_BITS=    2,
 // I/O parameters   
     parameter integer SENSI2C_DRIVE = 12,
     parameter SENSI2C_IBUF_LOW_PWR = "TRUE",
@@ -95,7 +97,14 @@ module  sensor_i2c_io#(
     input         eof_mclk,    // End of frame for i2c sequencer (will not work for linescan mode: either disable or make division upsteram
     input  [NUM_FRAME_BITS-1:0] frame_num_seq, // frame number from the command sequencer (to sync i2c)
     inout         scl,
-    inout         sda
+    inout         sda,
+    // interface for uart in write-only mode for short commands
+    output                      extif_dav,  // data byte available for external interface 
+//    output                      extif_last, // last byte for  external interface (with extif_dav)
+    output                [1:0] extif_sel,  // interface type (0 - internal, 1 - uart, 2,3 - reserved)
+    output                [7:0] extif_byte, // data to external interface (first - extif_sa)
+    input                       extif_ready, // acknowledges extif_dav
+    output                      extif_rst   // reset external interface from i2c command
 );
         wire scl_in;
         wire sda_in;
@@ -137,6 +146,8 @@ module  sensor_i2c_io#(
         .SENSI2C_TBL_NABRD       (SENSI2C_TBL_NABRD), // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
         .SENSI2C_TBL_DLY         (SENSI2C_TBL_DLY),   // bit delay (number of mclk periods in 1/4 of SCL period)
         .SENSI2C_TBL_DLY_BITS    (SENSI2C_TBL_DLY_BITS),
+        .SENSI2C_TBL_EXTIF       (SENSI2C_TBL_EXTIF),
+        .SENSI2C_TBL_EXTIF_BITS  (SENSI2C_TBL_EXTIF_BITS),
         .NUM_FRAME_BITS          (NUM_FRAME_BITS)
     ) sensor_i2c_i (
         .mrst          (mrst),          // input
@@ -154,7 +165,14 @@ module  sensor_i2c_io#(
         .scl_out       (scl_out),       // output
         .sda_out       (sda_out),       // output
         .scl_en        (scl_en),        // output
-        .sda_en        (sda_en)         // output
+        .sda_en        (sda_en),        // output
+        // interface for uart in write-only mode for short commands
+        .extif_dav       (extif_dav),   // output
+//        .extif_last      (extif_last),  // output
+        .extif_sel       (extif_sel),   // output[1:0] 
+        .extif_byte      (extif_byte),  // output[7:0] 
+        .extif_ready     (extif_ready), // input
+        .extif_rst       (extif_rst)    // output
     );
 
     iobuf #(

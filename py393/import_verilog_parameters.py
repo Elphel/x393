@@ -517,7 +517,7 @@ class ImportVerilogParameters(object):
                         self.conditions.append(not self.conditions.pop())
                         continue
                     elif tokens[0] == "elsif":
-                        self.conditions.pop
+                        self.conditions.pop()
                         self.conditions.append((tokens[1] in self.defines) and ( not False in self.conditions))
                         continue
                 else: # enabled, process all directives
@@ -528,7 +528,7 @@ class ImportVerilogParameters(object):
                         self.conditions.append(not (tokens[1] in self.defines))
                         continue
                     elif tokens[0] == "elsif":
-                        self.conditions.pop
+                        self.conditions.pop()
                         self.conditions.append(tokens[1] in self.defines)
                         continue
                     elif tokens[0] == "else":

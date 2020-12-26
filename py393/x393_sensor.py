@@ -49,6 +49,7 @@ import x393_mcntrl
 SENSOR_INTERFACE_PARALLEL = "PAR12"
 SENSOR_INTERFACE_HISPI =    "HISPI"
 SENSOR_INTERFACE_VOSPI =    "VOSPI"
+SENSOR_INTERFACE_BOSON =    "BOSON"
 
 class X393Sensor(object):
     DRY_MODE= True # True
@@ -74,11 +75,21 @@ class X393Sensor(object):
         Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
         @return "PAR12" or "HISPI"
         """
-        if  self.DRY_MODE is True:
-            print ("===== Running in dry mode, using parallel sensor======")
-            return SENSOR_INTERFACE_PARALLEL
-        print(self.x393_axi_tasks.read_status(address=0xfe))
-        sens_type = (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI,SENSOR_INTERFACE_VOSPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+        print ("===== Was: Running in dry mode, using parallel sensor======")
+#        if  self.DRY_MODE is True:
+#            print ("===== Running in dry mode, using parallel sensor======")
+#            return SENSOR_INTERFACE_PARALLEL
+        try:
+            print(self.x393_axi_tasks.read_status(address=0xfe))
+        except:
+            print ("===== Failed to read sesnor type, using parallel sensor======")
+            if  self.DRY_MODE is True:
+                return SENSOR_INTERFACE_PARALLEL
+        sens_type = (SENSOR_INTERFACE_PARALLEL,
+                     SENSOR_INTERFACE_HISPI,
+                     SENSOR_INTERFACE_VOSPI,
+                     SENSOR_INTERFACE_BOSON
+                     )[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
         print ("===== Sensor type read from FPGA = >>> %s <<< ======"%(sens_type))
         return sens_type
 
@@ -185,6 +196,20 @@ class X393Sensor(object):
             print ("   fake_in =                %d"%((status>>11) & 1))
             print ("   senspgmin =              %d"%((status>>24) & 1))
             print ("   busy =                   %d"%((status>>25) & 1))
+            print ("   seq =                    %d"%((status>>26) & 0x3f))
+        elif (sensorType == SENSOR_INTERFACE_BOSON):
+            print ("   ps_out =                 %d"%((status>> 0) & 0xff))
+            print ("   ps_rdy =                 %d"%((status>> 8) & 1))
+            print ("   perr =                   %d"%((status>> 9) & 1))
+            print ("   clkfb_pxd_stopped_mmcm = %d"%((status>>10) & 1))
+            print ("   clkin_pxd_stopped_mmcm = %d"%((status>>11) & 1))
+            print ("   locked_pxd_mmcm =        %d"%((status>>12) & 1))
+            print ("   hact_alive =             %d"%((status>>13) & 1))
+            print ("   recv_prgrs =             %d"%((status>>14) & 1))
+            print ("   recv_dav =               %d"%((status>>15) & 1))
+            print ("   recv_data =              %d"%((status>>16) & 0xff))
+            print ("   senspgmin =              %d"%((status>>24) & 1))
+            print ("   xmit_busy =              %d"%((status>>25) & 1))
             print ("   seq =                    %d"%((status>>26) & 0x3f))
         else:    
 #last_in_line_1cyc_mclk, dout_valid_1cyc_mclk
@@ -376,12 +401,14 @@ class X393Sensor(object):
                                  rah,
                                  num_bytes,
                                  bit_delay,
+                                 extif = 0,
                                  verbose = 1):
         """
         @param slave_addr - 7-bit i2c slave address
         @param rah -        register address high byte (bits [15:8]) optionally used for register write commands
         @param num_bytes -  number of bytes to send (including register address bytes) 1..10
         @param bit_delay -  number of mclk clock cycle in 1/4 of the SCL period
+        @param extif -      extrenal intgerface instead of i2c. 0 - i2c, 1 - uart,2,3 - reserved 
         @param verbose -    verbose level
         @return combined table data word.
         """
@@ -392,6 +419,7 @@ class X393Sensor(object):
         rslt |= (rah &        ((1 << vrlg.SENSI2C_TBL_RAH_BITS)  - 1)) << vrlg.SENSI2C_TBL_RAH
         rslt |= (num_bytes &  ((1 << vrlg.SENSI2C_TBL_NBWR_BITS) - 1)) << vrlg.SENSI2C_TBL_NBWR
         rslt |= (bit_delay &  ((1 << vrlg.SENSI2C_TBL_DLY_BITS)  - 1)) << vrlg.SENSI2C_TBL_DLY
+        rslt |= (extif &      ((1 << vrlg.SENSI2C_TBL_EXTIF_BITS)  - 1)) << vrlg.SENSI2C_TBL_EXTIF
         return rslt
 
     def func_sensor_i2c_table_reg_rd (self,
@@ -551,7 +579,68 @@ class X393Sensor(object):
             
         return rslt
 
+    def func_sensor_io_ctl_boson (self,
+                            mrst =       None,
+                            mmcm_rst =   None,
+                            set_delays = False,
+                            gpio0 =      None,
+                            gpio1 =      None,
+                            gpio2 =      None,
+                            gpio3 =      None):
+        """
+        Combine sensor I/O control parameters into a control word
+        @param mrst -  True - activate MRST signal (low), False - deactivate MRST (high), None - no change
+        @param mmcm_rst - True - activate MMCM reset, False - deactivate MMCM reset, None - no change (needed after clock change/interruption)
+        @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs
+        @param gpio0 -   GPIO[0]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @return sensor i/o control word
+        """
+        rslt = 0
+        if not mrst is None:
+            rslt |= (3,2)[mrst] <<     vrlg.SENS_CTRL_MRST
+        if not mmcm_rst is None:
+            rslt |= (2,3)[mmcm_rst] << vrlg.SENS_CTRL_RST_MMCM
+        rslt |= (0,1)[set_delays] <<   vrlg.SENS_CTRL_LD_DLY
+        #GPIO are not yet used in Boson?
+        if not gpio0 is None:
+            rslt |= (4 | (gpio0 & 3)) << vrlg.SENS_CTRL_GP0
+        if not gpio1 is None:
+            rslt |= (4 | (gpio1 & 3)) << vrlg.SENS_CTRL_GP1
+        if not gpio2 is None:
+            rslt |= (4 | (gpio2 & 3)) << vrlg.SENS_CTRL_GP2
+        if not gpio3 is None:
+            rslt |= (4 | (gpio3 & 3)) << vrlg.SENS_CTRL_GP3
+        return rslt
 
+    def func_sensor_uart_ctl_boson (self,
+                            uart_extif_en =   None,
+                            uart_xmit_rst =   None,
+                            uart_recv_rst =   None,
+                            uart_xmit_start = False,
+                            uart_recv_next = False):
+        """
+        Combine sensor UART control parameters into a control word
+        @param uart_extif_en -   True - enable sequencer commands, False - disable sequencer commands
+        @param uart_xmit_rst -   True - persistent reset software packet transmission, False - disable reset software packet transmission (normal operation)
+        @param uart_recv_rst -   True - persistent reset packet receive, False - disable reset packet receive (normal operation)
+        @param uart_xmit_start - start transmiting prepared packet
+        @param uart_recv_next -  advance receive FIFO to next byte
+        @return uart control word
+        """
+        rslt = 0
+        if not uart_extif_en is None:
+            rslt |= (3,2)[uart_extif_en] <<     vrlg.SENS_UART_EXTIF_EN
+
+        if not uart_xmit_rst is None:
+            rslt |= (3,2)[uart_xmit_rst] <<     vrlg.SENS_UART_XMIT_RST
+        if not uart_recv_rst is None:
+            rslt |= (3,2)[uart_recv_rst] <<     vrlg.SENS_UART_RECV_RST
+        rslt |= (0,1)[uart_xmit_start] <<       vrlg.SENS_UART_XMIT_START
+        rslt |= (0,1)[uart_recv_next] <<        vrlg.SENS_UART_RECV_NEXT
+        return rslt
 
     def func_sensor_jtag_ctl(self,
                              pgmen = None,    # <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
@@ -733,15 +822,17 @@ class X393Sensor(object):
                                      rah,
                                      num_bytes,
                                      bit_delay,
+                                     extif = 0,
                                      verbose = 1):
         """
         Set table entry for a single index for register write
         @param num_sensor - sensor port number (0..3)
         @param page -       1 byte table index (later provided as high byte of the 32-bit command)
-        @param slave_addr - 7-bit i2c slave address
-        @param rah -        register address high byte (bits [15:8]) optionally used for register write commands
-        @param num_bytes -  number of bytes to send (including register address bytes) 1..10
+        @param slave_addr - 7-bit i2c slave address (number of payload bytes for UART command (0..4)
+        @param rah -        register address high byte (bits [15:8]) optionally used for register write commands (module # for UART)
+        @param num_bytes -  number of bytes to send (including register address bytes) 1..10 (always 4 for UART)
         @param bit_delay -  number of mclk clock cycle in 1/4 of the SCL period
+        @param extif -      extrenal intgerface instead of i2c. 0 - i2c, 1 - uart,2,3 - reserved 
         @param verbose -    verbose level
         """
         ta = (1 << vrlg.SENSI2C_CMD_TABLE) | (1 << vrlg.SENSI2C_CMD_TAND) | (page & 0xff)
@@ -750,6 +841,7 @@ class X393Sensor(object):
                                                rah =        rah,
                                                num_bytes =  num_bytes,
                                                bit_delay =  bit_delay,
+                                               extif =      extif,
                                                verbose =    verbose)
 
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, ta)
@@ -1166,6 +1258,118 @@ class X393Sensor(object):
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
 
+    def set_sensor_io_ctl_boson (self,
+                           num_sensor,
+                            mrst =       None,
+                            mmcm_rst =   None,
+                            set_delays = False,
+                            gpio0 =      None,
+                            gpio1 =      None,
+                            gpio2 =      None,
+                            gpio3 =      None):
+        """
+        Set sensor I/O controls, including I/O signals
+        @param num_sensor - sensor port number (0..3)
+        @param mrst -  True - activate MRST signal (low), False - deactivate MRST (high), None - no change
+        @param mmcm_rst - True - activate MMCM reset, False - deactivate MMCM reset, None - no change (needed after clock change/interruption)
+        @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs
+        @param gpio0 -   GPIO[0]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_io_ctl_boson (num_sensor,
+                            mrst =       mrst,
+                            mmcm_rst =   mmcm_rst,
+                            set_delays = set_delays,
+                            gpio0 =      gpio0,
+                            gpio1 =      gpio1,
+                            gpio2 =      gpio2,
+                            gpio3 =      gpio3)
+                return
+        except:
+            pass
+
+
+        data = self.func_sensor_io_ctl_boson (
+                            mrst =       mrst,
+                            mmcm_rst =   mmcm_rst,
+                            set_delays = set_delays,
+                            gpio0 =      gpio0,
+                            gpio1 =      gpio1,
+                            gpio2 =      gpio2,
+                            gpio3 =      gpio3)
+
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
+        self.x393_axi_tasks.write_control_register(reg_addr, data)
+
+    def set_sensor_uart_ctl_boson (self,
+                           num_sensor,
+                            uart_extif_en =   None,
+                            uart_xmit_rst =   None,
+                            uart_recv_rst =   None,
+                            uart_xmit_start = False,
+                            uart_recv_next = False):
+        """
+        Set sensor UART control signals
+        @param num_sensor - sensor port number (0..3)
+        @param uart_extif_en -   True - enable sequencer commands, False - disable sequencer commands
+        @param uart_xmit_rst -   True - persistent reset software packet transmission, False - disable reset software packet transmission (normal operation)
+        @param uart_recv_rst -   True - persistent reset packet receive, False - disable reset packet receive (normal operation)
+        @param uart_xmit_start - start transmiting prepared packet
+        @param uart_recv_next -  advance receive FIFO to next byte
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_uart_ctl_boson (num_sensor,
+                            uart_extif_en =   uart_extif_en,
+                            uart_xmit_rst =   uart_xmit_rst,
+                            uart_recv_rst =   uart_recv_rst,
+                            uart_xmit_start = uart_xmit_start,
+                            uart_recv_next =  uart_recv_next)
+                return
+        except:
+            pass
+
+
+        data = self.func_sensor_uart_ctl_boson (
+                            uart_extif_en =   uart_extif_en,
+                            uart_xmit_rst =   uart_xmit_rst,
+                            uart_recv_rst =   uart_recv_rst,
+                            uart_xmit_start = uart_xmit_start,
+                            uart_recv_next =  uart_recv_next)
+
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + (vrlg.SENSIO_DELAYS + 1);
+        self.x393_axi_tasks.write_control_register(reg_addr, data)
+
+    def set_sensor_uart_fifo_byte_boson (self,
+                           num_sensor,
+                           uart_tx_byte):
+        """
+        Write byte tio the sensor UART transmit FIFO
+        @param num_sensor - sensor port number (0..3)
+        @param uart_tx_byte - Byte to write to FIFO
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_uart_fifo_byte_boson (num_sensor,
+                            uart_tx_byte =   uart_tx_byte)
+                return
+        except:
+            pass
+
+
+        data = uart_tx_byte & 0xff;
+
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + (vrlg.SENSIO_DELAYS + 0);
+        self.x393_axi_tasks.write_control_register(reg_addr, data)
+
+# TODO: Make one for HiSPi (it is different)
     def set_sensor_io_dly_parallel (self,
                                     num_sensor,
                                     mmcm_phase,

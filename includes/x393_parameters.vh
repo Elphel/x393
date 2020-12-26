@@ -429,6 +429,8 @@
         parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
         parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
         parameter SENSI2C_TBL_DLY_BITS=      8,
+        parameter SENSI2C_TBL_EXTIF =       30, // extrenal interface mode (0 - i2c, 1 uart for boson)
+        parameter SENSI2C_TBL_EXTIF_BITS=    2,
 
 
       parameter SENSI2C_STATUS =        'h1,
@@ -500,8 +502,16 @@
 //`endif
         parameter SENS_CTRL_LD_DLY =     10,  // 10
 //`ifdef HISPI
-        parameter SENS_CTRL_GP0=      12,  // 14:12
-        parameter SENS_CTRL_GP1=      15,  // 17:15
+        parameter SENS_CTRL_GP0=         12,  // 14:12
+        parameter SENS_CTRL_GP1=         15,  // 17:15
+//`elsif BOSON
+        parameter SENS_CTRL_GP2=         18,  // 20:18 00 - float, 01 - low, 10 - high, 11 - trigger
+        parameter SENS_CTRL_GP3=         21,  // 23:21 00 - float, 01 - low, 10 - high, 11 - trigger
+        parameter SENS_UART_EXTIF_EN =    0,  //  1: 0
+        parameter SENS_UART_XMIT_RST =    2,  //  3: 2
+        parameter SENS_UART_RECV_RST =    4,  //  5: 4
+        parameter SENS_UART_XMIT_START =  6,  //  6
+        parameter SENS_UART_RECV_NEXT =   7,  //  7
 //`else
         parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,
@@ -589,15 +599,15 @@
     parameter VOSPI_HACT_TO_HACT_EOF =   2,  // minimal clock cycles from HACT to HACT or to EOF
 `endif    
     parameter VOSPI_MCLK_HALFDIV =       4, // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock
-    `ifdef SIMULATION
+`ifdef SIMULATION
         parameter VOSPI_MRST_MS =            1, // master reset duration in ms
         parameter VOSPI_MRST_AFTER_MS =      5, // Wait after master reset and generate SOF pulse to advance sequencer  
         parameter VOSPI_SPI_TIMEOUT_MS =     3, // Wait to tymeout SPI when needed to re-sync
-    `else
+`else
         parameter VOSPI_MRST_MS =          200, // master reset duration in ms (so even all channels would overlap)
         parameter VOSPI_MRST_AFTER_MS =   2000, // Wait after master reset and generate SOF pulse to advance sequencer  
         parameter VOSPI_SPI_TIMEOUT_MS =   185, // Wait to tymeout SPI when needed to re-sync
-    `endif  
+`endif  
      
 //`else
     //sensor_fifo parameters (for parallel12)
@@ -658,6 +668,7 @@
     parameter SENS_BANDWIDTH =           "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
     // parameters for the sensor-synchronous clock PLL
+// ALL PARAMETERS HERE SHOULD BE DEFINED (for use in C-generator)    
 `define TWEAKING_IOSTANDARD
 `ifdef HISPI
     parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
@@ -668,12 +679,18 @@
     `ifdef TWEAKING_IOSTANDARD
         parameter PXD_IOSTANDARD =           "LVCMOS25", // with 1.8 actually applied voltage
         parameter SENSI2C_IOSTANDARD =       "LVCMOS25", // with 1.8 actually applied voltage
-//        parameter PXD_IOSTANDARD =           "LVCMOS18", // with 1.8 actually applied voltage
-//        parameter SENSI2C_IOSTANDARD =       "LVCMOS18", // with 1.8 actually applied voltage
     `else
         parameter PXD_IOSTANDARD =           "LVCMOS18",
         parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
     `endif
+`elsif BOSON    
+    parameter CLKIN_PERIOD_SENSOR =        37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+    parameter PXD_IOSTANDARD =           "LVCMOS18",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
 
 `else
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
@@ -686,17 +703,15 @@
 
 `endif
 
-    `ifdef TWEAKING_IOSTANDARD
-        parameter HISPI_UNTUNED_SPLIT =       "FALSE",   // Very power-hungry
-        parameter HISPI_DIFF_TERM =           "TRUE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
-//        parameter HISPI_DIFF_TERM =           "FALSE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
-//        parameter HISPI_IOSTANDARD =          "PPDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
-        parameter HISPI_IOSTANDARD =          "LVDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
-    `else
-        parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
-        parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
-        parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
-    `endif
+`ifdef TWEAKING_IOSTANDARD
+    parameter HISPI_UNTUNED_SPLIT =       "FALSE",   // Very power-hungry
+    parameter HISPI_DIFF_TERM =           "TRUE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+    parameter HISPI_IOSTANDARD =          "LVDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
+`else
+    parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
+    parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+`endif
 
 
 //    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3

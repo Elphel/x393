@@ -324,7 +324,8 @@ class X393ExportC(object):
         stypedefs += self.get_typedef32(comment =   "Sensor/multiplexer I/O pins status",
                                  data =      [self._enc_status_sens_io(),
                                               self._enc_status_sens_io_hispi(),
-                                              self._enc_status_sens_io_vospi()],
+                                              self._enc_status_sens_io_vospi(),
+                                              self._enc_status_sens_io_boson()],
                                  name =      "x393_status_sens_io",  typ="ro",
                                  frmt_spcs = frmt_spcs)
 
@@ -434,7 +435,8 @@ class X393ExportC(object):
         stypedefs += self.get_typedef32(comment =   "Sensor port I/O control",
                                  data =      [self._enc_sensio_ctrl_par12(),
                                               self._enc_sensio_ctrl_hispi(),
-                                              self._enc_sensio_ctrl_vospi()],
+                                              self._enc_sensio_ctrl_vospi(),
+                                              self._enc_sensio_ctrl_boson()],
                                  name =      "x393_sensio_ctl",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Programming interface for multiplexer FPGA",
@@ -450,12 +452,14 @@ class X393ExportC(object):
         """                                 
         stypedefs += self.get_typedef32(comment =   "Sensor i/o timing register 0 (different meanings for different sensor types)",
                                  data =      [self._enc_sensio_par12_tim0(),
-                                              self._enc_sensio_hispi_tim0()],
+                                              self._enc_sensio_hispi_tim0(),
+                                              self._enc_sensio_boson_tim0()],
                                  name =      "x393_sensio_tim0",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Sensor i/o timing register 1 (different meanings for different sensor types)",
                                  data =      [self._enc_sensio_par12_tim1(),
-                                              self._enc_sensio_hispi_tim1()],
+                                              self._enc_sensio_hispi_tim1(),
+                                              self._enc_sensio_boson_tim1()],
                                  name =      "x393_sensio_tim1",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Sensor i/o timing register 2 (different meanings for different sensor types)",
@@ -1898,6 +1902,25 @@ class X393ExportC(object):
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
         return dw
 
+    def _enc_status_sens_io_boson(self):
+        dw=[]
+        dw.append(("ps_out",                 0, 8,0,  "Sensor MMCM current phase"))
+        dw.append(("ps_rdy",                 8, 1,0,  "Sensor MMCM phase ready"))
+        dw.append(("perr",                   9, 1,0,  "Parity error in video stream"))
+        dw.append(("clkfb_pxd_stopped_mmcm",10, 1,0,  "Sensor MMCM feedback clock stopped"))
+        dw.append(("clkin_pxd_stopped_mmcm",11, 1,0,  "Sensor MMCM input clock stopped"))
+        dw.append(("locked_pxd_mmcm",       12, 1,0,  "Sensor MMCM locked"))
+        dw.append(("hact_alive",            13, 1,0,  "HACT signal from the sensor (or internal) is toggling"))
+        dw.append(("recv_prgrs",            14, 1,0,  "UART packet receive in progress"))
+        dw.append(("recv_dav",              15, 1,0,  "Byte available in received UART packet"))
+        dw.append(("recv_data",             16, 8,0,  "Received UART data byte"))
+        dw.append(("senspgmin",             24, 1,0,  "senspgm pin state (0 means non-FPGA SFE is present)"))
+        dw.append(("xmit_busy",             25, 1,0,  "UART transmitter busy"))
+        dw.append(("seq_num",               26, 6,0,  "Sequence number"))
+        return dw
+
+
+
     def _enc_status_sens_i2c(self):
         dw=[]
         dw.append(("i2c_fifo_dout",          0, 8,0,  "I2c byte read from the device through FIFO"))
@@ -1964,6 +1987,7 @@ class X393ExportC(object):
         dw.append(("nbwr",             vrlg.SENSI2C_TBL_NBWR, vrlg.SENSI2C_TBL_NBWR_BITS,0, "Number of bytes to write (1..10)"))
         dw.append(("dly",              vrlg.SENSI2C_TBL_DLY,  vrlg.SENSI2C_TBL_DLY_BITS, 0, "Bit delay - number of mclk periods in 1/4 of the SCL period"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND,                         2, 2,  "Should be 2 to select table data write mode"))
+        dw.append(("extif_mode",       vrlg.SENSI2C_TBL_EXTIF,  vrlg.SENSI2C_TBL_EXTIF_BITS,0,  "External interface mode: 0 - I2C (old), 1 - UART (Boson)"))
         return dw
 
     def _enc_i2c_tbl_rmode(self):
@@ -2156,6 +2180,29 @@ class X393ExportC(object):
         dw.append(("dbg_src_set",  vrlg.VOSPI_DBG_SRC+3,        1,   0,  "Enable write to dbg_src"))
         return dw
     
+    def _enc_sensio_ctrl_boson(self):
+        dw=[]
+        dw.append(("mrst",         vrlg.SENS_CTRL_MRST,         1,   0,  "MRST signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("mrst_set",     vrlg.SENS_CTRL_MRST + 1,     1,   0,  "when set to 1, MRST is set  to the 'mrst' field value"))
+#        dw.append(("arst",         vrlg.SENS_CTRL_ARST,         1,   0,  "ARST signal to the sensor"))
+#        dw.append(("arst_set",     vrlg.SENS_CTRL_ARST + 1,     1,   0,  "ARST set  to the 'arst' field"))
+#        dw.append(("aro",          vrlg.SENS_CTRL_ARO,          1,   0,  "ARO signal to the sensor"))
+#        dw.append(("aro_set",      vrlg.SENS_CTRL_ARO + 1,      1,   0,  "ARO set to the 'aro' field"))
+        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sensor clock) reset signal"))
+        dw.append(("mmcm_rst_set", vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
+#        dw.append(("ign_embed",    vrlg.SENS_CTRL_IGNORE_EMBED, 1,   0,  "Ignore embedded data (non-image pixel lines"))
+#        dw.append(("ign_embed_set",vrlg.SENS_CTRL_IGNORE_EMBED + 1,1,0,  "Set mode to 'ign_embed' field"))
+        dw.append(("set_dly",      vrlg.SENS_CTRL_LD_DLY,       1,   0,  "Set all pre-programmed delays to the sensor port input delays"))
+        dw.append(("gp0",          vrlg.SENS_CTRL_GP0,          2,   0 , "GP0 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp0_set",      vrlg.SENS_CTRL_GP0 + 2,      1,   0,  "Set GP0 to 'gp0' value"))
+        dw.append(("gp1",          vrlg.SENS_CTRL_GP1,          2,   0 , "GP1 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp1_set",      vrlg.SENS_CTRL_GP1 + 2,      1,   0,  "Set GP1 to 'gp1' value"))
+        dw.append(("gp2",          vrlg.SENS_CTRL_GP2,          2,   0 , "GP2 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp2_set",      vrlg.SENS_CTRL_GP2 + 2,      1,   0,  "Set GP2 to 'gp2' value"))
+        dw.append(("gp3",          vrlg.SENS_CTRL_GP3,          2,   0 , "GP3 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp3_set",      vrlg.SENS_CTRL_GP3 + 2,      1,   0,  "Set GP3 to 'gp3' value"))
+        return dw
+    
     def _enc_sensio_jtag(self):
         dw=[]
         dw.append(("tdi",          vrlg.SENS_JTAG_TDI,         1,   0,  "JTAG TDI level"))
@@ -2265,6 +2312,26 @@ class X393ExportC(object):
         dw=[]
         dw.append(("phase_h",      0,  8,   0,  "MMCM phase"))
         return dw
+
+    def _enc_sensio_boson_tim0(self):
+        dw=[]
+        dw.append(("uart_txd",     0,  8,   0,  "UART transmit data byte"))
+        return dw
+
+    def _enc_sensio_boson_tim1(self):
+        dw=[]
+        dw.append(("uart_extif_en",      vrlg.SENS_UART_EXTIF_EN,    1,   0,  "UART: enable sequencer commands"))
+        dw.append(("uart_extif_en_set",  vrlg.SENS_UART_EXTIF_EN+1,  1,   0,  "set 'uart_extif_en' field"))
+        dw.append(("uart_xmit_rst",      vrlg.SENS_UART_XMIT_RST,    1,   0,  "UART: reset software packet transmission"))
+        dw.append(("uart_xmit_rst_set",  vrlg.SENS_UART_XMIT_RST+1,  1,   0,  "set 'uart_xmit_rst' field"))
+        dw.append(("uart_recv_rst",      vrlg.SENS_UART_RECV_RST,    1,   0,  "UART: reset software packet receiving"))
+        dw.append(("uart_recv_rst_set",  vrlg.SENS_UART_RECV_RST+1,  1,   0,  "set 'uart_recv_rst' field"))
+        dw.append(("uart_xmit_start",    vrlg.SENS_UART_XMIT_START,  1,   0,  "UART: start transmiting prepared packet"))
+        dw.append(("uart_recv_next",     vrlg.SENS_UART_RECV_NEXT,   1,   0,  "UART: advance receive FIFO to next byte"))
+        return dw
+
+
+
 
     def _enc_sensio_width(self):
         dw=[]

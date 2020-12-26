@@ -68,12 +68,12 @@ module  sens_parallel12 #(
     
     parameter LINE_WIDTH_BITS =   16,
     
-    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
-    parameter integer IDELAY_VALUE = 0,
     parameter integer PXD_DRIVE = 12,
     parameter PXD_IBUF_LOW_PWR = "TRUE",
     parameter PXD_IOSTANDARD = "DEFAULT",
     parameter PXD_SLEW = "SLOW",
+    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
+    parameter integer IDELAY_VALUE = 0,
     parameter real SENS_REFCLK_FREQUENCY =    300.0,
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
     

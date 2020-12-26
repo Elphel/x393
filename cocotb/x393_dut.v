@@ -44,7 +44,7 @@
 `include "system_defines.vh"
 module  x393_dut#(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
-`include "includes/x393_simulation_parameters.vh"
+`include "includes/x393_simulation_parameters.vh" //SuppressThisWarning Veditor UNUSED
 )(
     output          dutm0_aclk,
     output          reset_out,
@@ -409,7 +409,7 @@ module  x393_dut#(
     parameter BLANK_ROWS_BEFORE= 8;  // 1; //8; ///2+2 - a little faster than compressor
     parameter BLANK_ROWS_AFTER=  8; // 1; //8;
 `endif 
- parameter TRIG_LINES=        8;
+ parameter TRIG_LINES=        8; //SuppressThisWarning Veditor UNUSED
  parameter VBLANK=            2; /// 2 lines //SuppressThisWarning Veditor UNUSED
  parameter CYCLES_PER_PIXEL=  3; /// 2 for JP4, 3 for JPEG // SuppressThisWarning VEditor - not used
 `ifdef PF
@@ -422,21 +422,21 @@ module  x393_dut#(
 `endif
   parameter WOI_MARGINS = 0; // 4;
 
-  parameter VIRTUAL_WIDTH=    FULL_WIDTH + HBLANK;
+  parameter VIRTUAL_WIDTH=    FULL_WIDTH + HBLANK; //SuppressThisWarning Veditor UNUSED
   parameter VIRTUAL_HEIGHT=   FULL_HEIGHT + BLANK_ROWS_BEFORE + BLANK_ROWS_AFTER;  //SuppressThisWarning Veditor UNUSED
   parameter TRIG_INTERFRAME=  100; /// extra 100 clock cycles between frames  //SuppressThisWarning Veditor UNUSED
   parameter TRIG_DELAY=      200; /// delay in sensor clock cycles // SuppressThisWarning VEditor - not used
   parameter FULL_WIDTH=  WOI_WIDTH +  WOI_MARGINS;
   parameter FULL_HEIGHT= WOI_HEIGHT + WOI_MARGINS;
-//  localparam       SENSOR_MEMORY_WIDTH_BURSTS = (FULL_WIDTH + 15) >> 4;
-//  localparam       SENSOR_MEMORY_MASK = (1 << (FRAME_WIDTH_ROUND_BITS-4)) -1;
-//  localparam       SENSOR_MEMORY_FULL_WIDTH_BURSTS = (SENSOR_MEMORY_WIDTH_BURSTS + SENSOR_MEMORY_MASK) & (~SENSOR_MEMORY_MASK); 
 
 
 // ========================== end of parameters from x353 ===================================
     reg [639:0] TEST_TITLE="abcdef"; //SuppressThisWarning VEditor
 
 // Sensor signals - as on sensor pads
+`ifdef LWIR
+`elsif BOSON
+`else // PAR12 od HISPI
     wire        PX1_MCLK; // input sensor input clock
     wire        PX1_MRST; // input 
     wire        PX1_ARO;  // input 
@@ -485,8 +485,9 @@ module  x393_dut#(
     wire       PX2_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
     wire       PX3_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
     wire       PX4_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
-    
+`endif    
 // for LWIR - 
+`ifdef LWIR
     wire       LWIR1_SPI_MISO;     
     wire       LWIR1_SPI_MOSI;
     wire       LWIR1_SPI_CS;
@@ -550,7 +551,7 @@ module  x393_dut#(
     wire       LWIR4_MIPI_DN;   // not implemented
     wire       LWIR4_MIPI_CLKP; // not implemented
     wire       LWIR4_MIPI_CLKN; // not implemented
-         
+`endif         
     
     
 
@@ -596,8 +597,8 @@ module  x393_dut#(
     localparam PIX_CLK_DIV =          1; // scale clock from FPGA to sensor pixel clock
     localparam PIX_CLK_MULT =        11; // scale clock from FPGA to sensor pixel clock
 `else    
-    localparam PIX_CLK_DIV =          1; // scale clock from FPGA to sensor pixel clock
-    localparam PIX_CLK_MULT =         1; // scale clock from FPGA to sensor pixel clock
+    localparam PIX_CLK_DIV =          1; // scale clock from FPGA to sensor pixel clock // SuppressThisWarning VEditor - may be unused
+    localparam PIX_CLK_MULT =         1; // scale clock from FPGA to sensor pixel clock // SuppressThisWarning VEditor - may be unused
 `endif
 `ifdef HISPI
     localparam HISPI_FULL_HEIGHT =    FULL_HEIGHT;  // >0 - count lines, ==0 - wait for the end of VACT
@@ -695,6 +696,8 @@ module  x393_dut#(
     assign PX4_MRST =      sns4_dp[7]; // from FPGA to sensor
     assign PX4_ARST =      sns4_dn[7]; // same as GP[3]
     assign PX4_ARO =       sns4_dn[5]; // same as GP[1]
+`elsif BOSON
+    
 `elsif LWIR
 // connect LWIR sensor to x393
     assign LWIR1_SPI_MOSI = sns1_dn[0];
@@ -777,7 +780,7 @@ module  x393_dut#(
     assign sns4_clkn  = LWIR4_MIPI_CLKN;
     assign sns4_clkp  = LWIR4_MIPI_CLKP;
 
-`else
+`else // only PAR12
     //connect parallel12 sensor to sensor port 1
     assign sns1_dp[6:1] =  {PX1_D[10], PX1_D[8], PX1_D[6], PX1_D[4], PX1_D[2], PX1_HACT};
     assign PX1_MRST =       sns1_dp[7]; // from FPGA to sensor
@@ -1093,6 +1096,11 @@ module  x393_dut#(
         .sns1_dn   (sns1_dn[3:0]),    // inout[3:0]
         .sns1_dp74 (sns1_dp[7:4]),    // inout[3:0]
         .sns1_dn74 (sns1_dn[7:4]),    // inout[3:0]
+`elsif BOSON        
+        .sns1_dp   (sns1_dp[3:0]),    // inout[3:0]
+        .sns1_dn   (sns1_dn[3:0]),    // inout[3:0]
+        .sns1_dp74 (sns1_dp[7:4]),    // inout[3:0]
+        .sns1_dn74 (sns1_dn[7:4]),    // inout[3:0]
 `elsif LWIR
         .sns1_dp40 (sns1_dp[4:0]),    // input[4:0] 
         .sns1_dn40 (sns1_dn[4:0]),    // input[4:0] 
@@ -1112,6 +1120,11 @@ module  x393_dut#(
         .sns1_pg   (sns1_pg),    // inout       SENSPGM
         
 `ifdef HISPI
+        .sns2_dp   (sns2_dp[3:0]),    // inout[3:0]
+        .sns2_dn   (sns2_dn[3:0]),    // inout[3:0]
+        .sns2_dp74 (sns2_dp[7:4]),    // inout[3:0]
+        .sns2_dn74 (sns2_dn[7:4]),    // inout[3:0]
+`elsif BOSON        
         .sns2_dp   (sns2_dp[3:0]),    // inout[3:0]
         .sns2_dn   (sns2_dn[3:0]),    // inout[3:0]
         .sns2_dp74 (sns2_dp[7:4]),    // inout[3:0]
@@ -1141,6 +1154,11 @@ module  x393_dut#(
         .sns3_dn   (sns3_dn[3:0]),    // inout[3:0]
         .sns3_dp74 (sns3_dp[7:4]),    // inout[3:0]
         .sns3_dn74 (sns3_dn[7:4]),    // inout[3:0]
+`elsif BOSON        
+        .sns3_dp   (sns3_dp[3:0]),    // inout[3:0]
+        .sns3_dn   (sns3_dn[3:0]),    // inout[3:0]
+        .sns3_dp74 (sns3_dp[7:4]),    // inout[3:0]
+        .sns3_dn74 (sns3_dn[7:4]),    // inout[3:0]
 `elsif LWIR
         .sns3_dp40 (sns3_dp[4:0]),    // input[4:0] 
         .sns3_dn40 (sns3_dn[4:0]),    // input[4:0] 
@@ -1160,6 +1178,11 @@ module  x393_dut#(
         .sns3_pg   (sns3_pg),    // inout       SENSPGM
         
 `ifdef HISPI
+        .sns4_dp   (sns4_dp[3:0]),    // inout[3:0]
+        .sns4_dn   (sns4_dn[3:0]),    // inout[3:0]
+        .sns4_dp74 (sns4_dp[7:4]),    // inout[3:0]
+        .sns4_dn74 (sns4_dn[7:4]),    // inout[3:0]
+`elsif BOSON        
         .sns4_dp   (sns4_dp[3:0]),    // inout[3:0]
         .sns4_dn   (sns4_dn[3:0]),    // inout[3:0]
         .sns4_dp74 (sns4_dp[7:4]),    // inout[3:0]
@@ -1705,6 +1728,9 @@ simul_axi_hp_wr #(
     );
 `endif    
 
+`ifdef LWIR
+`elsif BOSON
+`else // PAR12 od HISPI
     simul_clk_mult_div #(
         .MULTIPLIER (PIX_CLK_MULT),
         .DIVISOR    (PIX_CLK_DIV),
@@ -1744,53 +1770,8 @@ simul_axi_hp_wr #(
         .en         (1'b1), // input
         .clk_out    (PX4_MCLK) // output
     );
+`endif
 
-
-/*
-    wire lwir1_miso;
-    simul_lwir160x120_vospi #(
-        .DATA_FILE     ("/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat"),
-        .WINDOW_WIDTH  (160),
-        .WINDOW_HEIGHT (120),
-        .TELEMETRY     (2), // 1),
-        .FRAME_PERIOD  (946969),
-        .FRAME_DELAY   (100),
-        .MS_PERIOD     (25)  // 1us instead of 1 ms
-    ) simul_lwir160x120_vospi_i (
-        .mclk                       (x393_i.ps7_i.SAXIHP0ACLK), // PX1_MCLK),   // input temporarily made faster
-        .mrst                       (    PX1_MRST),   // input
-        .pwdn                       (1'b1),           // input
-        .spi_clk                    (    1'b0),       // input
-        .spi_cs                     (    1'b0),       // inout
-        .spi_miso                   (    lwir1_miso), // output
-        .spi_mosi                   (    1'bz),       // input
-        .gpio0                      (),               // inout
-        .gpio1                      (),               // inout
-        .gpio2                      (),               // inout
-        .gpio3                      (),               // inout
-        .i2c_scl                    (),               // input
-        .i2c_sda                    (),               // inout
-        .mipi_dp                    (),               // output
-        .mipi_dn                    (),               // output
-        .mipi_clkp                  (),               // output
-        .mipi_clkn                  (),               // output
-        
-        .telemetry_rev              (  16'h7654),     // input[15:0] 
-        .telemetry_status           (  32'h137f1248), // input[31:0] 
-        .telemetry_srev             (64'h0123456789abcdef), // input[63:0] 
-        .telemetry_temp_counts      ( 16'd59000),     // input[15:0] 
-        .telemetry_temp_kelvin      ( 16'd29500),     // input[15:0] 
-        .telemetry_temp_last_kelvin ( 16'd29300),     // input[15:0] 
-        .telemetry_time_last_ms     (  32'h12345678), // input[31:0] 
-        .telemetry_agc_roi_top      (    16'd0),      // input[15:0] 
-        .telemetry_agc_roi_left     (    16'd0),      // input[15:0] 
-        .telemetry_agc_roi_bottom   (  16'd119),      // input[15:0] 
-        .telemetry_agc_roi_right    (  16'd159),      // input[15:0] 
-        .telemetry_agc_high         (16'd19200),      // input[15:0] 
-        .telemetry_agc_low          (  16'd200),      // input[15:0] 
-        .telemetry_video_format     (32'haaaa5555)    // input[31:0] 
-    );
-*/
 `ifdef LWIR
     simul_lwir160x120_vospi #(
         .DATA_FILE                  (LWIR_DATA_FILE1),
@@ -1962,6 +1943,187 @@ simul_axi_hp_wr #(
         .telemetry_agc_high         (LWIR_TELEMETRY_AGC_HIGH),        // input[15:0] 
         .telemetry_agc_low          (LWIR_TELEMETRY_AGC_LOW),         // input[15:0] 
         .telemetry_video_format     (LWIR_TELEMETRY_VIDEO_FORMAT)     // input[31:0] 
+    );
+
+
+`elsif BOSON
+    wire boson_single = 1;
+    wire [BOSON_OUT_BITS-1:0] boson_pxd1;
+    wire [BOSON_OUT_BITS-1:0] boson_pxd2;
+    wire [BOSON_OUT_BITS-1:0] boson_pxd3;
+    wire [BOSON_OUT_BITS-1:0] boson_pxd4;
+    wire                      boson_pclk1;
+    wire                      boson_pclk2;
+    wire                      boson_pclk3;
+    wire                      boson_pclk4;
+    wire                      boson_dvalid1;
+    wire                      boson_dvalid2;
+    wire                      boson_dvalid3;
+    wire                      boson_dvalid4;
+    wire                      boson_vsync1;
+    wire                      boson_vsync2;
+    wire                      boson_vsync3;
+    wire                      boson_vsync4;
+    wire                      boson_hsync1;
+    wire                      boson_hsync2;
+    wire                      boson_hsync3;
+    wire                      boson_hsync4;
+    
+    
+    simul_boson640 #(
+        .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
+        .WIDTH         (BOSON_WIDTH),      // 160), 640),
+        .HEIGHT        (BOSON_HEIGHT),     // 120), 513),
+        .OUT_BITS      (BOSON_OUT_BITS),   // 16),
+        .FPS           (BOSON_FPS),        // 60.0),
+        .HSW           (BOSON_HSW),        // 8),
+        .FP_BP         (BOSON_FP_BP),      // 22), // 102),
+        .FP            (BOSON_FP),         // 12), 52),
+        .VSW           (BOSON_VSW)         // 7)  87)
+    ) simul_boson640_1_i (
+        .mrst          (sns1_dp[7]),       // input
+        .single        (boson_single),     // input
+        .ext_sync      (sns1_ctl),         // input
+        .pxd           (boson_pxd1),       // output[15:0] 
+        .pclk          (boson_pclk1),      // output
+        .dvalid        (boson_dvalid1),    // output
+        .vsync         (boson_vsync1),     // output
+        .hsync         (boson_hsync1),     // output
+        .uart_in       (sns1_dp[4]),       // input sns_txd
+        .uart_out      (sns1_dn[4])        // output  sns_rxd
+    );
+
+    simul_103993_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_1_i (
+        .red           (boson_pxd1[ 7:0]), // input[7:0] 
+        .green         (boson_pxd1[15:8]), // input[7:0] 
+        .blue          (8'h17),            // input[7:0] 
+        .hs            (boson_hsync1),     // input
+        .vs            (boson_vsync1),     // input
+        .de            (boson_dvalid1),    // input
+        .pclk          (boson_pclk1),      // input
+        .dp            (sns1_dp[2:0]),     // output[2:0] 
+        .dn            (sns1_dn[2:0]),     // output[2:0] 
+        .clkp          (sns1_clkp),        // output
+        .clkn          (sns1_clkn)         // output
+    );
+
+    simul_boson640 #(
+        .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
+        .WIDTH         (BOSON_WIDTH),      // 160), 640),
+        .HEIGHT        (BOSON_HEIGHT),     // 120), 513),
+        .OUT_BITS      (BOSON_OUT_BITS),   // 16),
+        .FPS           (BOSON_FPS),        // 60.0),
+        .HSW           (BOSON_HSW),        // 8),
+        .FP_BP         (BOSON_FP_BP),      // 22), // 102),
+        .FP            (BOSON_FP),         // 12), 52),
+        .VSW           (BOSON_VSW)         // 7)  87)
+    ) simul_boson640_2_i (
+        .mrst          (sns2_dp[7]),       // input
+        .single        (boson_single),     // input
+        .ext_sync      (sns2_ctl),         // input
+        .pxd           (boson_pxd2),       // output[15:0] 
+        .pclk          (boson_pclk2),      // output
+        .dvalid        (boson_dvalid2),    // output
+        .vsync         (boson_vsync2),     // output
+        .hsync         (boson_hsync2),     // output
+        .uart_in       (sns2_dp[4]),       // input sns_txd
+        .uart_out      (sns2_dn[4])        // output  sns_rxd
+    );
+
+    simul_103993_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_2_i (
+        .red           (boson_pxd2[ 7:0]), // input[7:0] 
+        .green         (boson_pxd2[15:8]), // input[7:0] 
+        .blue          (8'h17),            // input[7:0] 
+        .hs            (boson_hsync2),     // input
+        .vs            (boson_vsync2),     // input
+        .de            (boson_dvalid2),    // input
+        .pclk          (boson_pclk2),      // input
+        .dp            (sns2_dp[2:0]),     // output[2:0] 
+        .dn            (sns2_dn[2:0]),     // output[2:0] 
+        .clkp          (sns2_clkp),        // output
+        .clkn          (sns2_clkn)         // output
+    );
+
+    simul_boson640 #(
+        .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
+        .WIDTH         (BOSON_WIDTH),      // 160), 640),
+        .HEIGHT        (BOSON_HEIGHT),     // 120), 513),
+        .OUT_BITS      (BOSON_OUT_BITS),   // 16),
+        .FPS           (BOSON_FPS),        // 60.0),
+        .HSW           (BOSON_HSW),        // 8),
+        .FP_BP         (BOSON_FP_BP),      // 22), // 102),
+        .FP            (BOSON_FP),         // 12), 52),
+        .VSW           (BOSON_VSW)         // 7)  87)
+    ) simul_boson640_3_i (
+        .mrst          (sns3_dp[7]),       // input
+        .single        (boson_single),     // input
+        .ext_sync      (sns3_ctl),         // input
+        .pxd           (boson_pxd3),       // output[15:0] 
+        .pclk          (boson_pclk3),      // output
+        .dvalid        (boson_dvalid3),    // output
+        .vsync         (boson_vsync3),     // output
+        .hsync         (boson_hsync3),     // output
+        .uart_in       (sns3_dp[4]),       // input sns_txd
+        .uart_out      (sns3_dn[4])        // output  sns_rxd
+    );
+
+    simul_103993_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_3_i (
+        .red           (boson_pxd3[ 7:0]), // input[7:0] 
+        .green         (boson_pxd3[15:8]), // input[7:0] 
+        .blue          (8'h17),            // input[7:0] 
+        .hs            (boson_hsync3),     // input
+        .vs            (boson_vsync3),     // input
+        .de            (boson_dvalid3),    // input
+        .pclk          (boson_pclk3),      // input
+        .dp            (sns3_dp[2:0]),     // output[2:0] 
+        .dn            (sns3_dn[2:0]),     // output[2:0] 
+        .clkp          (sns3_clkp),        // output
+        .clkn          (sns3_clkn)         // output
+    );
+
+    simul_boson640 #(
+        .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
+        .WIDTH         (BOSON_WIDTH),      // 160), 640),
+        .HEIGHT        (BOSON_HEIGHT),     // 120), 513),
+        .OUT_BITS      (BOSON_OUT_BITS),   // 16),
+        .FPS           (BOSON_FPS),        // 60.0),
+        .HSW           (BOSON_HSW),        // 8),
+        .FP_BP         (BOSON_FP_BP),      // 22), // 102),
+        .FP            (BOSON_FP),         // 12), 52),
+        .VSW           (BOSON_VSW)         // 7)  87)
+    ) simul_boson640_4_i (
+        .mrst          (sns4_dp[7]),       // input
+        .single        (boson_single),     // input
+        .ext_sync      (sns4_ctl),         // input
+        .pxd           (boson_pxd4),       // output[15:0] 
+        .pclk          (boson_pclk4),      // output
+        .dvalid        (boson_dvalid4),    // output
+        .vsync         (boson_vsync4),     // output
+        .hsync         (boson_hsync4),     // output
+        .uart_in       (sns4_dp[4]),       // input sns_txd
+        .uart_out      (sns4_dn[4])        // output  sns_rxd
+    );
+
+    simul_103993_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_4_i (
+        .red           (boson_pxd4[ 7:0]), // input[7:0] 
+        .green         (boson_pxd4[15:8]), // input[7:0] 
+        .blue          (8'h17),            // input[7:0] 
+        .hs            (boson_hsync4),     // input
+        .vs            (boson_vsync4),     // input
+        .de            (boson_dvalid4),    // input
+        .pclk          (boson_pclk4),      // input
+        .dp            (sns4_dp[2:0]),     // output[2:0] 
+        .dn            (sns4_dn[2:0]),     // output[2:0] 
+        .clkp          (sns4_clkp),        // output
+        .clkn          (sns4_clkn)         // output
     );
 
 

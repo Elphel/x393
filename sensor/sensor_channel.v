@@ -6,7 +6,7 @@
  *
  * @brief Top module for a sensor channel
  *
- * @copyright Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015-2020 Elphel, Inc.
  *
  * <b>License:</b>
  *
@@ -41,7 +41,8 @@
 
 module  sensor_channel#(
     // parameters, individual to sensor channels and those likely to be modified
-    parameter SENSOR_NUMBER =             0,     // sensor number (0..3)
+//    Moving to the end to be always present
+//    parameter SENSOR_NUMBER =             0,     // sensor number (0..3)
     parameter SENSOR_GROUP_ADDR =         'h400, // sensor registers base address
     parameter SENSOR_BASE_INC =           'h040, // increment for sesor channel
     parameter SENSI2C_STATUS_REG_BASE =   'h20,  // 4 locations" x30, x32, x34, x36
@@ -111,7 +112,9 @@ module  sensor_channel#(
         parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
         parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
         parameter SENSI2C_TBL_DLY_BITS=      8,
-      
+        parameter SENSI2C_TBL_EXTIF =       30, // extrenal interface mode (0 - i2c, 1 uart for boson)
+        parameter SENSI2C_TBL_EXTIF_BITS=    2,
+        
       parameter SENSI2C_STATUS =        'h1,
     
     parameter SENS_GAMMA_RADDR =       'h38, //4,  'h38..'h3b
@@ -157,45 +160,78 @@ module  sensor_channel#(
     
       parameter SENSIO_RADDR =          8, //'h408  .. 'h40f
       parameter SENSIO_ADDR_MASK =      'h7f8,
-`ifdef LWIR
+
+      parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_CTRL =           'h0,
-      parameter SENSIO_STATUS =         'h1,
-`else    
+      
+`ifdef LWIR
+//      parameter SENSIO_CTRL =           'h0,
+//      parameter SENSIO_STATUS =         'h1,
+`else // all not LWIR   
       // sens_parallel12 registers
-        parameter SENSIO_CTRL =           'h0,
+//      parameter SENSIO_CTRL =           'h0,
         // SENSIO_CTRL register bits
-        parameter SENS_CTRL_MRST =        0,  //  1: 0
-        parameter SENS_CTRL_ARST =        2,  //  3: 2
-        parameter SENS_CTRL_ARO =         4,  //  5: 4
-        parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
-`ifdef HISPI
-        parameter SENS_CTRL_IGNORE_EMBED =8,  //  9: 8
-`else        
-        parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
-`endif        
-        parameter SENS_CTRL_LD_DLY =     10,  // 10
-`ifdef HISPI
-        parameter SENS_CTRL_GP0=      12,  // 14:12
-        parameter SENS_CTRL_GP1=      15,  // 17:15
-`else        
-        parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
-        parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,
-        parameter SENS_CTRL_ODD =             6, //
-        parameter SENS_CTRL_QUADRANTS_EN =   20,  // 18:12, enable - 20 (1 bits reserved)
-`endif        
-      parameter SENSIO_STATUS =         'h1,
-      parameter SENSIO_JTAG =           'h2,
+      parameter SENS_CTRL_MRST =        0,  //  1: 0
+  `ifndef BOSON      
+      parameter SENS_CTRL_ARST =        2,  //  3: 2
+      parameter SENS_CTRL_ARO =         4,  //  5: 4
+      parameter SENSIO_JTAG =           'h2, // not used for BOSON:
         // SENSIO_JTAG register bits
-        parameter SENS_JTAG_PGMEN =       8,
-        parameter SENS_JTAG_PROG =        6,
-        parameter SENS_JTAG_TCK =         4,
-        parameter SENS_JTAG_TMS =         2,
-        parameter SENS_JTAG_TDI =         0,
-`ifndef HISPI
+      parameter SENS_JTAG_PGMEN =       8,
+      parameter SENS_JTAG_PROG =        6,
+      parameter SENS_JTAG_TCK =         4,
+      parameter SENS_JTAG_TMS =         2,
+      parameter SENS_JTAG_TDI =         0,
+  `endif      
+      parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
+      parameter SENS_CTRL_LD_DLY =     10,  // 10
+      parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
+`endif  // `ifdef LWIR / else    
+
+`ifdef HISPI
+      parameter SENS_CTRL_IGNORE_EMBED =8,  //  9: 8
+`elsif PAR12       
+      parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
+`endif
+         
+`ifdef HISPI
+      parameter SENS_CTRL_GP0=         12,  // 14:12
+      parameter SENS_CTRL_GP1=         15,  // 17:15
+`elsif BOSON
+      parameter SENS_CTRL_GP0=         12,  // 14:12
+      parameter SENS_CTRL_GP1=         15,  // 17:15
+      parameter SENS_CTRL_GP2=         18,  // 20:18 00 - float, 01 - low, 10 - high, 11 - trigger
+      parameter SENS_CTRL_GP3=         21,  // 23:21 00 - float, 01 - low, 10 - high, 11 - trigger
+    
+      parameter SENS_UART_EXTIF_EN =    0,  //  1: 0
+      parameter SENS_UART_XMIT_RST =    2,  //  3: 2
+      parameter SENS_UART_RECV_RST =    4,  //  5: 4
+      parameter SENS_UART_XMIT_START =  6,  //  6
+      parameter SENS_UART_RECV_NEXT =   7,  //  7
+      
+`elsif PAR12        
+      parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
+      parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,
+      parameter SENS_CTRL_ODD =             6, //
+      parameter SENS_CTRL_QUADRANTS_EN =   20,  // 18:12, enable - 20 (1 bits reserved)
+`endif        
+
+`ifdef PAR12
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
 `endif      
-      parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
+      
 `ifdef HISPI     
+    `ifdef MON_HISPI
+        parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
+        parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
+        parameter SENSOR_TIMING_BITS =               24,   // increment to the next sensor
+        parameter SENSOR_TIMING_START =              16,   // bit # in JTAB control word to start timing measurement (now f = 660/4 = 165) 
+        parameter SENSOR_TIMING_LANE =               14,   // 15:14 - select lane
+        parameter SENSOR_TIMING_FROM =               12,   // select from 0 - sof, 1 - sol, 2 - eof, 3 eol
+        parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - sol, 2 - eof, 3 eol
+    `endif
+/*  
+`elsif BOSON
   `ifdef MON_HISPI
         parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
         parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
@@ -205,8 +241,10 @@ module  sensor_channel#(
         parameter SENSOR_TIMING_FROM =               12,   // select from 0 - sof, 1 - sol, 2 - eof, 3 eol
         parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - sol, 2 - eof, 3 eol
   `endif
-`endif            
-`endif      
+*/  
+`endif //`ifdef HISPI
+       
+////  `endif     // seems to  be extra?
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_BASE_ADDR)
     parameter SENSI2C_ABS_RADDR =       'h10, // 'h410..'h41f
@@ -231,8 +269,7 @@ module  sensor_channel#(
     
     parameter NUM_FRAME_BITS =        4,
     
-`ifdef HISPI
-`elsif LWIR
+`ifdef LWIR
     parameter integer VOSPI_DRIVE =        16, // 12, (4,8,12,16)
     parameter         VOSPI_IBUF_LOW_PWR = "TRUE",
     parameter         VOSPI_IOSTANDARD =   "LVCMOS25",
@@ -278,38 +315,50 @@ module  sensor_channel#(
     parameter VOSPI_MCLK_HALFDIV =       4,  // divide mclk (200Hhz) to get 50 MHz, then divide by 2 and use for sensor 25MHz clock 
     parameter VOSPI_MRST_MS =          200, // master reset duration in ms (so even all channels would overlap)
     parameter VOSPI_MRST_AFTER_MS =   2000,  // Wait after master reset and generate SOF pulse to advance sequencer  
-    parameter VOSPI_SPI_TIMEOUT_MS =   185 // Wait to tymeout SPI when needed to re-sync
-`else
+    parameter VOSPI_SPI_TIMEOUT_MS =   185, // Wait to tymeout SPI when needed to re-sync
+`elsif PAR12
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =       12,
     parameter SENSOR_FIFO_2DEPTH =       4,
-    parameter [3:0] SENSOR_FIFO_DELAY =  5 // 7,
+    parameter [3:0] SENSOR_FIFO_DELAY =  5, // 7,
 `endif
     
 // start with comma!    
 `ifdef LWIR
-    ,parameter SENSI2C_IOSTANDARD =       "LVCMOS25"
-`else
-    // sens_parallel12 other parameters
-    
-   ,parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
-    parameter integer IDELAY_VALUE = 0,
-    parameter integer PXD_DRIVE = 12,
-    parameter PXD_IBUF_LOW_PWR = "TRUE",
-    parameter PXD_SLEW = "SLOW",
-    parameter real SENS_REFCLK_FREQUENCY =    300.0,
-    parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
-`ifdef HISPI
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
+`elsif HISPI
     parameter PXD_CAPACITANCE =          "DONT_CARE",
     parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
     parameter PXD_CLK_DIV_BITS =          4,
 //`else    
 //    parameter SENS_PCLK_PERIOD =        10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+`elsif BOSON
+    parameter PXD_CAPACITANCE =          "DONT_CARE",
+//    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
+//    parameter PXD_CLK_DIV_BITS =          4,
+`elsif PAR12
+    // sens_parallel12 other parameters
+//    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
+//    parameter integer IDELAY_VALUE = 0,
+///    parameter integer PXD_DRIVE = 12,
+///    parameter PXD_IBUF_LOW_PWR = "TRUE",
+///    parameter PXD_SLEW = "SLOW",
+//    parameter real SENS_REFCLK_FREQUENCY =    300.0,
+//    parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
 `endif    
-    
-    parameter SENS_PHASE_WIDTH=        8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_BANDWIDTH =         "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
+`ifdef LWIR
+`else
+    parameter integer PXD_DRIVE = 12,
+    parameter PXD_IBUF_LOW_PWR = "TRUE",
+    parameter PXD_SLEW = "SLOW",
+    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
+    parameter integer IDELAY_VALUE = 0,
+    parameter real SENS_REFCLK_FREQUENCY =    200, // was300.0,
+    parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
+    parameter SENS_PHASE_WIDTH=        8,      // number of bits for the phase counter (depends on divisors)
+    parameter SENS_BANDWIDTH =         "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
+`endif
     // parameters for the sensor-synchronous clock PLL
 `ifdef HISPI    
     parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
@@ -319,7 +368,16 @@ module  sensor_channel#(
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS18",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
-`else    
+`elsif BOSON    
+    parameter CLKIN_PERIOD_SENSOR =      37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     30,      // 27 MHz --> 810 MHz (3*270MHz)
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    //IPCLK* will be used as PCLK*
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+    parameter PXD_IOSTANDARD =           "LVCMOS18",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
+`elsif PAR12 // no LWIR    
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
@@ -329,21 +387,22 @@ module  sensor_channel#(
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
 `endif
     
+`ifdef LWIR
+`else // all but LWIR    
     parameter BUF_IPCLK =             "BUFR",
     parameter BUF_IPCLK2X =           "BUFR",  
-
     parameter SENS_DIVCLK_DIVIDE =     1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =     0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter SENS_REF_JITTER2   =     0.010,
     parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
-    parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
+    parameter SENS_SS_MOD_PERIOD =     10000,        // integer 4000-40000 - SS modulation period in ns
 `endif
  
  
     
 `ifdef HISPI
-   ,parameter HISPI_MSB_FIRST =            0,
+   parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
     parameter HISPI_DELAY_CLK =           "FALSE",      
     parameter HISPI_MMCM =                "TRUE",
@@ -358,16 +417,39 @@ module  sensor_channel#(
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I" //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+`elsif BOSON
+//   ,parameter HISPI_MSB_FIRST =            0,
+    parameter HISPI_NUMLANES =             3,
+    parameter HISPI_DELAY_CLK =           "FALSE",      
+    parameter HISPI_MMCM =                "TRUE",
+//    parameter HISPI_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
+//    parameter HISPI_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
+//    parameter HISPI_FIFO_DEPTH =          4,
+//    parameter HISPI_FIFO_START =          7,
+    parameter HISPI_CAPACITANCE =         "DONT_CARE",
+    parameter HISPI_DIFF_TERM =           "TRUE",
+    parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
+    parameter HISPI_DQS_BIAS =            "TRUE",
+    parameter HISPI_IBUF_DELAY_VALUE =    "0",
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE",
+    parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 `endif    
     
 `ifdef DEBUG_RING
-        ,parameter DEBUG_CMD_LATENCY = 2 
+    parameter DEBUG_CMD_LATENCY =        2, 
 `endif        
-    
+//    parameter real REFCLK_FREQUENCY =    200.0,
+//    parameter HIGH_PERFORMANCE_MODE =   "FALSE",
+    parameter SENSOR_NUMBER =             0     // sensor number (0..3)
 ) (
-
+`ifdef PCLK_MASTER // for Boson
+    output                      pclk,
+    output                      locked_pclk,
+`else
     input                       pclk,   // global clock input, pixel rate (96MHz for MT9P006)
+`endif    
     // TODO: get rid of pclk2x in histograms by doubling memories (making 1 write port and 2 read ones)
     // How to erase?
     // Alternative: copy/erase to a separate buffer in the beginning/end of a frame?
@@ -386,6 +468,13 @@ module  sensor_channel#(
     inout                 [7:4] sns_dn74,
     input                       sns_clkp,
     input                       sns_clkn,
+`elsif BOSON   
+    input                 [3:0] sns_dp,
+    input                 [3:0] sns_dn,
+    inout                 [7:4] sns_dp74,
+    inout                 [7:4] sns_dn74,
+    input                       sns_clkp,
+    input                       sns_clkn,
 `elsif LWIR
     inout                [ 4:0] sns_dp40,
     inout                [ 4:0] sns_dn40,
@@ -395,8 +484,7 @@ module  sensor_channel#(
     inout                [ 7:6] sns_dn76,
     input                       sns_clkp,
     input                       sns_clkn,
-    
-`else
+`elsif PAR12
     inout                 [7:0] sns_dp,
     inout                 [7:0] sns_dn,
     inout                       sns_clkp,
@@ -406,7 +494,11 @@ module  sensor_channel#(
     inout                       sns_sda,
 `ifdef HISPI   
     output                      sns_ctl,
-`else    
+`elsif BOSON   
+    output                      sns_ctl,
+`elsif LWIR    
+    inout                       sns_ctl,
+`elsif PAR12    
     inout                       sns_ctl,
 `endif    
     inout                       sns_pg,
@@ -445,10 +537,10 @@ module  sensor_channel#(
    ,input                       ext_rst_in,
     input                       ext_rstseq_in,    
     output                      ext_rst_out,
-    output                      ext_rstseq_out    
-`endif    
+    output                      ext_rstseq_out,    
 // currently used only for LWIR
-   ,input                      khz                     // 1 KHz 50% @mclk
+    input                       khz                     // 1 KHz 50% @mclk
+`endif    
     
     
 `ifdef DEBUG_RING       
@@ -481,6 +573,12 @@ module  sensor_channel#(
   `ifdef MON_HISPI    
     localparam SENSOR_TIMING_STATUS_REG = (SENSOR_TIMING_STATUS_REG_BASE + SENSOR_NUMBER * SENSOR_TIMING_STATUS_REG_INC);
   `endif
+  /*
+`elsif BOSON
+  `ifdef MON_HISPI    
+    localparam SENSOR_TIMING_STATUS_REG = (SENSOR_TIMING_STATUS_REG_BASE + SENSOR_NUMBER * SENSOR_TIMING_STATUS_REG_INC);
+  `endif
+  */
 `endif    
     localparam SENS_SYNC_ADDR =     SENSOR_BASE_ADDR + SENS_SYNC_RADDR;
 //    parameter SENSOR_BASE_ADDR =    'h300; // sensor registers base address
@@ -506,19 +604,33 @@ module  sensor_channel#(
     wire                [7:0] sens_phys_status_ad;
     wire                      sens_phys_status_rq;
     wire                      sens_phys_status_start;
-    
-`ifndef HISPI
-  `ifndef LWIR        
+
+`ifdef PAR12    
     wire                      ipclk;   // Use in FIFO
     wire               [11:0] pxd_to_fifo;
     wire                      vact_to_fifo;    // frame active @posedge  ipclk
     wire                      hact_to_fifo;    // line active @posedge  ipclk
-  `endif
 `endif    
+
+// only used for Boson
+`ifdef BOSON
+    wire                      extif_dav;  // data byte available for external interface
+    // sequencer interface now always 5 bytes form the sequencer! (no need for extif_last - remove)
+    wire                [1:0] extif_sel;  // interface type (0 - internal, 1 - uart, 2,3 - reserved)
+    wire                [7:0] extif_byte; // data to external interface (first - extif_sa)
+    wire                      extif_ready;// acknowledges extif_dav
+    wire                      extif_rst;  // reset interface from i2c modulet
+`endif
+
+
     // data from FIFO
 `ifdef LWIR
     wire               [15:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
-`else    
+`elsif BOSON    
+    wire               [15:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
+`elsif HISPI    
+    wire               [11:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
+`elsif PAR12    
     wire               [11:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
 `endif    
     wire                      hact;    // line active @posedge  ipclk
@@ -608,18 +720,18 @@ module  sensor_channel#(
     
 `ifdef DEBUG_RING
     `ifdef HISPI
+    `elsif BOSON
     `elsif LWIR
-    
-    `else
+    `elsif PAR12
         reg vact_to_fifo_r;    
     `endif
-     `ifdef LWIR    
+    `ifdef LWIR    
 //         reg        hact_to_fifo_r;
          reg [15:0] debug_line_cntr = 0;
          reg [15:0] debug_lines =     0;
          reg [15:0] hact_cntr =       0;
 //         reg [15:0] vact_cntr;
-     `else
+    `else
          reg        hact_to_fifo_r;
          reg [15:0] debug_line_cntr;
          reg [15:0] debug_lines;
@@ -627,6 +739,23 @@ module  sensor_channel#(
          reg [15:0] vact_cntr;
      `endif
 `ifdef HISPI
+    always @(posedge pclk) begin
+//        vact_to_fifo_r <= vact_to_fifo;
+        hact_to_fifo_r <= hact;
+
+        if      (sof)  debug_line_cntr <=           0;
+        else if (hact && !hact_to_fifo_r)           debug_line_cntr <= debug_line_cntr + 1;
+
+        if      (sof)   debug_lines <=              debug_line_cntr;
+        
+        if      (prst)                              hact_cntr <= 0;
+        else if (hact && !hact_to_fifo_r)           hact_cntr <= hact_cntr + 1;
+
+        if      (prst)                              vact_cntr <= 0;
+        else if (sof)   vact_cntr <= vact_cntr + 1;
+        
+    end
+`elsif BOSON
     always @(posedge pclk) begin
 //        vact_to_fifo_r <= vact_to_fifo;
         hact_to_fifo_r <= hact;
@@ -682,6 +811,8 @@ module  sensor_channel#(
 `ifdef HISPI
         12'b0,
 `elsif LWIR
+        12'b0,
+`elsif BOSON
         12'b0,
 `else        
         pxd_to_fifo[11:0],
@@ -795,6 +926,8 @@ module  sensor_channel#(
         .SENSI2C_TBL_NABRD       (SENSI2C_TBL_NABRD), // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
         .SENSI2C_TBL_DLY         (SENSI2C_TBL_DLY),   // bit delay (number of mclk periods in 1/4 of SCL period)
         .SENSI2C_TBL_DLY_BITS    (SENSI2C_TBL_DLY_BITS),
+        .SENSI2C_TBL_EXTIF       (SENSI2C_TBL_EXTIF),
+        .SENSI2C_TBL_EXTIF_BITS  (SENSI2C_TBL_EXTIF_BITS),
         .SENSI2C_DRIVE           (SENSI2C_DRIVE),
         .SENSI2C_IBUF_LOW_PWR    (SENSI2C_IBUF_LOW_PWR),
         .SENSI2C_IOSTANDARD      (SENSI2C_IOSTANDARD),
@@ -813,13 +946,30 @@ module  sensor_channel#(
                                                         // division as in sof_out_mclk
         .frame_num_seq         (frame_num_seq),         // input[3:0] 
         .scl                   (sns_scl),               // inout
-        .sda                   (sns_sda)                // inout
+        .sda                   (sns_sda),               // inout
+        // interface for uart in write-only mode for short commands
+`ifdef BOSON
+        .extif_dav             (extif_dav),             // output
+//        .extif_last            (extif_last),            // output
+        .extif_sel             (extif_sel),             // output[1:0] 
+        .extif_byte            (extif_byte),            // output[7:0] 
+        .extif_ready           (extif_ready),           // input
+        .extif_rst             (extif_rst)              // output
+`else
+        .extif_dav             (),                      // output
+//        .extif_last            (),                      // output
+        .extif_sel             (),                      // output[1:0] 
+        .extif_byte            (),                      // output[7:0] 
+        .extif_ready           (1'b0),                  // input
+        .extif_rst             ()                       // output
+`endif        
     );
 
 // debug_hist_mclk is never active, alive_hist0_rq == 0
 //    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
 //    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, debug_hist_mclk[0], alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
-`ifndef HISPI    
+`ifndef HISPI
+ `ifndef BOSON
     localparam STATUS_ALIVE_WIDTH = 8;
   `ifndef LWIR    
     reg  hact_r; // hact delayed by 1 cycle to generate start pulse
@@ -893,7 +1043,8 @@ module  sensor_channel#(
             .busy() // output
         );
   `endif    
-`endif    
+ `endif // `ifndef BOSON   
+`endif // `ifndef HISPI   
 
 //`ifndef LWIR  
         pulse_cross_clock pulse_cross_clock_eof_mclk_i (
@@ -916,14 +1067,14 @@ module  sensor_channel#(
             .SENSIO_JTAG            (SENSIO_JTAG),
             .SENSIO_DELAYS          (SENSIO_DELAYS),
             .SENSIO_STATUS_REG      (SENSIO_STATUS_REG),
-`ifdef MON_HISPI
+ `ifdef MON_HISPI
             .SENSOR_TIMING_BITS      (SENSOR_TIMING_BITS),
             .TIM_START               (SENSOR_TIMING_START),
             .TIM_LANE                (SENSOR_TIMING_LANE),
             .TIM_FROM                (SENSOR_TIMING_FROM),
             .TIM_TO                  (SENSOR_TIMING_TO),
             .SENSOR_TIMING_STATUS_REG(SENSOR_TIMING_STATUS_REG), // localparam
-`endif            
+ `endif            
             .SENS_JTAG_PGMEN        (SENS_JTAG_PGMEN),
             .SENS_JTAG_PROG         (SENS_JTAG_PROG),
             .SENS_JTAG_TCK          (SENS_JTAG_TCK),
@@ -1012,6 +1163,109 @@ module  sensor_channel#(
             .sof              (sof),                    // output
             .eof              (eof)                     // output
         );
+`elsif BOSON
+        wire vsync;
+        wire dvalid;
+        sens_103993 #(
+            .SENSIO_ADDR            (SENSIO_ADDR),
+            .SENSIO_ADDR_MASK       (SENSIO_ADDR_MASK),
+            .SENSIO_CTRL            (SENSIO_CTRL),
+            .SENSIO_STATUS          (SENSIO_STATUS),
+            .SENSIO_DELAYS          (SENSIO_DELAYS),
+            .SENSIO_STATUS_REG      (SENSIO_STATUS_REG),
+            .SENS_CTRL_MRST         (SENS_CTRL_MRST),
+            .SENS_CTRL_RST_MMCM     (SENS_CTRL_RST_MMCM),
+            .SENS_CTRL_LD_DLY       (SENS_CTRL_LD_DLY),
+            .SENS_CTRL_GP0          (SENS_CTRL_GP0),
+            .SENS_CTRL_GP1          (SENS_CTRL_GP1),
+            .SENS_CTRL_GP2          (SENS_CTRL_GP2),
+            .SENS_CTRL_GP3          (SENS_CTRL_GP3),
+            .SENS_UART_EXTIF_EN     (SENS_UART_EXTIF_EN),
+            .SENS_UART_XMIT_RST     (SENS_UART_XMIT_RST),
+            .SENS_UART_RECV_RST     (SENS_UART_RECV_RST),
+            .SENS_UART_XMIT_START   (SENS_UART_XMIT_START),
+            .SENS_UART_RECV_NEXT    (SENS_UART_RECV_NEXT),
+            .IODELAY_GRP            (IODELAY_GRP),
+            .IDELAY_VALUE           (IDELAY_VALUE),
+            .REFCLK_FREQUENCY       (SENS_REFCLK_FREQUENCY),
+            .HIGH_PERFORMANCE_MODE  (SENS_HIGH_PERFORMANCE_MODE), 
+            .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
+            .SENS_BANDWIDTH         (SENS_BANDWIDTH),
+            .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
+            .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
+            .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
+            .PCLK_PHASE             (IPCLK_PHASE), // use IPCLK* for PCLK*
+            .IPCLK2X_PHASE          (IPCLK2X_PHASE),
+            .BUF_PCLK               (BUF_IPCLK), // use IPCLK* for PCLK*
+            .BUF_IPCLK2X            (BUF_IPCLK2X),
+            .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),
+            .SENS_REF_JITTER1       (SENS_REF_JITTER1),
+            .SENS_REF_JITTER2       (SENS_REF_JITTER2),
+            .SENS_SS_EN             (SENS_SS_EN),
+            .SENS_SS_MODE           (SENS_SS_MODE),
+            .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
+            .NUMLANES               (HISPI_NUMLANES),
+            .LVDS_DELAY_CLK         (HISPI_DELAY_CLK),
+            .LVDS_MMCM              (HISPI_MMCM),
+            .LVDS_CAPACITANCE       (HISPI_CAPACITANCE),
+            .LVDS_DIFF_TERM         (HISPI_DIFF_TERM),
+            .LVDS_UNTUNED_SPLIT     (HISPI_UNTUNED_SPLIT),        
+            .LVDS_DQS_BIAS          (HISPI_DQS_BIAS),
+            .LVDS_IBUF_DELAY_VALUE  (HISPI_IBUF_DELAY_VALUE),
+            .LVDS_IBUF_LOW_PWR      (HISPI_IBUF_LOW_PWR),
+            .LVDS_IFD_DELAY_VALUE   (HISPI_IFD_DELAY_VALUE),
+            .LVDS_IOSTANDARD        (HISPI_IOSTANDARD),
+            .PXD_DRIVE              (PXD_DRIVE),
+            .PXD_IBUF_LOW_PWR       (PXD_IBUF_LOW_PWR),
+            .PXD_IOSTANDARD         (PXD_IOSTANDARD),
+            .PXD_SLEW               (PXD_SLEW),
+            .PXD_CAPACITANCE        (PXD_CAPACITANCE)
+        ) sens_103993_i (
+            .pclk             (pclk),                   // output
+            .locked_pclk      (locked_pclk),            // output
+            .prst             (prst),                   // input
+            .prsts            (prsts),                  // output
+            .mclk             (mclk),                   // input
+            .mrst             (mrst),                   // input
+            .cmd_ad           (cmd_ad),                 // input[7:0] 
+            .cmd_stb          (cmd_stb),                // input
+            .status_ad        (sens_phys_status_ad),    // output[7:0] 
+            .status_rq        (sens_phys_status_rq),    // output
+            .status_start     (sens_phys_status_start), // input
+//            .trigger_mode     (trigger_mode),           // input
+            .ext_sync         (trig),                   // input
+            .sns_dp           (sns_dp[2:0]),            // input[2:0] 
+            .sns_dn           (sns_dn[2:0]),            // input[2:0] 
+            .sns_clkp         (sns_clkp),               // input
+            .sns_clkn         (sns_clkn),               // input
+            .sns_gp2          (sns_dn74[6]),            // inout
+            .sns_pgm          (sns_pg),                 // inout
+            .sns_ext_sync     (sns_ctl),                // output
+            .sns_mrst         (sns_dp74[7]),            // output
+            .sns_gp3          (sns_dn74[7]),            // output
+            .sns_gp0          (sns_dp74[5]),            // output
+            .sns_gp1          (sns_dn74[5]),            // output
+            .sns_txd          (sns_dp74[4]),            // input
+            .sns_rxd          (sns_dn74[4]),            // input
+            .pxd              (pxd),                    // output[11:0] 
+            .vsync            (vsync),                  // output
+            .hsync            (), // hsync),            // output
+            .dvalid           (dvalid),                 // output
+    // interface for uart in write-only mode for short commands
+    // sequencer interface now always 5 bytes form the sequencer! (no need for extif_last - remove)
+            .extif_dav        (extif_dav),              // input
+            .extif_sel        (extif_sel),              // input[1:0] 
+            .extif_byte       (extif_byte),             // input[7:0] 
+            .extif_ready      (extif_ready),            // output
+            .extif_rst        (extif_rst)              // input
+        );
+        reg vsync_d;
+        always @(posedge pclk) begin
+            vsync_d <= vsync;
+        end
+        assign sof =  vsync && !vsync_d;
+        assign eof = !vsync &&  vsync_d;
+        assign hact = dvalid;
 `elsif LWIR
     sens_lepton3 #(
             .SENSIO_ADDR            (SENSIO_ADDR),
@@ -1099,9 +1353,9 @@ module  sensor_channel#(
             .dn2                  (sns_dn40[2]), // input reserved
             .dn6                  (sns_dn76[6]),  // input reserved
 // reset synchronization
-            .ext_rst_in           (ext_rst_in), // input
-            .ext_rstseq_in        (ext_rstseq_in), // input
-            .ext_rst_out          (ext_rst_out), // output
+            .ext_rst_in           (ext_rst_in),     // input
+            .ext_rstseq_in        (ext_rstseq_in),  // input
+            .ext_rst_out          (ext_rst_out),    // output
             .ext_rstseq_out       (ext_rstseq_out), // output
             .khz                  (khz)             // input  1 KHz 50% duty @ mclk
     );
@@ -1133,11 +1387,11 @@ module  sensor_channel#(
             .SENS_CTRL_ODD         (SENS_CTRL_ODD),
             .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
             .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
-            .IODELAY_GRP           (IODELAY_GRP),
-            .IDELAY_VALUE          (IDELAY_VALUE),
             .PXD_DRIVE             (PXD_DRIVE),
             .PXD_IOSTANDARD        (PXD_IOSTANDARD),
             .PXD_SLEW              (PXD_SLEW),
+            .IODELAY_GRP           (IODELAY_GRP),
+            .IDELAY_VALUE          (IDELAY_VALUE),
             .SENS_REFCLK_FREQUENCY (SENS_REFCLK_FREQUENCY),
             .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
             .SENS_PHASE_WIDTH      (SENS_PHASE_WIDTH),
@@ -1190,7 +1444,7 @@ module  sensor_channel#(
             .status_start         (sens_phys_status_start) // input
         );
 
-// TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
+// TODO NC393: This delay may be too long for serial sensors. Make them always start to fill the
 // first buffer page, waiting for the request from mcntrl_linear during that first page. And if it will arrive - 
 // just continue.    
     

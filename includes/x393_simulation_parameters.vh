@@ -53,8 +53,8 @@
     parameter       FCLK0_PERIOD =  41.667, //  24MHz
 `endif    
     parameter       FCLK1_PERIOD =  0.0,
-    
-`ifdef LWIR
+// for python (export to C header) all parameters should be defined    
+//`ifdef LWIR
     parameter       LWIR_DATA_FILE1  = "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",
     parameter       LWIR_DATA_FILE2  = "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",
     parameter       LWIR_DATA_FILE3  = "/data_ssd/nc393/elphel393/fpga-elphel/x393/input_data/pattern_160_120_14.dat",
@@ -83,7 +83,17 @@
     
     parameter       LWIR_GPIO_IN =                              4'b0000,
     
-`endif    
+    parameter       BOSON_DATA_FILE = "/input_data/pattern_160_120_16.dat",
+    parameter       BOSON_WIDTH =   160,   // 640
+    parameter       BOSON_HEIGHT =  120,   // 513
+    parameter       BOSON_OUT_BITS = 16,   // 16
+    parameter       BOSON_FPS =      60.0, // 60.0 
+    parameter       BOSON_HSW =       8,   // 8
+    parameter       BOSON_FP_BP =    22,   // 102 (FP+BP)
+    parameter       BOSON_FP =       12,   // 52   
+    parameter       BOSON_VSW =      7,    // 87,   // in scan lines
+    
+//`endif    
     
     
 //    parameter SENSOR12BITS_LLINE   =   192,   //   1664;//   line duration in clocks
@@ -192,9 +202,16 @@
     parameter HISTOGRAM_START_PAGE =    20'h12345,
     parameter FRAME_WIDTH_ROUND_BITS =   9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
     
+`ifdef LWIR
+    parameter WOI_WIDTH=                 160,
+    parameter WOI_HEIGHT=                122,
+`elsif BOSON
+    parameter WOI_WIDTH=                 160, // 640,
+    parameter WOI_HEIGHT=                120, // 513,
+`else
     parameter WOI_WIDTH=                 256, // 512, // 256, //1040, // 64,
     parameter WOI_HEIGHT=                256, // 512, // 256, // 64, // 32,
-         
+`endif         
     parameter QUADRANTS_PXD_HACT_VACT =  6'h01, // 2 bits each: data-0, hact - 1, vact - 2 
                                                // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
     parameter SENSOR_PRIORITY =          1000
