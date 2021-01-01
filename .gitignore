@@ -66,5 +66,5 @@ html.tar.gz
 /sysroots
 /image
 /scripts
-
 py393-p2
+*.~*
