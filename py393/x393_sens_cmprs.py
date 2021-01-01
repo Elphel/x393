@@ -805,7 +805,8 @@ class X393SensCmprs(object):
                                mmcm_rst =   True,   #reset mmcm
                                set_delays = False)
 
-            self.x393Sensor.func_sensor_uart_ctl_boson (
+            self.x393Sensor.set_sensor_uart_ctl_boson (
+                            num_sensor = num_sensor,
                             uart_extif_en =   False,
                             uart_xmit_rst =   True,
                             uart_recv_rst =   True,
@@ -822,7 +823,8 @@ class X393SensCmprs(object):
                                mrst =       False,
                                mmcm_rst =   False, 
                                set_delays = False)
-            self.x393Sensor.func_sensor_uart_ctl_boson (
+            self.x393Sensor.set_sensor_uart_ctl_boson (
+                            num_sensor = num_sensor,
                             uart_extif_en =   True,
                             uart_xmit_rst =   False,
                             uart_recv_rst =   False,
@@ -1882,7 +1884,19 @@ class X393SensCmprs(object):
                                     bit_delay  =    i2c_delay,
                                     verbose =       verbose)
                 elif sensorType ==  x393_sensor.SENSOR_INTERFACE_BOSON:
-                    pass
+                    for module in x393_sensor.BOSON_MAP:
+                        mod_index, indx = x393_sensor.BOSON_MAP[module]
+                        for byte_var in range(4):
+                            num_payload_bytes = (0,1,2,4)[byte_var]
+                            self.x393Sensor.set_sensor_i2c_table_reg_wr (
+                                            num_sensor = num_sensor,
+                                            page       = indx*4, 
+                                            slave_addr = num_payload_bytes,
+                                            rah        = mod_index,
+                                            num_bytes  = 4,
+                                            bit_delay  = i2c_delay, # not used here
+                                            extif      = x393_sensor.BOSON_EXTIF,
+                                            verbose = verbose)
                 else:
                     raise ("Unknown sensor type: %s"%(sensorType))
 

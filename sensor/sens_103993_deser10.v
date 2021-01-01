@@ -46,13 +46,14 @@ module  sens_103993_deser10(
 );
     reg [9:0] sr;
     reg [9:0] dout_r;
+    wire [9:0] pre_sr;
     assign dout = dout_r;
-    
+    assign pre_sr = {sr[8:0], din};
     always @(posedge pclk10) begin
-        sr <= {sr[8:0], din};
+        sr <= pre_sr;
     end
     always @(posedge pclk) begin
-        dout_r <= sr;
+        dout_r <= pre_sr;
     end
 endmodule
 

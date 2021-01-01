@@ -49,7 +49,7 @@ module  serial_stuffer #(
     input         mrst,         // @posedge mclk, sync reset
     input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input         packet_run,   // goes inactive after last txd_in_stb
-    input         tx_in_stb,
+    input         tx_in_stb,    // data strobe from crc16
     input   [7:0] txd_in,
     output        stuffer_rdy,  // stuffer ready to accept tx_in_stb
     input         uart_rdy,     // uart ready to accept byte
@@ -62,6 +62,7 @@ module  serial_stuffer #(
     reg     [1:0] stuffer_start;
     reg           stuffer_finsh;
     reg           packet_trailer;
+    reg           pre_trailer;
     reg           packet_header;
     reg           escape_cyc0;
     reg     [2:0] escape_cyc1;
@@ -69,60 +70,81 @@ module  serial_stuffer #(
     reg     [7:0] txd_in_r;
     reg     [2:0] tx_in_stb_r;
     reg     [2:0] need_escape;
-    reg     [1:0] byte_out_set; //  
+    reg     [3:0] byte_out_set; //  
+    wire          byte_out_stb; // ==byte_out_set[1]
     reg     [7:0] uart_txd_r;
-    reg           tx_dav;
+    reg           tx_dav;       // for sending data to uart
     reg           copy_in_byte;
     reg           stuffer_rdy_r;
-    
+    wire          pre_stuffer_start_w;
+    wire          proc_next_in_byte; // when txd_in_r contains new data and uart is ready to accept one
+    wire          proc_trailer;      // when trailer and uart is ready to accept one
+    reg           txd_in_r_full; // txd_in_r contains data 
+    wire          use_txd_in_r;
+    wire          set_trailer;
     assign stuffer_busy = stuffer_busy_r;
     assign uart_stb =     uart_stb_r;
     assign uart_txd =     uart_txd_r;
     assign stuffer_rdy =  stuffer_rdy_r;
-
+    assign pre_stuffer_start_w = ~stuffer_busy_r & packet_run;
+    assign use_txd_in_r =  byte_out_stb && !escape_cyc0 && !packet_header && !packet_trailer;
+    assign proc_next_in_byte = txd_in_r_full && uart_rdy && ! (|tx_in_stb_r) && !(|byte_out_set);
+    assign proc_trailer =     packet_trailer && uart_rdy && ! (|tx_in_stb_r) && !(|byte_out_set) && !stuffer_finsh;
+    assign set_trailer =   !pre_trailer && !packet_trailer && !escape_cyc0 && !packet_run && stuffer_busy_r; //
+    assign byte_out_stb = byte_out_set[1];
     always @(posedge mclk) begin
-        stuffer_start <= {stuffer_start[0], ~stuffer_busy_r & packet_run};
+        if (mrst || !stuffer_busy_r)  txd_in_r_full <= 0;
+        else if (tx_in_stb)           txd_in_r_full <= 1;
+        else if (use_txd_in_r)        txd_in_r_full <= 0;
+    
+        stuffer_start <= {stuffer_start[0], pre_stuffer_start_w};
          
-        if      (mrst)                         stuffer_busy_r <= 0;
-        else if (stuffer_start[0])             stuffer_busy_r <= 1;
-        else if (packet_trailer && uart_stb_r) stuffer_busy_r <= 0;
+        if      (mrst)                              stuffer_busy_r <= 0;
+        else if (pre_stuffer_start_w)               stuffer_busy_r <= 1;
+        else if (packet_trailer && uart_stb_r)      stuffer_busy_r <= 0;
+        if      (mrst || !stuffer_busy_r)                               stuffer_rdy_r <= 0;
+        else if (stuffer_start[0])                                      stuffer_rdy_r <= 1;
+        else if (tx_in_stb || stuffer_finsh)                            stuffer_rdy_r <= 0;
+        else if (use_txd_in_r)                                          stuffer_rdy_r <= 1;
+        else if (!stuffer_busy_r)                                       stuffer_rdy_r <= 1; //*
         
-        if      (mrst)                                        stuffer_rdy_r <= 0;
-        else if (stuffer_start || tx_in_stb || stuffer_finsh) stuffer_rdy_r <= 0;
-        else if (byte_out_set[1] && (!escape_cyc0))           stuffer_rdy_r <= 1;
-        
-        tx_in_stb_r <= {tx_in_stb_r[1:0],tx_in_stb};
+        tx_in_stb_r <= {tx_in_stb_r[1:0], proc_next_in_byte}; // tx_in_stb};
         
         if (tx_in_stb) txd_in_r <= txd_in;
-        
-        if (tx_in_stb_r[0]) need_escape <= {
-            (txd_in_r == START_FRAME_BYTE)? 1'b1 : 1'b0,
+//        if (tx_in_stb_r[0]) need_escape <= {
+        if (tx_in_stb_r[0] && !escape_cyc0) need_escape <= {
+            (txd_in_r == ESCAPE_BYTE)?      1'b1 : 1'b0,
             (txd_in_r == END_FRAME_BYTE)?   1'b1 : 1'b0,
-            (txd_in_r == ESCAPE_BYTE)?      1'b1 : 1'b0};
+            (txd_in_r == START_FRAME_BYTE)? 1'b1 : 1'b0};
 
         if      (mrst)             escape_cyc0 <= 0; 
-        else if (tx_in_stb_r[1])   escape_cyc0 <= |need_escape;
-        else if (uart_stb_r)       escape_cyc0 <= 0;
+//        else if (tx_in_stb_r[1])   escape_cyc0 <= |need_escape;
+//        else if (uart_stb_r)       escape_cyc0 <= 0;
+        else if (tx_in_stb_r[1])   escape_cyc0 <= |need_escape && !escape_cyc0;
         
         if      (mrst)             escape_cyc1 <= 0;
+//        else if (uart_stb_r)       escape_cyc1 <= {3{escape_cyc0}} & need_escape;
         else if (uart_stb_r)       escape_cyc1 <= {3{escape_cyc0}} & need_escape;
         
         if      (mrst)             byte_out_set <= 0;
-        else                       byte_out_set <= {byte_out_set[0], tx_in_stb_r[2] | stuffer_start[1] | stuffer_finsh};
+        else                       byte_out_set <= {byte_out_set[2:0], tx_in_stb_r[2] | stuffer_start[1] | stuffer_finsh};
         
         if      (mrst)             packet_header <= 0;
         else if (stuffer_start[1]) packet_header <= 1;
-        else if (byte_out_set[1])  packet_header <= 0;
+        else if (byte_out_stb)  packet_header <= 0;
+
+        if      (!stuffer_busy_r)  pre_trailer <= 0;
+        else if (byte_out_stb)  pre_trailer <= set_trailer;
 
         if      (!stuffer_busy_r)  packet_trailer <= 0;
-        else if (!packet_run)      packet_trailer <= 1;
+        else if (uart_stb_r)       packet_trailer <= pre_trailer;
+
+        stuffer_finsh <= proc_trailer; // stuffer_rdy_r && stuffer_busy_r && packet_trailer; // !packet_run
         
-        stuffer_finsh <= stuffer_rdy_r && stuffer_busy_r && packet_trailer; // !packet_run
         
+        copy_in_byte <= !(|need_escape) && !packet_header && !packet_trailer;
         
-        copy_in_byte <= !need_escape && !packet_header && !packet_trailer;
-        
-        if (byte_out_set[1]) uart_txd_r <=
+        if (byte_out_stb) uart_txd_r <=
             ({8{packet_header}}  &  START_FRAME_BYTE) |
             ({8{packet_trailer}} &  END_FRAME_BYTE) |
             ({8{escape_cyc0}}  &    ESCAPE_BYTE) |
@@ -132,7 +154,7 @@ module  serial_stuffer #(
             ({8{copy_in_byte}} &    txd_in_r);
             
         if      (mrst)            tx_dav <= 0;
-        else if (byte_out_set[1]) tx_dav <= 1;
+        else if (byte_out_stb) tx_dav <= 1;
         else if (uart_stb_r)      tx_dav <= 0;
         
         if (mrst) uart_stb_r <= 0;

@@ -455,6 +455,17 @@ module  sensors393 #(
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
     parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+    
+    parameter UART_START_FRAME_BYTE  =         'h8E,
+    parameter UART_END_FRAME_BYTE  =           'hAE,
+    parameter UART_ESCAPE_BYTE =               'h9E,
+    parameter UART_REPLACED_START_FRAME_BYTE = 'h81,
+    parameter UART_REPLACED_END_FRAME_BYTE =   'hA1,
+    parameter UART_REPLACED_ESCAPE_BYTE =      'h91,
+    parameter UART_INITIAL_CRC16 =           16'h1d0f,
+    parameter UART_CLK_DIV =                   217,
+    parameter UART_RX_DEBOUNCE =               60,
+    parameter UART_EXTIF_MODE =                 1, // 1,2 or 3 if there are several different extif
 `endif    
     
     
@@ -959,7 +970,16 @@ module  sensors393 #(
                 .HISPI_IFD_DELAY_VALUE         (HISPI_IFD_DELAY_VALUE),
                 .HISPI_IOSTANDARD              (HISPI_IOSTANDARD),
 
-
+                .UART_START_FRAME_BYTE             (UART_START_FRAME_BYTE),// 'h8E),
+                .UART_END_FRAME_BYTE               (UART_END_FRAME_BYTE),  // 'hAE),
+                .UART_ESCAPE_BYTE                  (UART_ESCAPE_BYTE),     // 'h9E),
+                .UART_REPLACED_START_FRAME_BYTE    (UART_REPLACED_START_FRAME_BYTE), // 'h81),
+                .UART_REPLACED_END_FRAME_BYTE      (UART_REPLACED_END_FRAME_BYTE),   // 'hA1),
+                .UART_REPLACED_ESCAPE_BYTE         (UART_REPLACED_ESCAPE_BYTE), // 'h91),
+                .UART_INITIAL_CRC16                (UART_INITIAL_CRC16), // 16'h1d0f),
+                .UART_CLK_DIV                      (UART_CLK_DIV),       // 217),
+                .UART_RX_DEBOUNCE                  (UART_RX_DEBOUNCE),   // 60),
+                .UART_EXTIF_MODE                   (UART_EXTIF_MODE),     // 1)
 `endif    
                 
 `ifdef DEBUG_RING

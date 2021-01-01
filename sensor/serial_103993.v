@@ -82,6 +82,9 @@ module  serial_103993#(
     output               [7:0] recv_data
 
 );
+    wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
+    wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
+
     wire                [ 7:0] xmit_fifo_out;
     wire                [ 1:0] xmit_fifo_re_regen;
     wire                [10:0] xmit_fifo_waddr;
@@ -132,31 +135,33 @@ module  serial_103993#(
     
     assign extif_rq_w =          packet_ready_seq && !extif_run && !packet_over_seq;
     assign xmit_any_data =       extif_run ? xmit_extif_data : xmit_fifo_out;
-    assign xmit_stb_any =            extif_run ? xmit_stb_seq :    xmit_stb_fifo;
+    assign xmit_stb_any =        extif_run ? xmit_stb_seq :    xmit_stb_fifo;
     assign xmit_over =           extif_run ? xmit_over_seq :   xmit_over_fifo;
     assign xmit_start_out_fifo = xmit_run && !xmit_run_d;
     assign xmit_start_out_seq =  extif_run && !extif_run_d;
     assign xmit_start_out =      xmit_start_out_fifo || xmit_start_out_seq;
-    assign pre_tx_stb =          !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run && tx_rdy;
+//    assign pre_tx_stb =          !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run && tx_rdy;
+// TODO: is !xmit_stb_d needed?
+    assign pre_tx_stb =          !xmit_stb_any && !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run && tx_rdy;
     assign xmit_busy =           xmit_busy_r;
 //    assign packet_sent =         xmit_over && !xmit_over_d;
     always @(posedge mclk) begin
         xmit_busy_r  <= uart_tx_busy || stuffer_busy_d || xmit_pend || xmit_run || extif_run;
     
-        if (mrst || xmit_rst)                          xmit_pend <= 0;
-        else if (xmit_start)                           xmit_pend <= 1;
-        else if (xmit_start_out_fifo)                  xmit_pend <= 0;
+        if (mrst || xmit_rst)                           xmit_pend <= 0;
+        else if (xmit_start)                            xmit_pend <= 1;
+        else if (xmit_start_out_fifo)                   xmit_pend <= 0;
         
-        if (mrst || xmit_rst)                          xmit_run <= 0;
-        else if (xmit_pend && !xmit_run && extif_run)  xmit_run <= 1;
-        else if (xmit_done)                            xmit_run <= 0; // no need to condition with xmit_run
+        if (mrst || xmit_rst)                           xmit_run <= 0;
+        else if (xmit_pend && !xmit_run && !extif_run)  xmit_run <= 1;
+        else if (xmit_done)                             xmit_run <= 0; // no need to condition with xmit_run
 //        else if (!stuffer_busy && !xmit_fifo_nempty)   xmit_run <= 0; // no need to condition with xmit_run
     
         xmit_run_d <= xmit_run && !mrst && !xmit_rst;
         
-        if (mrst || extif_rst)                         extif_run <= 0;
+        if (mrst || extif_rst)                          extif_run <= 0;
         else if (!xmit_run && !xmit_pend && extif_rq_w) extif_run <= 1;
-        else if (xmit_done)                            extif_run <= 0; // no need to condition with xmit_run
+        else if (xmit_done)                             extif_run <= 0; // no need to condition with xmit_run
         extif_run_d <= extif_run  && !mrst && !extif_rst;
         
         xmit_stb_d <= xmit_stb_any;

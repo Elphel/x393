@@ -55,6 +55,9 @@ module  boson_uart #(
     output  [7:0] rx_byte,      // received byte  
     output        rx_stb        // received data strobe (valid 1 cycle before and later for 1 bit) 
 );
+    wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
+    wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
+
     localparam CLK_DIV_BITS =       clogb2(CLK_DIV); //  + 1);
     localparam RX_DEBOUNCE_BITS =   clogb2(RX_DEBOUNCE + 1);
     reg     [CLK_DIV_BITS-1:0] clk_div_cntr_rx;
@@ -94,12 +97,14 @@ module  boson_uart #(
     assign stop_bit_tx =  (tx_bcntr == 9);
     assign rx_errw = rxd_r ? start_bit_rx : stop_bit_rx; // 1 at start, 0 at stop 
     assign tx_startw =    tx_bit[0] && stop_bit_tx && tx_rq; 
-    assign tx_continuew = tx_bit[0] && !stop_bit_tx;
+///    assign tx_continuew = tx_bit[0] && !stop_bit_tx ;
+    assign tx_continuew = tx_bit[0] && !stop_bit_tx && tx_busy_r;
     
     assign rx_byte = rx_sr[8:1];
     assign rx_stb =  rx_stb_r[1];
-    assign tx_rdy =  tx_rq;
-    assign tx_busy = tx_busy_r || !tx_rq;
+//    assign tx_rdy =  tx_rq;
+    assign tx_rdy =  !tx_rq;
+    assign tx_busy = tx_busy_r || tx_rq; // !tx_rq;
     assign txd = tx_sr[0];
     
     always @(posedge mclk) begin
@@ -137,20 +142,22 @@ module  boson_uart #(
         else if (tx_bit[1])  clk_div_cntr_tx <= CLK_DIV - 3;
         else                 clk_div_cntr_tx <= clk_div_cntr_tx - 1;
         
-        if      (mrst)       tx_sr <= 10'h3ff;
-        else if (tx_start)   tx_sr <= {1'b1, tx_r, 1'b0};
-        else if (tx_bit[1])  tx_sr <= {1'b1, tx_sr[9:1]};
+//        if      (mrst)       tx_sr <= 10'h3ff;
+        if (mrst || !tx_busy) tx_sr <= 10'h3ff;
+        else if (tx_start)    tx_sr <= {1'b1, tx_r, 1'b0};
+        else if (tx_bit[1])   tx_sr <= {1'b1, tx_sr[9:1]};
         
         if      (mrst)                     tx_busy_r <= 0;
         else if (tx_start)                 tx_busy_r <= 1;
         else if (tx_bit[1] && stop_bit_tx) tx_busy_r <= 0;
         
         if      (mrst)        tx_rq <= 0;
-        else if (mrst_d)      tx_rq <= 1; // single-cycle turn-on after mrst
-        else if (tx_stb)      tx_rq <= 0;
-        else if (tx_start)    tx_rq <= 1;
+///        else if (mrst_d)      tx_rq <= 1; // single-cycle turn-on after mrst
+        else if (tx_stb)      tx_rq <= 1; // 0;
+        else if (tx_start)    tx_rq <= 0; // 1;
         
-        if      (mrst)        tx_bcntr <= 0;
+//        if      (mrst)        tx_bcntr <= 0;
+        if (mrst || !tx_busy) tx_bcntr <= 9; // stop bit ?
         else if (tx_start)    tx_bcntr <= 0;
         else if (tx_continue) tx_bcntr <= tx_bcntr + 1;
         

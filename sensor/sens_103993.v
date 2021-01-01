@@ -106,11 +106,6 @@ module  sens_103993 #(
     parameter NUMLANES =                   3,
     parameter LVDS_DELAY_CLK =           "FALSE",      
     parameter LVDS_MMCM =                "TRUE",
-//    parameter LVDS_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
-//    parameter LVDS_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
-//    parameter LVDS_FIFO_DEPTH =          4,
-//    parameter LVDS_FIFO_START =          7,
-    
     parameter LVDS_CAPACITANCE =         "DONT_CARE",
     parameter LVDS_DIFF_TERM =           "TRUE",
     parameter LVDS_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
@@ -126,10 +121,6 @@ module  sens_103993 #(
     parameter PXD_IOSTANDARD =           "LVCMOS18", // 1.8V single-ended
     parameter PXD_SLEW =                 "SLOW",
     parameter PXD_CAPACITANCE =          "DONT_CARE",
-//    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
-//    parameter PXD_CLK_DIV_BITS =          4,
-//    ,parameter STATUS_ALIVE_WIDTH =        4
-//    parameter SENSIO_SKIP_BITS =         8, // number  of bits in line skip counter
     parameter START_FRAME_BYTE  =         'h8E,
     parameter END_FRAME_BYTE  =           'hAE,
     parameter ESCAPE_BYTE =               'h9E,
@@ -193,6 +184,9 @@ module  sens_103993 #(
     output                       extif_ready, // acknowledges extif_dav
     input                        extif_rst
 );
+
+    wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
+    wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
 
     wire                         dvalid_w;
     reg                          dvalid_r;
@@ -461,7 +455,8 @@ module  sens_103993 #(
         .dvalid                 (dvalid_w),               // output
         .mclk                   (mclk),                   // input
         .mrst                   (mrst),                   // input
-        .dly_data               (data_r[23:0]),           // input[23:0] 
+//        .dly_data               (data_r[23:0]),           // input[23:0] 
+        .dly_data               (data_r),                 // input[23:0] 
         .set_idelay             ({NUMLANES{set_idelays}}),// input[2:0] 
         .ld_idelay              (ld_idelay),              // input
         .set_clk_phase          (set_iclk_phase),         // input

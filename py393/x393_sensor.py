@@ -50,6 +50,19 @@ SENSOR_INTERFACE_PARALLEL = "PAR12"
 SENSOR_INTERFACE_HISPI =    "HISPI"
 SENSOR_INTERFACE_VOSPI =    "VOSPI"
 SENSOR_INTERFACE_BOSON =    "BOSON"
+BOSON_MAP = {"gao":      (0x00, 0), # (module, table index - will be multiplied by 4 for 0,1,2 and 4-byte xmit command)
+             "roic":     (0x02, 1),
+             "bpr":      (0x03, 2),
+             "telemetry":(0x04, 3),
+             "boson":    (0x05, 4),
+             "dvo":      (0x06, 5),
+             "scnr":     (0x08, 6),
+             "tnr":      (0x0a, 7),
+             "snr":      (0x0c, 8),
+             "sysctrl":  (0x0e, 9),
+             "testramp": (0x10,10),
+             "spnr":     (0x28,11)}
+BOSON_EXTIF = 1 #EXTIF code for i2c commands - 0 - i2c, 1 - uart, 2,3 - reserved
 
 class X393Sensor(object):
     DRY_MODE= True # True
@@ -57,6 +70,7 @@ class X393Sensor(object):
     x393_mem=None
     x393_axi_tasks=None #x393X393AxiControlStatus
     x393_utils=None
+    uart_seq_number = 0
 
     verbose=1
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
@@ -632,12 +646,12 @@ class X393Sensor(object):
         """
         rslt = 0
         if not uart_extif_en is None:
-            rslt |= (3,2)[uart_extif_en] <<     vrlg.SENS_UART_EXTIF_EN
+            rslt |= (2,3)[uart_extif_en] <<     vrlg.SENS_UART_EXTIF_EN
 
         if not uart_xmit_rst is None:
-            rslt |= (3,2)[uart_xmit_rst] <<     vrlg.SENS_UART_XMIT_RST
+            rslt |= (2,3)[uart_xmit_rst] <<     vrlg.SENS_UART_XMIT_RST
         if not uart_recv_rst is None:
-            rslt |= (3,2)[uart_recv_rst] <<     vrlg.SENS_UART_RECV_RST
+            rslt |= (2,3)[uart_recv_rst] <<     vrlg.SENS_UART_RECV_RST
         rslt |= (0,1)[uart_xmit_start] <<       vrlg.SENS_UART_XMIT_START
         rslt |= (0,1)[uart_recv_next] <<        vrlg.SENS_UART_RECV_NEXT
         return rslt
@@ -874,6 +888,35 @@ class X393Sensor(object):
         if verbose > 1:
             print ("ta= 0x%x, td = 0x%x"%(ta,td))
 
+    def write_boson_cmd(self,
+                        num_sensor,
+                        rel_addr,
+                        addr,
+                        mod_name, # module name
+                        func_lsb, # LSB of the function
+                        num_payload_bytes, #0,1,2,4
+                        data):
+        """
+        Write i2c command to the i2c command sequencer
+        @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
+        @param rel_addr - True - relative frame address, False - absolute frame address
+        @param addr - frame address (0..15)
+        @param mod_name - gao, roic, bpr, telemetry, boson, dvo, scnr, tnr, snr, sysctrl, testramp, spnr
+        @param func_lsb - function code LSB:
+        @param num_payload_bytes - number of payload bytes: 0,1,2 or 4 only
+        @param payload data (16 LSB used)
+        """
+
+        payload_mode = (0,1,2,-1,3)[num_payload_bytes]
+        if payload_mode < 0:
+            raise ValueError('Payload of 3 bytes is not implemented, only 0,1,2 or 4 bytes are valid.')
+        _,mod_index = BOSON_MAP[mod_name]
+        wdata = ((mod_index * 4 + payload_mode) << 24) + (func_lsb & 0xff) << 16 + (data & 0xffff)
+        self.write_sensor_i2c (num_sensor = num_sensor,
+                               rel_addr = rel_addr,
+                               addr = addr,
+                               data = wdata)
+        
     def write_sensor_reg16(self,
                            num_sensor,
                            reg_addr16,
@@ -1495,6 +1538,110 @@ class X393Sensor(object):
 #                                      mode = 1,     # input [1:0] mode;
 #                                      seq_num = seq_num) # input [5:0] seq_num;
 #        return seq_num
+
+    def uart_send_packet(self,
+                         num_sensor,
+                         command,
+                         data, #bytearray
+                         wait_ready=True,
+                         reset_recv=True,
+                         reset_xmit=True):
+        """
+        Send packet to UART
+        @param num_sensor - sensor port number (0..3)
+        @param command - Full command code (module+function)
+        @param data -  Byte array to transmit
+        @param wait_ready Wait until all data is sent to UART
+        @param reset_recv Reset UART receive channel simultaneously with transmit one
+        @param reset_xmit Reset UART transmit channel before sending bytes
+        Note: sequencer commands are disabled (may be (re)-enabled after reading response
+        """
+        
+        if self.uart_seq_number < 0x100:
+            self.uart_seq_number= 0xabcde100 + (self.uart_seq_number & 0xffffffff)
+        packet = bytearray()
+        packet.append(0) # channel number == 0
+        for b in (self.uart_seq_number).to_bytes(4,byteorder='big'):
+            packet.append(b)
+        for b in (command).to_bytes(4,byteorder='big'): #command
+            packet.append(b)
+        for b in (0xffffffff).to_bytes(4,byteorder='big'): # status
+            packet.append(b)
+        for b in data: # data
+            packet.append(b)
+        #reset XMIT channe, disable sequencer     
+        #write data to FIFO, no need to wait
+        if reset_xmit:            
+            self.set_sensor_uart_ctl_boson (
+                            num_sensor = num_sensor,
+                            uart_extif_en =   False,
+                            uart_xmit_rst =   True,
+                            uart_recv_rst = reset_recv)
+        self.set_sensor_uart_ctl_boson (
+                        num_sensor = num_sensor,
+                        uart_xmit_rst =   False,
+                        uart_recv_rst =   False)
+        print(packet)
+        for b in packet:
+            self.set_sensor_uart_fifo_byte_boson (
+                        num_sensor=num_sensor,
+                        uart_tx_byte = b)
+        self.set_sensor_uart_ctl_boson ( # start command
+                        num_sensor = num_sensor,
+                        uart_xmit_start = True)
+            
+            
+        self.uart_seq_number= (self.uart_seq_number + 1) & 0xffffffff
+        if wait_ready:
+            while ((self.get_new_status(num_sensor=num_sensor) >> 25) & 1 )!= 0:
+                pass
+
+    def get_new_status(self,num_sensor): # same as jtag_get_tdo(self, chn):
+        seq_num = ((self.get_status_sensor_io(num_sensor = num_sensor) >> 26) + 1) & 0x3f
+        self.program_status_sensor_io(num_sensor = num_sensor,
+                                      mode = 1,     # input [1:0] mode;
+                                      seq_num = seq_num) # input [5:0] seq_num;
+        stat = None
+        for _ in range(10):
+            stat = self.get_status_sensor_io(num_sensor = num_sensor)
+            if seq_num == ((stat >> 26) & 0x3f):
+                break
+        else:
+            print ("wait_sensio_status(): Failed to get seq_num== 0x%x, current is 0x%x"%(seq_num, (stat >> 26) & 0x3f))
+        return stat
+                
+                
+                
+    def uart_receive_packet(self,
+                         num_sensor,
+                         enable_sequencer=True):
+        """
+        Send packet to UART
+        @param num_sensor - sensor port number (0..3)
+        @param enable_sequencer (Re)enable sequencer commands
+        """
+        
+        ready = False
+        while not ready: # wait full packet is in FIFO
+            sensor_status = self.get_new_status(num_sensor=num_sensor)
+            recv_dav =   ((sensor_status >> 15) & 1) != 0
+            recv_prgrs = ((sensor_status >> 14) & 1) != 0
+            ready = recv_dav and (not recv_prgrs)
+        #read byte array. TODO: improve waiting for tghe next byte?
+        packet = bytearray()
+        recv_dav = True
+        while recv_dav:
+            sensor_status = self.get_new_status(num_sensor=num_sensor)
+            recv_dav =   ((sensor_status >> 15) & 1) != 0
+            recv_data =  (sensor_status >> 16) & 0xff
+            if recv_dav:
+                packet.append(recv_data)
+            self.set_sensor_uart_ctl_boson ( # next byte
+                            num_sensor = num_sensor,
+                            uart_recv_next = True)
+                
+        #        
+        return packet        
 
     def jtag_get_tdo(self, chn):
         seq_num = ((self.get_status_sensor_io(num_sensor = chn) >> 26) + 1) & 0x3f

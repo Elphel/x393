@@ -667,6 +667,24 @@
 //    parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =           "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
+// for BOSON:
+    parameter UART_START_FRAME_BYTE  =         'h8E,
+    parameter UART_END_FRAME_BYTE  =           'hAE,
+    parameter UART_ESCAPE_BYTE =               'h9E,
+    parameter UART_REPLACED_START_FRAME_BYTE = 'h81,
+    parameter UART_REPLACED_END_FRAME_BYTE =   'hA1,
+    parameter UART_REPLACED_ESCAPE_BYTE =      'h91,
+    parameter UART_INITIAL_CRC16 =           16'h1d0f,
+`ifdef SIMULATION
+    parameter UART_CLK_DIV =                   22,
+    parameter UART_RX_DEBOUNCE =               6,
+`else
+    parameter UART_CLK_DIV =                   217,
+    parameter UART_RX_DEBOUNCE =               60,
+`endif
+    parameter UART_EXTIF_MODE =                 1, // 1,2 or 3 if there are several different extif
+// endof for BOSON:
+
     // parameters for the sensor-synchronous clock PLL
 // ALL PARAMETERS HERE SHOULD BE DEFINED (for use in C-generator)    
 `define TWEAKING_IOSTANDARD

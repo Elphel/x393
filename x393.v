@@ -1996,7 +1996,7 @@ assign axi_grst = axi_rst_pre;
 `endif
 
 `ifdef LWIR
-`else
+`else // used for BOSON too
         .SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
         .SENS_BANDWIDTH             (SENS_BANDWIDTH),
         .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
@@ -2043,6 +2043,53 @@ assign axi_grst = axi_rst_pre;
         .HISPI_IBUF_LOW_PWR            (HISPI_IBUF_LOW_PWR),
         .HISPI_IFD_DELAY_VALUE         (HISPI_IFD_DELAY_VALUE),
         .HISPI_IOSTANDARD              (HISPI_IOSTANDARD),
+`elsif BOSON
+        .SENS_CTRL_GP0          (SENS_CTRL_GP0),
+        .SENS_CTRL_GP1          (SENS_CTRL_GP1),
+        .SENS_CTRL_GP2          (SENS_CTRL_GP2),
+        .SENS_CTRL_GP3          (SENS_CTRL_GP3),
+        .SENS_UART_EXTIF_EN     (SENS_UART_EXTIF_EN),
+        .SENS_UART_XMIT_RST     (SENS_UART_XMIT_RST),
+        .SENS_UART_RECV_RST     (SENS_UART_RECV_RST),
+        .SENS_UART_XMIT_START   (SENS_UART_XMIT_START),
+        .SENS_UART_RECV_NEXT    (SENS_UART_RECV_NEXT),
+         
+
+        .HISPI_NUMLANES         (HISPI_NUMLANES),
+        .HISPI_DELAY_CLK0       (HISPI_DELAY_CLK0),
+        .HISPI_DELAY_CLK1       (HISPI_DELAY_CLK1),
+        .HISPI_DELAY_CLK2       (HISPI_DELAY_CLK2),
+        .HISPI_DELAY_CLK3       (HISPI_DELAY_CLK3),
+        .HISPI_MMCM0            (HISPI_MMCM0),
+        .HISPI_MMCM1            (HISPI_MMCM1),
+        .HISPI_MMCM2            (HISPI_MMCM2),
+        .HISPI_MMCM3            (HISPI_MMCM3),
+        
+        .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
+        .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
+        .HISPI_UNTUNED_SPLIT    (HISPI_UNTUNED_SPLIT),        
+        .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),
+        .HISPI_IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
+        .HISPI_IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
+        .HISPI_IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
+        .HISPI_IOSTANDARD       (HISPI_IOSTANDARD),
+        
+        .PXD_DRIVE              (PXD_DRIVE),
+        .PXD_IBUF_LOW_PWR       (PXD_IBUF_LOW_PWR),
+        .PXD_IOSTANDARD         (PXD_IOSTANDARD),
+        .PXD_SLEW               (PXD_SLEW),
+        .PXD_CAPACITANCE        (PXD_CAPACITANCE),
+        
+        .UART_START_FRAME_BYTE       (UART_START_FRAME_BYTE),// 'h8E),
+        .UART_END_FRAME_BYTE         (UART_END_FRAME_BYTE),  // 'hAE),
+        .UART_ESCAPE_BYTE            (UART_ESCAPE_BYTE),     // 'h9E),
+        .UART_REPLACED_START_FRAME_BYTE(UART_REPLACED_START_FRAME_BYTE), // 'h81),
+        .UART_REPLACED_END_FRAME_BYTE  (UART_REPLACED_END_FRAME_BYTE),   // 'hA1),
+        .UART_REPLACED_ESCAPE_BYTE     (UART_REPLACED_ESCAPE_BYTE), // 'h91),
+        .UART_INITIAL_CRC16          (UART_INITIAL_CRC16), // 16'h1d0f),
+        .UART_CLK_DIV                (UART_CLK_DIV),       // 217),
+        .UART_RX_DEBOUNCE            (UART_RX_DEBOUNCE),   // 60),
+        .UART_EXTIF_MODE             (UART_EXTIF_MODE),     // 1)
 `endif    
 `ifdef DEBUG_RING
         .DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY), 
@@ -2158,7 +2205,9 @@ assign axi_grst = axi_rst_pre;
         .debug_di           (debug_ring[1])        // input
 `endif         
     );
-
+    wire[7:0]debug_UART_CLK_DIV     = UART_CLK_DIV; //  =                   22,
+    wire[7:0]debug_UART_RX_DEBOUNCE = UART_RX_DEBOUNCE; //                6,
+    
     // AFI1 (AXI_HP1) signals - write channels only
     wire [31:0] afi1_awaddr;   // output[31:0]
     wire        afi1_awvalid;  // output

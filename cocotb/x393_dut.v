@@ -1982,7 +1982,7 @@ simul_axi_hp_wr #(
         .VSW           (BOSON_VSW)         // 7)  87)
     ) simul_boson640_1_i (
         .mrst          (sns1_dp[7]),       // input
-        .single        (boson_single),     // input
+        .single        (1'b0), // boson_single),     // input
         .ext_sync      (sns1_ctl),         // input
         .pxd           (boson_pxd1),       // output[15:0] 
         .pclk          (boson_pclk1),      // output
@@ -2021,7 +2021,7 @@ simul_axi_hp_wr #(
         .VSW           (BOSON_VSW)         // 7)  87)
     ) simul_boson640_2_i (
         .mrst          (sns2_dp[7]),       // input
-        .single        (boson_single),     // input
+        .single        (1'b0), // boson_single),     // input
         .ext_sync      (sns2_ctl),         // input
         .pxd           (boson_pxd2),       // output[15:0] 
         .pclk          (boson_pclk2),      // output

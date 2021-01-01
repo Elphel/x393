@@ -56,9 +56,12 @@ module  simul_103993_serializer#(
     localparam PERIOD = 1000.0/PCLK_FREQ_MHZ; 
     wire   [9:0] dclocks;
     
-    
-    assign #(PERIOD/20) dclocks[9:0] = ~{dclocks[8:0], pclk};
     /*
+    // dclocks[8:0] - OK, but
+    // dclocks[9] was delayed twice from dclocks[8]
+    assign #(PERIOD/20) dclocks[9:0] = ~{dclocks[8:0], pclk};
+    */
+    
     assign #(PERIOD/20) dclocks[0] = pclk;
     assign #(PERIOD/20) dclocks[1] = dclocks[0];
     assign #(PERIOD/20) dclocks[2] = dclocks[1];
@@ -69,7 +72,7 @@ module  simul_103993_serializer#(
     assign #(PERIOD/20) dclocks[7] = dclocks[6];
     assign #(PERIOD/20) dclocks[8] = dclocks[7];
     assign #(PERIOD/20) dclocks[9] = dclocks[8];
-    */
+    
     wire clk10 = ^dclocks[9:0];
     reg [9:0] r_red;
     reg [9:0] r_green;
@@ -93,7 +96,7 @@ module  simul_103993_serializer#(
     
     always @ (posedge clk10) begin
         clk_r <= {clk_r[0], pclk};
-        set_sr <= clk_r[0] && !clk_r[0];
+        set_sr <= clk_r[0] && !clk_r[1];
         if (set_sr) begin
             sr_red <=   r_red;
             sr_green <= r_green;

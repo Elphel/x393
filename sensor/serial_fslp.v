@@ -68,6 +68,9 @@ module  serial_fslp #(
     output        rx_packet_run,  // run received packet
     output        rx_packet_done  // finished receiving packet (last 2 bytes - crc16)
 );
+    wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
+    wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
+
     wire  [7:0] uart_txd;
     wire  [7:0] uart_rxd;
     wire        uart_tx_stb;

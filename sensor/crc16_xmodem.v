@@ -70,7 +70,7 @@ module  crc16_xmodem#(
     reg         tx_busy_r;
     reg         tx_stb_crc_m;
     reg         tx_stb_crc_l;
-    reg         tx_stb_crc_l2; // next cycle after tx_stb_crc_l, same as last tx_out_stb
+//    reg         tx_stb_crc_l2; // next cycle after tx_stb_crc_l, same as last tx_out_stb
     reg  [15:0] tx_crc16_r;
     reg   [3:0] tx_crc16_s;   
     reg   [7:0] crc16_addr;
@@ -83,7 +83,8 @@ module  crc16_xmodem#(
     reg         tx_out_stb_r;
     reg         tx_out_stb_r2;
     reg         tx_gen_bsy;
-    
+    reg         tx_rdy_r; // registered stuffer ready
+//    reg         tx_run;   // during CRC generation/output 
 
     wire        tx_crc16_next; // calculate next CRC16
     wire [15:0] crc16_table; // valid at tx_crc16_s[3]
@@ -95,30 +96,42 @@ module  crc16_xmodem#(
     
     assign tx_busy = tx_busy_r;
     assign txd_out = txd_out_r;
-    assign tx_in_rdy = tx_in_rdy_r;
+//    assign tx_in_rdy = tx_in_rdy_r;
+    assign tx_in_rdy = tx_in_rdy_r && tx_rdy_r; // && tx_run;
     assign tx_out_stb = tx_out_stb_r;
     
     always @(posedge mclk) begin
+        tx_rdy_r <= tx_rdy;
+    
+    // TODO: Clean up from tx_busy_r
         if      (mrst)                      tx_in_rdy_r <= 0;
-        else if (tx_start || tx_crc16_s[0]) tx_in_rdy_r <= 1; // tx_crc16_next
+//        else if (tx_start || tx_crc16_s[0]) tx_in_rdy_r <= 1; // tx_crc16_next
+        else if (tx_start || tx_crc16_next) tx_in_rdy_r <= 1; // tx_crc16_next
         else if (tx_in_stb || tx_over)      tx_in_rdy_r <= 0;
+///        else if (!tx_busy_r)                tx_in_rdy_r <= 1; 
         
         if      (mrst)         tx_gen_bsy <= 0;
         else if (tx_in_stb)    tx_gen_bsy <= 1;
         else if (tx_out_stb_r) tx_gen_bsy <= 0; 
         
         
-        if      (mrst)     tx_pre_crc <= 0;
-        else if (tx_start) tx_pre_crc <= 0;
-        else if (tx_over)  tx_pre_crc <= 1; 
+        if      (mrst)                      tx_pre_crc <= 0;
+        else if (tx_start || tx_crc_out[0]) tx_pre_crc <= 0;
+        else if (tx_over)                   tx_pre_crc <= 1;
         
-        if      (mrst)                          tx_crc_out[0] <= 0;
-        else if (tx_start)                      tx_crc_out[0] <= 0;
-        else if (tx_pre_crc && !tx_gen_bsy)     tx_crc_out[0] <= 1;
+        if      (mrst)                                            tx_crc_out[0] <= 0;
+        else if (tx_start || tx_out_stb_r)                        tx_crc_out[0] <= 0;
+        else if (tx_pre_crc && !tx_gen_bsy && !tx_crc_out[1])     tx_crc_out[0] <= 1;
 
-        if      (mrst)                          tx_crc_out[1] <= 0;
-        else if (tx_start)                      tx_crc_out[1] <= 0;
-        else if (tx_crc_out[0] && tx_out_stb_r) tx_crc_out <= 2'h1;
+        if      (mrst)                                            tx_crc_out[1] <= 0;
+        else if (tx_start)                                        tx_crc_out[1] <= 0;
+//        else if (tx_crc_out[0] && tx_out_stb_r)                   tx_crc_out[1] <= 1;
+        else if (tx_out_stb_r)                                    tx_crc_out[1] <= tx_crc_out[0];
+
+//        if      (mrst)                          tx_run <= 0;
+//        else if (tx_start)                      tx_run <= 1;
+//        else if (tx_crc_out[1] && tx_out_stb_r) tx_run <= 0;
+
         
         tx_crc_out_d <= tx_crc_out;
         
@@ -143,11 +156,12 @@ module  crc16_xmodem#(
     
         if (tx_in_stb) txd_in_r <= txd_in;
         
-        tx_stb_crc_l2 <= tx_stb_crc_l;
+//        tx_stb_crc_l2 <= tx_stb_crc_l;
         
-        if      (mrst)          tx_busy_r <= 0;
-        else if (tx_start)      tx_busy_r <= 1;
-        else if (tx_stb_crc_l2) tx_busy_r <= 0;
+        if      (mrst)                          tx_busy_r <= 0;
+        else if (tx_start)                      tx_busy_r <= 1;
+//        else if (tx_stb_crc_l2) tx_busy_r <= 0;
+        else if (tx_out_stb_r && tx_crc_out[1]) tx_busy_r <= 0;
         
         if      (tx_start)      tx_crc16_r <= INITIAL_CRC16;
         else if (tx_crc16_next) tx_crc16_r <= tx_crc16_w; 

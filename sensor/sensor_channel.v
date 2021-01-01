@@ -435,6 +435,17 @@ module  sensor_channel#(
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
     parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+    
+    parameter UART_START_FRAME_BYTE  =         'h8E,
+    parameter UART_END_FRAME_BYTE  =           'hAE,
+    parameter UART_ESCAPE_BYTE =               'h9E,
+    parameter UART_REPLACED_START_FRAME_BYTE = 'h81,
+    parameter UART_REPLACED_END_FRAME_BYTE =   'hA1,
+    parameter UART_REPLACED_ESCAPE_BYTE =      'h91,
+    parameter UART_INITIAL_CRC16 =           16'h1d0f,
+    parameter UART_CLK_DIV =                   217,
+    parameter UART_RX_DEBOUNCE =               60,
+    parameter UART_EXTIF_MODE =                 1, // 1,2 or 3 if there are several different extif
 `endif    
     
 `ifdef DEBUG_RING
@@ -1219,7 +1230,18 @@ module  sensor_channel#(
             .PXD_IBUF_LOW_PWR       (PXD_IBUF_LOW_PWR),
             .PXD_IOSTANDARD         (PXD_IOSTANDARD),
             .PXD_SLEW               (PXD_SLEW),
-            .PXD_CAPACITANCE        (PXD_CAPACITANCE)
+            .PXD_CAPACITANCE        (PXD_CAPACITANCE),
+            .START_FRAME_BYTE       (UART_START_FRAME_BYTE),// 'h8E),
+            .END_FRAME_BYTE         (UART_END_FRAME_BYTE),  // 'hAE),
+            .ESCAPE_BYTE            (UART_ESCAPE_BYTE),     // 'h9E),
+            .REPLACED_START_FRAME_BYTE(UART_REPLACED_START_FRAME_BYTE), // 'h81),
+            .REPLACED_END_FRAME_BYTE  (UART_REPLACED_END_FRAME_BYTE),   // 'hA1),
+            .REPLACED_ESCAPE_BYTE     (UART_REPLACED_ESCAPE_BYTE), // 'h91),
+            .INITIAL_CRC16          (UART_INITIAL_CRC16), // 16'h1d0f),
+            .CLK_DIV                (UART_CLK_DIV),       // 217),
+            .RX_DEBOUNCE            (UART_RX_DEBOUNCE),   // 60),
+            .EXTIF_MODE             (UART_EXTIF_MODE)     // 1)
+            
         ) sens_103993_i (
             .pclk             (pclk),                   // output
             .locked_pclk      (locked_pclk),            // output
@@ -1234,8 +1256,10 @@ module  sensor_channel#(
             .status_start     (sens_phys_status_start), // input
 //            .trigger_mode     (trigger_mode),           // input
             .ext_sync         (trig),                   // input
-            .sns_dp           (sns_dp[2:0]),            // input[2:0] 
-            .sns_dn           (sns_dn[2:0]),            // input[2:0] 
+//            .sns_dp           (sns_dp[2:0]),            // input[2:0] 
+//            .sns_dn           (sns_dn[2:0]),            // input[2:0] 
+            .sns_dp           (sns_dp),            // input[2:0] 
+            .sns_dn           (sns_dn),            // input[2:0] 
             .sns_clkp         (sns_clkp),               // input
             .sns_clkn         (sns_clkn),               // input
             .sns_gp2          (sns_dn74[6]),            // inout

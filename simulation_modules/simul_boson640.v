@@ -49,7 +49,7 @@ module  simul_boson640#(
     parameter FP =                52, // FP_BP = 52+50
     parameter VSW =               87 // with telemetry, in eows 
 )(
-    input         mrst,
+    input         mrst,// active low
     input         single,
     input         ext_sync,
     output [15:0] pxd,
@@ -97,7 +97,7 @@ module  simul_boson640#(
     localparam LSTATE_BP =    4'b1000;
                  
     assign pclk =          ~pclk_r;
-    assign uart_out =      uart_in && !mrst;
+    assign uart_out =      uart_in; //  && mrst;
     assign last_line =     (frame_state == FSTATE_OUT) && (line_cntr == 0);
     assign last_in_line =  (line_state == LSTATE_BP) &&  (pix_cntr == 0);
     assign start_frame =   ((frame_state == FSTATE_IDLE) || (last_line && last_in_line)) && (!single | (ext_sync && !ext_sync_d));
@@ -111,17 +111,17 @@ module  simul_boson640#(
         $readmemh({`ROOTPATH,DATA_FILE},sensor_data);
     end
 
-    always #(CLK_PERIOD/2) pclk_r <= mrst ? 1'b0:  ~pclk_r;
+    always #(CLK_PERIOD/2) pclk_r <= mrst ? ~pclk_r : 1'b0;
     
     always @ (posedge pclk_r) begin
-        dvalid_r <= pre_dav && !mrst;
+        dvalid_r <= pre_dav && mrst;
     
-        if (mrst) ext_sync_d <= 0;
-        else      ext_sync_d <= ext_sync;
+        if (!mrst) ext_sync_d <= 0;
+        else       ext_sync_d <= ext_sync;
         
 //        frame_state_d <=frame_state;
         
-        if (mrst) begin
+        if (!mrst) begin
                     frame_state <= FSTATE_IDLE;
         end else begin
           case (frame_state)
@@ -151,7 +151,7 @@ module  simul_boson640#(
           endcase
         end
         
-        if (mrst) begin
+        if (!mrst) begin
             line_state <= 0;
             pix_cntr <= HSW - 1;
         end else if (start_line) begin
