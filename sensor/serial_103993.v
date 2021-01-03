@@ -82,9 +82,6 @@ module  serial_103993#(
     output               [7:0] recv_data
 
 );
-    wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
-    wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
-
     wire                [ 7:0] xmit_fifo_out;
     wire                [ 1:0] xmit_fifo_re_regen;
     wire                [10:0] xmit_fifo_waddr;

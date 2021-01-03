@@ -55,9 +55,12 @@ module  boson_uart #(
     output  [7:0] rx_byte,      // received byte  
     output        rx_stb        // received data strobe (valid 1 cycle before and later for 1 bit) 
 );
+/*
+`ifdef SIMULATION
     wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
     wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
-
+`endif    
+*/
     localparam CLK_DIV_BITS =       clogb2(CLK_DIV); //  + 1);
     localparam RX_DEBOUNCE_BITS =   clogb2(RX_DEBOUNCE + 1);
     reg     [CLK_DIV_BITS-1:0] clk_div_cntr_rx;
@@ -91,7 +94,7 @@ module  boson_uart #(
     assign debounced = (debounce_cntr == 0);
     assign rx_bitw =    (clk_div_cntr_rx == 0);
     assign tx_bitw =    (clk_div_cntr_tx == 0);
-    assign mark =       &rx_sr; // all ones
+    assign mark =       &rx_sr & rxd_r; // all ones
     assign start_bit_rx = (rx_bcntr == 0);
     assign stop_bit_rx =  (rx_bcntr == 9);
     assign stop_bit_tx =  (tx_bcntr == 9);

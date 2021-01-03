@@ -75,9 +75,10 @@ module  serial_destuffer#(
     assign flsp_end =   in_stb[0] && (rxd_in_r == END_FRAME_BYTE);
     assign is_esc_w =   rxd_in_r == ESCAPE_BYTE;
     assign replaced_w = {
-        (rxd_in_r == REPLACED_START_FRAME_BYTE) ? 1'b1: 1'b0,
+        (rxd_in_r == REPLACED_ESCAPE_BYTE) ?      1'b1: 1'b0,
         (rxd_in_r == REPLACED_END_FRAME_BYTE) ?   1'b1: 1'b0,
-        (rxd_in_r == REPLACED_ESCAPE_BYTE) ?      1'b1: 1'b0};
+        (rxd_in_r == REPLACED_START_FRAME_BYTE) ? 1'b1: 1'b0
+        };
 
     assign packet_run = packet_run_r[0];
     assign rxd_out = rxd_r;
