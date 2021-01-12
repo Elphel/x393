@@ -933,13 +933,16 @@ class X393Jpeg(object):
                               circbuf_len =  x393_sens_cmprs.GLBL_CIRCBUF_ENDS[channel] - x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
     
                               verbose = verbose)
-        if verbose > 2 :
+        if verbose > 0: # 2 :
             print ("meta = ",meta)
         if verbose > 1 :
             for s in meta["segments"]:
                 print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
         if "@" in file_path:
-            fts=("%f"%(meta["timestamp"])).replace(".","_")
+            try:
+                fts=("%f"%(meta["timestamp"])).replace(".","_")
+            except:
+                fts=str(channel)
             file_path=file_path[:file_path.rindex('@')]+fts+file_path[file_path.rindex('@')+1:] #replacing '@'
         with open (server_root+file_path, "w+b") as bf:
             bf.write(jpeg_data["header"])

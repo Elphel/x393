@@ -823,6 +823,13 @@ class X393SensCmprs(object):
                                mrst =       False,
                                mmcm_rst =   False, 
                                set_delays = False)
+            #Wait pclk MMCM lock!
+            locked_pxd_mmcm = False
+            print ("Waiting for PCLK MMCM lock")
+            while not locked_pxd_mmcm:
+                sensor_status = self.x393Sensor.get_new_status(num_sensor=num_sensor)
+                locked_pxd_mmcm = ((sensor_status >> 12) & 1) != 0
+            print ("PCLK MMCM locked")
             self.x393Sensor.set_sensor_uart_ctl_boson (
                             num_sensor = num_sensor,
                             uart_extif_en =   True,

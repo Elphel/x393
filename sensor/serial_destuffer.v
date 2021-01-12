@@ -65,6 +65,7 @@ module  serial_destuffer#(
     reg     [2:0] replaced;
     reg           thru; // pass input data through
     reg     [1:0] out_stb;
+//    reg           flsp_end_r;
     
     wire          flsp_start; 
     wire          flsp_end;
@@ -85,6 +86,8 @@ module  serial_destuffer#(
     assign rx_stb = out_stb[1];
     assign packet_done = packet_done_r;
     always @(posedge mclk) begin
+//        flsp_end_r <= flsp_end && !mrst;
+        
         if (mrst) in_stb <= 0;
         else      in_stb <= {in_stb[1:0], rx_in_stb};
     
@@ -109,6 +112,7 @@ module  serial_destuffer#(
         
         if (mrst)           out_stb <= 0;
         else                out_stb <= {out_stb[0], in_stb[1] & payload & ~is_esc};
+//        else                out_stb <= {out_stb[0], (in_stb[1] & payload & ~is_esc) || flsp_end_r}; // added extra pulse after end
         
         if (out_stb[0]) rxd_r <=
                  ({8{thru}} &        rxd_in_r) |

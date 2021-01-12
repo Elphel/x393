@@ -44,10 +44,11 @@ module  sens_103993_deser10(
     input din,
     output [9:0] dout
 );
-    reg [9:0] sr;
+//    reg [9:0] sr;
     reg [9:0] dout_r;
-    wire [9:0] pre_sr;
+//    wire [9:0] pre_sr;
     assign dout = dout_r;
+    /*
     assign pre_sr = {sr[8:0], din};
     always @(posedge pclk10) begin
         sr <= pre_sr;
@@ -55,5 +56,26 @@ module  sens_103993_deser10(
     always @(posedge pclk) begin
         dout_r <= pre_sr;
     end
+    */
+    reg        xclk_r;
+    reg  [2:0] copy_r;
+    reg [11:0] sr;
+    reg [ 9:0] dout_pclk10;
+    always @(posedge pclk or posedge copy_r[2]) begin  // re_simulate!
+        if (copy_r[2]) xclk_r <= 0;
+        else           xclk_r <= 1;
+    end
+    
+    always @ (negedge pclk10) begin
+        copy_r <= {copy_r[1] & ~copy_r[0], copy_r[0], xclk_r};
+        sr <=     {sr[10:0], din};
+        if (copy_r[2]) dout_pclk10 <= sr[11:2];
+    end
+
+    always @(posedge pclk) begin
+        dout_r <= dout_pclk10;
+    end
+
+    
 endmodule
 

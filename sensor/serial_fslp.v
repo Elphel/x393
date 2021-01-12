@@ -151,7 +151,7 @@ module  serial_fslp #(
         .rxd_in       (uart_rxd[7:0]), // input[7:0] 
         .rx_in_stb    (uart_rx_stb),   // input
         .rxd_out      (rx_byte[7:0]),  // output[7:0] 
-        .rx_stb       (rx_stb),        // output
+        .rx_stb       (rx_stb),        // output 
         .packet_run   (rx_packet_run), // output
         .packet_done  (rx_packet_done) // output
     );

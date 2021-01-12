@@ -906,7 +906,8 @@ module  x393_dut#(
 //    reg [639:0] TEST_TITLE="abcdef"; //S uppressThisWarning VEditor May use again later
   // Simulation signals
     wire        CLK;
-    reg        RST;
+    reg         RST;
+    wire        RST_SIM_AXI; // was RST 
 //    reg        RST_CLEAN  = 1;
 /*
     wire [NUM_INTERRUPTS-1:0] IRQ_R =   {x393_i.sata_irq, x393_i.cmprs_irq[3:0], x393_i.frseq_irq[3:0]}; 
@@ -930,6 +931,7 @@ module  x393_dut#(
     
 */
     assign reset_out = RST || x393_i.arst;
+    assign RST_SIM_AXI = reset_out; // was RST before 2021 
     x393 #(
 // TODO: Are these parameters needed? They are included in x393 from the save x393_parameters.vh    
         .MCONTR_WR_MASK                    (MCONTR_WR_MASK),
@@ -1284,7 +1286,7 @@ module  x393_dut#(
         .VALID_DELAY   (4.0)
     ) simul_axi_master_rdaddr_i (
         .clk        (maxigp0aclk),//CLK),// input
-        .reset      (RST),             // input
+        .reset      (RST_SIM_AXI),             // input
         .arid_in    (dutm0_arid_w[11:0]),   // input[11:0] 
         .araddr_in  (dutm0_araddr_w[31:0]), // input[31:0] 
         .arlen_in   (dutm0_arlen_w[3:0]),   // input[3:0] 
@@ -1318,7 +1320,7 @@ module  x393_dut#(
         .VALID_DELAY   (4.0)
     ) simul_axi_master_wraddr_i (
         .clk        (maxigp0aclk),     // input
-        .reset      (RST),             // input
+        .reset      (RST_SIM_AXI),             // input
         .awid_in    (dutm0_awid_w[11:0]),   // input[11:0] 
         .awaddr_in  (dutm0_awaddr_w[31:0]), // input[31:0] 
         .awlen_in   (dutm0_awlen_w[3:0]),   // input[3:0] 
@@ -1352,7 +1354,7 @@ module  x393_dut#(
         .VALID_DELAY   (3.6)
     ) simul_axi_master_wdata_i (
         .clk        (maxigp0aclk),     // input
-        .reset      (RST),             // input
+        .reset      (RST_SIM_AXI),             // input
         .wid_in     (dutm0_wid_w[11:0]),    // input[11:0] 
         .wdata_in   (dutm0_wdata_w[31:0]),  // input[31:0] 
         .wstrb_in   (dutm0_wstb_w[3:0]),   // input[3:0] 
@@ -1371,7 +1373,7 @@ module  x393_dut#(
 // Until then  dutm0_rready and dutm0_bready are outputs, not inputs
     simul_axi_slow_ready simul_axi_slow_ready_i (
         .clk        (maxigp0aclk),     // input
-        .reset      (RST),             // input
+        .reset      (RST_SIM_AXI),             // input
         .delay      (dutm0_xtra_rdlag),          // input[3:0] 
         .valid      (maxigp0rvalid),   // input
         .ready      (maxigp0rready)    // output
@@ -1379,7 +1381,7 @@ module  x393_dut#(
     
     simul_axi_slow_ready simul_axi_slow_ready_write_resp_i(
         .clk        (maxigp0aclk),     // input
-        .reset      (RST),             // input
+        .reset      (RST_SIM_AXI),             // input
         .delay      (dutm0_xtra_blag),           // input[3:0]
         .valid      (maxigp0bvalid),   // input
         .ready      (maxigp0bready)    // output
@@ -1389,7 +1391,7 @@ module  x393_dut#(
         .ADDRESS_WIDTH (SIMUL_AXI_READ_WIDTH)
     ) simul_axi_read_i (
         .clk        (maxigp0aclk),                                // input
-        .reset      (RST),                                        // input
+        .reset      (RST_SIM_AXI),                                        // input
         .last       (maxigp0rlast),                               // input
         .data_stb   (maxigp0rready & maxigp0rvalid),              // input
         .raddr      (dutm0_araddr_w[SIMUL_AXI_READ_WIDTH+1:2]),   // input[9:0] 
@@ -1406,7 +1408,7 @@ module  x393_dut#(
 simul_axi_hp_rd #(
         .HP_PORT(0)
     ) simul_axi_hp_rd_i (
-        .rst            (RST),                               // input
+        .rst            (RST_SIM_AXI),                               // input
         .aclk           (x393_i.ps7_i.SAXIHP0ACLK),          // input
         .aresetn        (),                                  // output
         .araddr         (x393_i.ps7_i.SAXIHP0ARADDR[31:0]),  // input[31:0] 
@@ -1449,7 +1451,7 @@ simul_axi_hp_rd #(
 simul_axi_hp_wr #(
         .HP_PORT(0)
     ) simul_axi_hp_wr_i (
-        .rst            (RST),                               // input
+        .rst            (RST_SIM_AXI),                               // input
         .aclk           (x393_i.ps7_i.SAXIHP0ACLK),          // input
         .aresetn        (),                                  // output
         .awaddr         (x393_i.ps7_i.SAXIHP0AWADDR),        // input[31:0] 
@@ -1496,7 +1498,7 @@ simul_axi_hp_wr #(
 simul_axi_hp_wr #(
         .HP_PORT(1)
     ) simul_axi_hp1_wr_i (
-        .rst            (RST),                               // input
+        .rst            (RST_SIM_AXI),                               // input
         .aclk           (x393_i.ps7_i.SAXIHP1ACLK),          // input
         .aresetn        (),                                  // output
         .awaddr         (x393_i.ps7_i.SAXIHP1AWADDR),        // input[31:0] 
@@ -1542,7 +1544,7 @@ simul_axi_hp_wr #(
     
     // SAXI_GP0 - histograms to system memory
     simul_saxi_gp_wr simul_saxi_gp0_wr_i (
-        .rst               (RST),                         // input
+        .rst               (RST_SIM_AXI),                         // input
         .aclk              (saxi0_aclk),                  // input
         .aresetn           (), // output
         .awaddr            (x393_i.ps7_i.SAXIGP0AWADDR),  // input[31:0] 
@@ -1579,7 +1581,7 @@ simul_axi_hp_wr #(
 
     // SAXI_GP1 - event logger to system memory
     simul_saxi_gp_wr simul_saxi_gp1_wr_i (
-        .rst               (RST),                         // input
+        .rst               (RST_SIM_AXI),                         // input
         .aclk              (saxi0_aclk),                  // input
         .aresetn           (), // output
         .awaddr            (x393_i.ps7_i.SAXIGP1AWADDR),  // input[31:0] 
@@ -1982,7 +1984,7 @@ simul_axi_hp_wr #(
         .VSW           (BOSON_VSW)         // 7)  87)
     ) simul_boson640_1_i (
         .mrst          (sns1_dp[7]),       // input
-        .single        (1'b0), // boson_single),     // input
+        .single        (boson_single),     // input 1'b0), // 
         .ext_sync      (sns1_ctl),         // input
         .pxd           (boson_pxd1),       // output[15:0] 
         .pclk          (boson_pclk1),      // output
@@ -2021,7 +2023,7 @@ simul_axi_hp_wr #(
         .VSW           (BOSON_VSW)         // 7)  87)
     ) simul_boson640_2_i (
         .mrst          (sns2_dp[7]),       // input
-        .single        (1'b0), // boson_single),     // input
+        .single        (boson_single),     // input 1'b0), //
         .ext_sync      (sns2_ctl),         // input
         .pxd           (boson_pxd2),       // output[15:0] 
         .pclk          (boson_pclk2),      // output

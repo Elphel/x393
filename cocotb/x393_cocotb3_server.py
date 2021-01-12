@@ -76,9 +76,9 @@ class X393_cocotb3_server(object):
         self.dut =       dut
         #Open file to use as system memory
         try:
-            self._memfile=open(mempath, 'r+') #keep old file if it exists already
+            self._memfile=open(mempath, 'rb+') #keep old file if it exists already
         except:    
-            self._memfile=open(mempath, 'w+') #create a new file if it does not exist
+            self._memfile=open(mempath, 'wb+') #create a new file if it does not exist
             self.dut._log.info ("Created a new 'memory' file %s"%(mempath)) #
         #Extend to full size
         self._memfile.seek(self.memhigh-1)
@@ -91,7 +91,7 @@ class X393_cocotb3_server(object):
             pass
         if not readOK:
             self._memfile.seek(self.memhigh-1)
-            self._memfile.write(chr(0))
+            self._memfile.write(b'\x00')#chr(0))
             self._memfile.flush()
             self.dut._log.info("Wrote to 0x%08x to extend file to full size"%(self.memhigh-1)) #
         
@@ -195,7 +195,7 @@ class X393_cocotb3_server(object):
         except:
             self.logErrorTerminate("Socket seems to have died :-(")
         self.dut._log.debug("1.Received from socket: %s"%(line))
-        yield self.executeCommand(line)
+        yield self.executeCommand(line) ##
         self.dut._log.debug("3.Received from socket: %s"%(line))
     
     @cocotb.coroutine

@@ -48,7 +48,8 @@ module  serial_103993#(
     parameter INITIAL_CRC16 =           16'h1d0f,
     parameter CLK_DIV =                   217,
     parameter RX_DEBOUNCE =               60,
-    parameter EXTIF_MODE =                 1 // 1,2 or 3 if there are several different extif
+    parameter EXTIF_MODE =                 1, // 1,2 or 3 if there are several different extif
+    parameter RECV_CNTR_WIDTH =            8  // received packet counter width
 )(
     input         mrst,           // @posedge mclk, sync reset
     input         mclk,           // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -77,8 +78,10 @@ module  serial_103993#(
     
     input                      recv_rst,    // reset read uart FIFO
     input                      recv_next,
-    output                     recv_prgrs, // read in progress
-    output                     recv_dav,   // read byte available 
+//    output                     recv_prgrs, // read in progress
+//    output                     recv_dav,   // read byte available
+    output                     recv_pav,    // packet available
+    output                     recv_eop,    // end of packet (discard  recv_data, apply recv_next)
     output               [7:0] recv_data
 
 );
@@ -86,15 +89,14 @@ module  serial_103993#(
     wire                [ 1:0] xmit_fifo_re_regen;
     wire                [10:0] xmit_fifo_waddr;
     wire                [10:0] xmit_fifo_raddr;
-//    wire                [11:0] xmit_fifo_fill;
-//    reg                        xmit_fifo_rd;
     wire                       xmit_fifo_nempty;
     
     wire                       recv_fifo_wr;
+    wire                       fslp_rx_stb;
+    wire                       fslp_rx_done;
     wire                [ 1:0] recv_fifo_re_regen;
     wire                [10:0] recv_fifo_waddr;
     wire                [10:0] recv_fifo_raddr;
-//    wire                [11:0] recv_fifo_fill;
     wire                [ 7:0] recv_fifo_din;
     
     reg                        xmit_pend; // initiated soft xmit
@@ -111,7 +113,12 @@ module  serial_103993#(
     reg                        xmit_over_d;
     reg                        stuffer_busy_d; 
     reg                        xmit_busy_r;
-    
+    reg                        fslp_stb_or_done; // used to push 9-th bit to FIFO (packet over)
+    reg                        fifo_out_stb;
+    reg                        packet_end_r;
+    reg  [RECV_CNTR_WIDTH-1:0] recv_cntr;
+    reg                        recv_pav_r;
+     
     wire                       xmit_start_out_fifo;
     wire                       xmit_start_out_seq;
     wire                       xmit_start_out;
@@ -128,7 +135,8 @@ module  serial_103993#(
     
     wire                       packet_ready_seq;
     wire                       packet_over_seq;
-//    wire                       packet_sent;
+//    wire                       recv_end;      // Discard recv_data, this is packet end
+    wire                       recv_prgrs; // packet is being received (to distinguish eop from data byte)
     
     assign extif_rq_w =          packet_ready_seq && !extif_run && !packet_over_seq;
     assign xmit_any_data =       extif_run ? xmit_extif_data : xmit_fifo_out;
@@ -137,12 +145,22 @@ module  serial_103993#(
     assign xmit_start_out_fifo = xmit_run && !xmit_run_d;
     assign xmit_start_out_seq =  extif_run && !extif_run_d;
     assign xmit_start_out =      xmit_start_out_fifo || xmit_start_out_seq;
-//    assign pre_tx_stb =          !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run && tx_rdy;
 // TODO: is !xmit_stb_d needed?
     assign pre_tx_stb =          !xmit_stb_any && !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run && tx_rdy;
     assign xmit_busy =           xmit_busy_r;
-//    assign packet_sent =         xmit_over && !xmit_over_d;
+    assign recv_fifo_wr =        fslp_stb_or_done;
+    assign recv_pav =            recv_pav_r;
+//    assign recv_eop =            recv_end;
     always @(posedge mclk) begin
+        fslp_stb_or_done <= fslp_rx_stb || fslp_rx_done;
+        fifo_out_stb <=     recv_fifo_re_regen[1];
+        packet_end_r <=     fifo_out_stb && recv_eop;
+        if (mrst || recv_rst)                    recv_cntr <= 0;
+        else if ( fslp_rx_done && !packet_end_r) recv_cntr <= recv_cntr + 1;
+        else if (!fslp_rx_done &&  packet_end_r) recv_cntr <= recv_cntr - 1;
+        
+        recv_pav_r <= |recv_cntr; 
+        
         xmit_busy_r  <= uart_tx_busy || stuffer_busy_d || xmit_pend || xmit_run || extif_run;
     
         if (mrst || xmit_rst)                           xmit_pend <= 0;
@@ -152,7 +170,6 @@ module  serial_103993#(
         if (mrst || xmit_rst)                           xmit_run <= 0;
         else if (xmit_pend && !xmit_run && !extif_run)  xmit_run <= 1;
         else if (xmit_done)                             xmit_run <= 0; // no need to condition with xmit_run
-//        else if (!stuffer_busy && !xmit_fifo_nempty)   xmit_run <= 0; // no need to condition with xmit_run
     
         xmit_run_d <= xmit_run && !mrst && !xmit_rst;
         
@@ -177,7 +194,6 @@ module  serial_103993#(
         
     end
     
-        /* Instance template for module serial_103993_extif */
     serial_103993_extif #(
         .EXTIF_MODE (EXTIF_MODE) // 1)
     ) serial_103993_extif_i (
@@ -220,9 +236,10 @@ module  serial_103993#(
         .stuffer_busy   (stuffer_busy),    // output processing packet (not including UART)
         .uart_tx_busy   (uart_tx_busy),    // output UART busy ('or' with stuffer_busy?)
         .rx_byte        (recv_fifo_din),   // output[7:0] received byte output
-        .rx_stb         (recv_fifo_wr),    // output received byte strobe
+//        .rx_stb         (recv_fifo_wr),    // output received byte strobe
+        .rx_stb         (fslp_rx_stb),    // output received byte strobe
         .rx_packet_run  (recv_prgrs),      // output  run received packet
-        .rx_packet_done () // output finished receiving packet (last 2 bytes - crc16)
+        .rx_packet_done (fslp_rx_done) // output finished receiving packet (last 2 bytes - crc16)
     );
 
    fifo_sameclock_control #(
@@ -267,7 +284,7 @@ module  serial_103993#(
         .rst      (mrst || recv_rst),       // input
         .wr       (recv_fifo_wr),           // input
         .rd       (recv_next),              // input
-        .nempty   (recv_dav),               // output
+        .nempty   (), // recv_dav),               // output
         .fill_in  (), // recv_fifo_fill),         // output[11:0] 
         .mem_wa   (recv_fifo_waddr),        // output[10:0] reg 
         .mem_ra   (recv_fifo_raddr),        // output[10:0] reg 
@@ -277,21 +294,21 @@ module  serial_103993#(
         .under    () //h2d_under)           // output reg 
     );
     
-    ram18_var_w_var_r #(
+    ram18p_var_w_var_r #(
         .REGISTERS    (1),
         .LOG2WIDTH_WR (3),
         .LOG2WIDTH_RD (3)
     ) fifo_recv_i (
-        .rclk     (mclk),                   // input
-        .raddr    (recv_fifo_raddr),        // input[10:0] 
-        .ren      (recv_fifo_re_regen[0]),  // input
-        .regen    (recv_fifo_re_regen[1]),  // input
-        .data_out (recv_data),              // output[7:0] 
-        .wclk     (mclk),                   // input
-        .waddr    (recv_fifo_waddr),        // input[10:0] 
-        .we       (recv_fifo_wr),           // input
-        .web      (4'hf),                   // input[3:0] 
-        .data_in  (recv_fifo_din)           // input[7:0] 
+        .rclk     (mclk),                       // input
+        .raddr    (recv_fifo_raddr),            // input[10:0] 
+        .ren      (recv_fifo_re_regen[0]),      // input
+        .regen    (recv_fifo_re_regen[1]),      // input
+        .data_out ({recv_eop,recv_data}),       // output[7:0] 
+        .wclk     (mclk),                       // input
+        .waddr    (recv_fifo_waddr),            // input[10:0] 
+        .we       (recv_fifo_wr),               // input
+        .web      (4'hf),                       // input[3:0] 
+        .data_in  ({~recv_prgrs,recv_fifo_din}) // input[7:0] 
     );
 
 

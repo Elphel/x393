@@ -706,6 +706,8 @@ module  sensor_channel#(
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
 `ifdef LWIR    
     assign lens_pxd_in = pxd[15:0];
+`elsif BOSON    
+    assign lens_pxd_in = pxd[15:0];
 `else
     assign lens_pxd_in = {pxd[11:0],4'b0};
 `endif    
@@ -1177,6 +1179,7 @@ module  sensor_channel#(
 `elsif BOSON
         wire vsync;
         wire dvalid;
+        wire hsync;
         sens_103993 #(
             .SENSIO_ADDR            (SENSIO_ADDR),
             .SENSIO_ADDR_MASK       (SENSIO_ADDR_MASK),
@@ -1254,12 +1257,12 @@ module  sensor_channel#(
             .status_ad        (sens_phys_status_ad),    // output[7:0] 
             .status_rq        (sens_phys_status_rq),    // output
             .status_start     (sens_phys_status_start), // input
-//            .trigger_mode     (trigger_mode),           // input
+//            .trigger_mode     (trigger_mode),         // input
             .ext_sync         (trig),                   // input
-//            .sns_dp           (sns_dp[2:0]),            // input[2:0] 
-//            .sns_dn           (sns_dn[2:0]),            // input[2:0] 
-            .sns_dp           (sns_dp),            // input[2:0] 
-            .sns_dn           (sns_dn),            // input[2:0] 
+//            .sns_dp           (sns_dp[2:0]),          // input[2:0] 
+//            .sns_dn           (sns_dn[2:0]),          // input[2:0] 
+            .sns_dp           (sns_dp[3:0]),            // input[2:0] 
+            .sns_dn           (sns_dn[3:0]),            // input[2:0] 
             .sns_clkp         (sns_clkp),               // input
             .sns_clkn         (sns_clkn),               // input
             .sns_gp2          (sns_dn74[6]),            // inout
@@ -1269,11 +1272,12 @@ module  sensor_channel#(
             .sns_gp3          (sns_dn74[7]),            // output
             .sns_gp0          (sns_dp74[5]),            // output
             .sns_gp1          (sns_dn74[5]),            // output
+            .sns_dp6          (sns_dp74[6]),            // unused, just to select IOstandard
             .sns_txd          (sns_dp74[4]),            // input
             .sns_rxd          (sns_dn74[4]),            // input
             .pxd              (pxd),                    // output[11:0] 
             .vsync            (vsync),                  // output
-            .hsync            (), // hsync),            // output
+            .hsync            (hsync),                  // output
             .dvalid           (dvalid),                 // output
     // interface for uart in write-only mode for short commands
     // sequencer interface now always 5 bytes form the sequencer! (no need for extif_last - remove)
@@ -1283,12 +1287,31 @@ module  sensor_channel#(
             .extif_ready      (extif_ready),            // output
             .extif_rst        (extif_rst)              // input
         );
-        reg vsync_d;
+        reg   [3:0] vsync_dly_cntr;
+        reg         vsync_late;
+        reg         vsync_d;
+        reg         hsync_d;
+        wire        hsync_next;
+        wire        pre_sof; 
+        reg         sof_r;
+        assign hsync_next = !hsync && hsync_d;
+        assign pre_sof =  hsync_next && (vsync_dly_cntr==0);
+        
+        // it what vsync state does it wait for ext sync?
         always @(posedge pclk) begin
+            if (vsync)                          vsync_dly_cntr <= 5; // arbitrary, need to end at list 1 before active output (including telemetry - 87/88 lines)
+            else if (hsync_next && !vsync_late) vsync_dly_cntr <= vsync_dly_cntr - 1;
+            
+            if      (vsync)                     vsync_late <= 1;
+            else if (vsync_d)                   vsync_late <= 0;
+            else if (sof_r)                     vsync_late <= 1;
+            
+            sof_r <= pre_sof;
             vsync_d <= vsync;
+            hsync_d <= hsync;
         end
-        assign sof =  vsync && !vsync_d;
-        assign eof = !vsync &&  vsync_d;
+        assign sof =  sof_r; // vsync && !vsync_d;
+        assign eof = !vsync &&  vsync_d; // change to first hsync after ?
         assign hact = dvalid;
 `elsif LWIR
     sens_lepton3 #(

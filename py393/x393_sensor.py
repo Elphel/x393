@@ -1610,36 +1610,60 @@ class X393Sensor(object):
             print ("wait_sensio_status(): Failed to get seq_num== 0x%x, current is 0x%x"%(seq_num, (stat >> 26) & 0x3f))
         return stat
                 
+    def uart_print_packet(self,
+                         num_sensor,
+                         wait_packet =      True,
+                         enable_sequencer = True):
+        """
+        Send packet to UART
+        @param num_sensor - sensor port number (0..3)
+        @param wait packet - if False, return empty packet if none is available
+        @param enable_sequencer (Re)enable sequencer commands
+        """
+        packet = self.uart_receive_packet(
+                         num_sensor =       num_sensor,
+                         wait_packet =      wait_packet,
+                         enable_sequencer = enable_sequencer)
+        print ("received UART packet: ", end="")
+        for b in packet:
+            print (hex(b), end=", ")
+        print()    
                 
                 
     def uart_receive_packet(self,
                          num_sensor,
-                         enable_sequencer=True):
+                         wait_packet =      True,
+                         enable_sequencer = True):
         """
         Send packet to UART
         @param num_sensor - sensor port number (0..3)
+        @param wait packet - if False, return empty packet if none is available
         @param enable_sequencer (Re)enable sequencer commands
         """
         
-        ready = False
-        while not ready: # wait full packet is in FIFO
-            sensor_status = self.get_new_status(num_sensor=num_sensor)
-            recv_dav =   ((sensor_status >> 15) & 1) != 0
-            recv_prgrs = ((sensor_status >> 14) & 1) != 0
-            ready = recv_dav and (not recv_prgrs)
-        #read byte array. TODO: improve waiting for tghe next byte?
+        recv_pav = False
         packet = bytearray()
-        recv_dav = True
-        while recv_dav:
+        while not recv_pav: # wait full packet is in FIFO
             sensor_status = self.get_new_status(num_sensor=num_sensor)
-            recv_dav =   ((sensor_status >> 15) & 1) != 0
+            recv_pav = ((sensor_status >> 14) & 1) != 0
+#            recv_eop = ((sensor_status >> 15) & 1) != 0
+#            ready = recv_dav and (not recv_prgrs)
+            if not wait_packet:
+                break
+        if not recv_pav:
+            return packet # empty bytearray    
+        #read byte array. TODO: improve waiting for tghe next byte?
+#        packet = bytearray()
+        recv_eop = False
+        while not recv_eop:
+            sensor_status = self.get_new_status(num_sensor=num_sensor)
+            recv_eop = ((sensor_status >> 15) & 1) != 0
             recv_data =  (sensor_status >> 16) & 0xff
-            if recv_dav:
-                packet.append(recv_data)
             self.set_sensor_uart_ctl_boson ( # next byte
                             num_sensor = num_sensor,
                             uart_recv_next = True)
-                
+            if not recv_eop:
+                packet.append(recv_data)
         #        
         return packet        
 

@@ -113,7 +113,7 @@ module  simul_boson640#(
 
     always #(CLK_PERIOD/2) pclk_r <= mrst ? ~pclk_r : 1'b0;
     
-    always @ (posedge pclk_r) begin
+    always @ (posedge pclk_r or negedge mrst) begin
         dvalid_r <= pre_dav && mrst;
     
         if (!mrst) ext_sync_d <= 0;
@@ -193,7 +193,7 @@ module  simul_boson640#(
           default: line_state <= LSTATE_IDLE; 
           endcase
         end
-        if (start_frame)  frame_pixel <= 0;
+        if (start_frame || !mrst)  frame_pixel <= 0;
         else if (pre_dav) frame_pixel <= frame_pixel + 1;
         
         if (pre_dav)      pxd_r <=       sensor_data[frame_pixel];

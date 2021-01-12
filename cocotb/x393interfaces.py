@@ -180,9 +180,9 @@ class SAXIWrSim(BusDriver):
 #        self.log.debug ("SAXIWrSim.__init__(): super done")
         #Open file to use as system memory
         try:
-            self._memfile=open(mempath, 'r+') #keep old file if it exists already
+            self._memfile=open(mempath, 'rb+') #keep old file if it exists already
         except:    
-            self._memfile=open(mempath, 'w+') #create a new file if it does not exist
+            self._memfile=open(mempath, 'wb+') #create a new file if it does not exist
             self.log.info ("SAXIWrSim(%s): created a new 'memory' file %s"%(name,mempath)) #
         #Extend to full size
         self._memfile.seek(memhigh-1)
@@ -255,7 +255,8 @@ class SAXIWrSim(BusDriver):
                 bv = self.bus.wr_data.value
                 bv.binstr = re.sub("[^1]","0",bv.binstr)
                 data = bv.integer
-            sdata=struct.pack(self._fmt,data).decode('iso-8859-1')
+#            sdata=struct.pack(self._fmt,data).decode('iso-8859-1')
+            sdata = data.to_bytes(self._data_bytes, byteorder='little') # byte array
             bv = self.bus.wr_data.value    
             bv.binstr= re.sub("[^0]","1",bv.binstr) # only 0 suppresses write to this byte
             while len(bv.binstr) < self._data_bytes: # very unlikely
@@ -265,9 +266,9 @@ class SAXIWrSim(BusDriver):
             else:
                 for i in range (self._data_bytes):
                     if bv.binstr[-1-i] != 0:
-                       self._memfile.write(sdata[i])
+                        self._memfile.write(sdata[i:i+1])
                     else:
-                       self._memfile.seek(1,1)
+                        self._memfile.seek(1,1)
             if self.autoflush:
                 self._memfile.flush()
             self.log.info ("SAXIWrSim(%s:%d) 0x%x <- 0x%x"%(self.name,self._data_bytes,address,data))
@@ -383,7 +384,8 @@ class SAXIRdSim(BusDriver):
                 rs = None
             if not rs is None:
                 try:
-                    data = struct.unpack(self._fmt,rs)
+#                   data = struct.unpack(self._fmt,rs)
+                    data = int.from_bytes(rs, byteorder='little')
                 except:
                     self.log.warning ("SAXIRdSim():Can not unpack memory data @ address 0x%08x"%(address))
                     data=None

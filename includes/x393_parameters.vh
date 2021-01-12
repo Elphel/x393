@@ -687,7 +687,7 @@
 
     // parameters for the sensor-synchronous clock PLL
 // ALL PARAMETERS HERE SHOULD BE DEFINED (for use in C-generator)    
-`define TWEAKING_IOSTANDARD
+//`define TWEAKING_IOSTANDARD
 `ifdef HISPI
     parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
@@ -707,8 +707,13 @@
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
-    parameter PXD_IOSTANDARD =           "LVCMOS18",
-    parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
+    `ifdef TWEAKING_IOSTANDARD
+        parameter PXD_IOSTANDARD =           "LVCMOS25", // with 1.8 actually applied voltage
+        parameter SENSI2C_IOSTANDARD =       "LVCMOS25", // with 1.8 actually applied voltage
+    `else
+        parameter PXD_IOSTANDARD =           "LVCMOS18",
+        parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
+    `endif
 
 `else
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
@@ -734,7 +739,19 @@
 
 //    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
 //    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",
+`ifdef BOSON
+    parameter BUF_IPCLK_SENS0 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS0 =        "BUFR", // "BUFIO", /// "BUFR", //G", // "BUFR",
 
+    parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",
+
+    parameter BUF_IPCLK_SENS2 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS2 =        "BUFR", // "BUFIO", ///"BUFR", //G", // "BUFR",
+
+    parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR2", ///"BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFIO", ///"BUFG", // "BUFR",
+`else
     parameter BUF_IPCLK_SENS0 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS0 =        "BUFIO", /// "BUFR", //G", // "BUFR",
 
@@ -746,7 +763,7 @@
 
     parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR2", ///"BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFIO", ///"BUFG", // "BUFR",
-
+`endif
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =       0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter SENS_REF_JITTER2   =       0.010,
@@ -756,16 +773,16 @@
 
 //`ifdef HISPI
     parameter HISPI_MSB_FIRST =            0,
+`ifdef BOSON
+    parameter HISPI_NUMLANES =             3,
+`else
     parameter HISPI_NUMLANES =             4,
+`endif
 
     parameter HISPI_DELAY_CLK0=           "TRUE",
     parameter HISPI_DELAY_CLK1=           "TRUE",
     parameter HISPI_DELAY_CLK2=           "TRUE",
     parameter HISPI_DELAY_CLK3=           "TRUE",
-    parameter HISPI_MMCM0 =               "TRUE",
-    parameter HISPI_MMCM1 =               "FALSE",
-    parameter HISPI_MMCM2 =               "TRUE",
-    parameter HISPI_MMCM3 =               "FALSE",
     parameter HISPI_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
     parameter HISPI_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
     parameter HISPI_FIFO_DEPTH =          4,
@@ -778,7 +795,22 @@
 //    parameter HISPI_IOSTANDARD =          "PPDS_25", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 //    parameter HISPI_IOSTANDARD =          "DIFF_HSTL_II_18", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 //`endif  DIFF_HSTL_II_18
+//VivadoRoute: [Route 35-54] Net: sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/sr_reg[3]__0 is not completely routed. sensor_channel.v    /x393/sensor    line 42 Problem of the external builder
+//VivadoRoute: [Route 35-54] Net: sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/sr_reg[3]__0 is not completely routed. sensor_channel.v    /x393/sensor    line 42 Problem of the external builder
 
+
+`ifdef BOSON
+    parameter HISPI_MMCM0 =               "TRUE",
+    parameter HISPI_MMCM1 =               "TRUE",
+    parameter HISPI_MMCM2 =               "TRUE",
+    parameter HISPI_MMCM3 =               "TRUE",
+`else
+    parameter HISPI_MMCM0 =               "TRUE",
+    parameter HISPI_MMCM1 =               "FALSE",
+    parameter HISPI_MMCM2 =               "TRUE",
+    parameter HISPI_MMCM3 =               "FALSE",
+
+`endif
 
     parameter CMPRS_NUM_AFI_CHN =         1, // 2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
     parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60

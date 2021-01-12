@@ -148,10 +148,9 @@ module  sens_103993 #(
 //    input                      trigger_mode, // running in triggered mode (0 - free running mode)
     input                      ext_sync, // trig,      // per-sensor trigger input
     
-    
     // I/O pads
-    input       [NUMLANES-1:0] sns_dp,
-    input       [NUMLANES-1:0] sns_dn,
+    input                [3:0] sns_dp, // NUMLANES-1, use all with dummy for IOSTANDARD (otherwise uses default that does not match bank)
+    input                [3:0] sns_dn, // NUMLANES-1, use all with dummy for IOSTANDARD (otherwise uses default that does not match bank)
     input                      sns_clkp,
     input                      sns_clkn,
 
@@ -162,6 +161,8 @@ module  sens_103993 #(
     inout                      sns_gp3,        // sns_dn[7] == gp[3]  TMS
     inout                      sns_gp0,        // sns_dp[5] == gp[0]  TDI   (differs from 10353)
     inout                      sns_gp1,        // sns_dn[5] == gp[1]
+
+    inout                      sns_dp6,        // unused, just to select IOstandard
 
     output                     sns_txd,  // flash_tdo,   // sns_dp[4]           TDO  (differs from 10353)
     input                      sns_rxd, // shutter_done,// sns_dn[4]           DONE (differs from 10353)
@@ -243,8 +244,8 @@ module  sens_103993 #(
     reg                         recv_next;   // input
 
     wire                        xmit_busy;   // output
-    wire                        recv_prgrs;  // output
-    wire                        recv_dav;    // output fifo not empty
+    wire                        recv_pav;  // output
+    wire                        recv_eop;    // output fifo not empty
     wire                 [7:0]  recv_data;    // output[7:0] 
     
     wire                        senspgmin;   // detect sensorboard
@@ -253,10 +254,10 @@ module  sens_103993 #(
     wire       gp_comb = &gp[3:0];
 
     assign status = {recv_data[7:0],              // [23:16]
-                     recv_dav,                    // 15
-                     recv_prgrs,                  // 14 
+                     recv_eop,                    // 15
+                     recv_pav,                    // 14 
                      mrst ? gp_comb : hact_alive, // 13 using gp_comb to keep
-                     locked_pclk,                 // 12
+                     locked_pclk,                 // 12 // wait after mrst
                      clkin_pxd_stopped_mmcm,      // 11
                      clkfb_pxd_stopped_mmcm,      // 10
                      perr_persistent,             //  9 deserializer parity error
@@ -406,8 +407,8 @@ module  sens_103993 #(
         .xmit_busy                 (xmit_busy),   // output
         .recv_rst                  (recv_rst),    // input
         .recv_next                 (recv_next),   // input
-        .recv_prgrs                (recv_prgrs),  // output
-        .recv_dav                  (recv_dav),    // output fifo not empty
+        .recv_pav                  (recv_pav),    // output at least one received packet is in fifo
+        .recv_eop                  (recv_eop),    // output end of packet (discard recv_data; apply recv_next)
         .recv_data                 (recv_data)    // output[7:0] 
     );
 
@@ -445,8 +446,8 @@ module  sens_103993 #(
         .LVDS_IOSTANDARD        (LVDS_IOSTANDARD)         // "DIFF_SSTL18_I")
     ) sens_103993_l3_i (
         .pclk                   (pclk),                   // output
-        .sns_dp                 (sns_dp),                 // input[2:0] 
-        .sns_dn                 (sns_dn),                 // input[2:0] 
+        .sns_dp                 (sns_dp[2:0]),                 // input[2:0] 
+        .sns_dn                 (sns_dn[2:0]),                 // input[2:0] 
         .sns_clkp               (sns_clkp),               // input
         .sns_clkn               (sns_clkn),               // input
         .pxd_out                (pxd),                    // output[15:0] 
@@ -455,8 +456,8 @@ module  sens_103993 #(
         .dvalid                 (dvalid_w),               // output
         .mclk                   (mclk),                   // input
         .mrst                   (mrst),                   // input
-//        .dly_data               (data_r[23:0]),           // input[23:0] 
-        .dly_data               (data_r),                 // input[23:0] 
+//        .dly_data               (data_r[23:0]),         // input[23:0] 
+        .dly_data               (data_r[23:0]),           // input[23:0] 
         .set_idelay             ({NUMLANES{set_idelays}}),// input[2:0] 
         .ld_idelay              (ld_idelay),              // input
         .set_clk_phase          (set_iclk_phase),         // input
@@ -557,6 +558,46 @@ module  sens_103993 #(
         .T  (~|gp_r[7:6])    // input
     );
     
+    // dummy I/O to specify IOSTANDARD
+    iobuf #(
+        .DRIVE        (PXD_DRIVE),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) sns_dp6_i (
+        .O  (),         // output
+        .IO (sns_dp6),  // inout
+        .I  (1'b0),   // input
+        .T  (1'b0)    // input
+    );
+
+    // dummy I/O to specify IOSTANDARD
+    iobuf #(
+        .DRIVE        (PXD_DRIVE),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) sns_dp3_i (
+        .O  (),         // output
+        .IO (sns_dp[3]),  // inout
+        .I  (1'b0),   // input
+        .T  (1'b0)    // input
+    );
+
+    // dummy I/O to specify IOSTANDARD
+    iobuf #(
+        .DRIVE        (PXD_DRIVE),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) sns_dn3_i (
+        .O  (),         // output
+        .IO (sns_dn[3]),  // inout
+        .I  (1'b0),   // input
+        .T  (1'b0)    // input
+    );
+// end of dummy
+
     
     // READ RXD    
     ibuf_ibufg #(

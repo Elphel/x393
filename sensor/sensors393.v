@@ -907,10 +907,13 @@ module  sensors393 #(
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),
                 .SENSOR_FIFO_2DEPTH            (SENSOR_FIFO_2DEPTH),
                 .SENSOR_FIFO_DELAY             (SENSOR_FIFO_DELAY),
-                .IODELAY_GRP                   ((i & 2)?"IODELAY_SENSOR_34":"IODELAY_SENSOR_12"),
+//                .IODELAY_GRP                   ((i & 2)?"IODELAY_SENSOR_34":"IODELAY_SENSOR_12"),
 `endif
-// aLL SENSORS
+// All SENSORS
+`ifndef LWIR
+                .IODELAY_GRP                   ((i & 2)?"IODELAY_SENSOR_34":"IODELAY_SENSOR_12"),
                 .IDELAY_VALUE                  (IDELAY_VALUE),
+`endif                
                 .PXD_DRIVE                     (PXD_DRIVE),
                 .PXD_IBUF_LOW_PWR              (PXD_IBUF_LOW_PWR),
                 .PXD_IOSTANDARD                (PXD_IOSTANDARD),

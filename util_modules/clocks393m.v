@@ -48,7 +48,8 @@ module  clocks393m#(
         parameter CLK_RESET =                'h0, // which clocks should stay reset after release of masrter reset {ff1,ff0,mem,sync,xclk,pclk,xclk}
         parameter CLK_PWDWN =                'h0, // which clocks should stay powered down  after release of masrter reset {sync,xclk,pclk,xclk}
         
-// CLocks derived from external clock source (for sesnors        
+// CLocks derived from external clock source (for sensors
+`ifndef PCLK_MASTER        
         parameter CLKIN_PERIOD_PCLK =         42, // 24MHz 
         parameter DIVCLK_DIVIDE_PCLK =         1,
         parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
@@ -59,6 +60,7 @@ module  clocks393m#(
         parameter PHASE_CLK2X_PCLK =           0.000, 
         parameter BUF_CLK1X_PCLK2X =          "BUFG",  
 `endif
+`endif        
 /*
  Mutltiple clocks derived from PS source (excluding memory controller) using a single PLL
  Fvco = 1200Mhz - maximal for spped grade -1
@@ -122,9 +124,12 @@ module  clocks393m#(
     input       ffclk1n_pad, // differential clock (N) same power as sensors 0 and 1 (VCC_SENS01)
     output      aclk,        // global clock 50 MHz (used for maxi0)
     output      hclk,        // global clock 150MHz (used for afi*, saxi*)
-    output      pclk,        // global clock for sensors (now 96MHz), based on external clock generator
+    
+`ifndef PCLK_MASTER
+    output      pclk,       // global clock for sensors (now 96MHz), based on external clock generator
 `ifdef USE_PCLK2X    
     output      pclk2x,      // global clock for sensors, 2x frequency (now 192MHz)
+`endif
 `endif
     output      xclk,        // global clock for compressor (now 100MHz) 
 `ifdef  USE_XCLK2X     
@@ -160,7 +165,11 @@ module  clocks393m#(
     assign locked[3:2] =     3; // for compatibility with previous clocks393.v module
     assign locked_sync_clk = locked[3];
     assign locked_xclk =     locked[2];
+`ifndef PCLK_MASTER
     assign locked_pclk =     locked[1];
+`else    
+    assign locked_pclk =     1'b1;
+`endif    
     assign locked_hclk =     locked[0];
 
     always @ (posedge mclk) begin
@@ -210,7 +219,8 @@ module  clocks393m#(
     
     BUFG bufg_axi_aclk_i  (.O(aclk), .I(fclk[0])); // PS clock, 50MHz
 
-// from external clock sourec
+// from external clock source
+`ifndef PCLK_MASTER
     dual_clock_source #(
         .CLKIN_PERIOD     (CLKIN_PERIOD_PCLK),
         .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_PCLK),
@@ -236,6 +246,8 @@ module  clocks393m#(
 `endif        
         .locked           (locked[1])         // output
     );
+`endif //ifndef PCLK_MASTER
+    
     wire multi_clkfb;
     wire hclk_pre;
     wire dly_ref_clk_pre;

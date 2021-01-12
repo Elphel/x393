@@ -41,7 +41,8 @@
 
 module  sync_resets#(
     parameter WIDTH    =    1,
-    parameter REGISTER =    4 // number of registers used at crossing clocks >1
+    parameter REGISTER =    4, // number of registers used at crossing clocks >1
+    parameter ACLK_INDEX =  5
     )(
     input              arst,    // async reset
     input  [WIDTH-1:0] locked,  // clk[i] MMCM/PLL is locked
@@ -79,9 +80,8 @@ module  sync_resets#(
         for (i = 1; i < WIDTH; i = i + 1) begin: rst_block
             level_cross_clocks #(
                 .WIDTH      (1),
-              .REGISTER   ((i==5) ? 1: REGISTER), // disable for aclk
-//                .REGISTER   (REGISTER), // disable for aclk - aclk is now (0)
-                .FAST1      (1) // Switch to next cycle, to 0 - regeisterd
+                .REGISTER   ((i == ACLK_INDEX) ? 1: REGISTER), // disable for aclk
+                .FAST1      (1) // Switch to next cycle, to 0 - registerd
             ) level_cross_clocks_rst_i (
                 .clk   (clk[i]),                                  // input
                 .d_in  (mrst || rst_early_master || ~locked[i] ), // input[0:0] 

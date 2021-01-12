@@ -87,8 +87,8 @@ class x393Client():
         self.PORT = port
         self.HOST = host   # Symbolic name meaning all available interfaces
         self.cmd= SocketCommand()
- #       print("HOST=%s"%(self.HOST))
- #       print("PORT=%d"%(self.PORT))
+#       print("HOST=%s"%(self.HOST))
+#       print("PORT=%d"%(self.PORT))
     def communicate(self, snd_str):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.HOST, self.PORT))
