@@ -61,13 +61,13 @@ module  sens_103993_deser10(
     reg  [2:0] copy_r;
     reg [11:0] sr;
     reg [ 9:0] dout_pclk10;
-    always @(posedge pclk or posedge copy_r[2]) begin  // re_simulate!
-        if (copy_r[2]) xclk_r <= 0;
+    always @(posedge pclk or posedge copy_r[1]) begin  // re_simulate!
+        if (copy_r[1]) xclk_r <= 0;
         else           xclk_r <= 1;
     end
     
     always @ (negedge pclk10) begin
-        copy_r <= {copy_r[1] & ~copy_r[0], copy_r[0], xclk_r};
+        copy_r <= {copy_r[0] & ~copy_r[1], copy_r[0], xclk_r};
         sr <=     {sr[10:0], din};
         if (copy_r[2]) dout_pclk10 <= sr[11:2];
     end

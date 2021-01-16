@@ -58,7 +58,7 @@ module  serial_103993_extif #(
     input                [7:0] extif_byte, // data to external interface (first - extif_sa)
     output                     extif_ready, // acknowledges extif_dav
     input                      extif_rst,   // reset seq xmit and sequence number
-    output                     packet_ready,// packet ready, later next packet byte ready
+    output                     packet_ready,// packet ready, later next packet byte ready (just >=4 bytes got now?)
     output               [7:0] packet_byte,
     input                      packet_byte_stb, // packet byte read out - should be >2(?) cycles apart
 //    output                     packet_byte_rdy, // packet byte ready
@@ -86,22 +86,32 @@ module  serial_103993_extif #(
     reg   [15:0] seq_num; // 16-bit sequence number
     reg    [7:0] packet_byte_r;
     reg    [1:0] packet_byte_stb_d;
-    
+///    reg          packet_xmit_busy; // after packet got from the sequencer and until it is transmitted out
 
-    assign packet_ready =   in_bytes[2] && !packet_byte_stb_d[0] && !packet_byte_stb_d[1]; //
-    assign recv_start =    !packet_nempty_r && extif_en && extif_dav && (extif_sel == EXTIF_MODE) && extif_ready_r;
-    assign recv_next =      packet_nempty_r && extif_dav && !extif_ready_r;
-    assign reset_in_bytes = mrst || extif_rst || !packet_nempty_r;
+///    assign packet_ready =   in_bytes[2] && !packet_byte_stb_d[0] && !packet_byte_stb_d[1]; //
+    assign packet_ready =   in_bytes[2]; // && !packet_byte_stb_d[0] && !packet_byte_stb_d[1]; //
+ // recv_start needs extif_ready_r,  extif_ready_r needs recv_start ??
+    assign recv_start =    !packet_nempty_r && extif_en && extif_dav && (extif_sel == EXTIF_MODE); //  && extif_ready_r; 
+///    assign recv_next =      packet_nempty_r && extif_dav && !extif_ready_r; // should wait when extif_byte is used (1-st OK, it is not xmitted)
+    assign recv_next =      packet_nempty_r && extif_dav && !extif_ready_r && !packet_ready; // should wait when extif_byte is used (1-st OK, it is not xmitted)
+//    assign reset_in_bytes = mrst || extif_rst || !packet_nempty_r;
+    assign reset_in_bytes = mrst || extif_rst || !packet_nempty_r || packet_sent;
     assign packet_byte =    packet_byte_r;
     assign extif_ready =    extif_ready_r;
+///    assign extif_ready =    extif_ready_r && !packet_ready;
     assign packet_over =    packet_gen_state[17];
     
     always @(posedge mclk) begin
+///        if (mrst || extif_rst) packet_xmit_busy <= 0;
+///        else packet_byte_stb_d <= {packet_byte_stb_d[0], packet_byte_stb};
+        
         if (mrst || extif_rst) packet_byte_stb_d <= 0;
         else packet_byte_stb_d <= {packet_byte_stb_d[0], packet_byte_stb};
+        
     
-        if (mrst || extif_rst || !extif_dav) extif_ready_r <= 0;
-        else if (recv_start || recv_next)    extif_ready_r <= 1;
+        if (mrst || extif_rst || !extif_dav)                    extif_ready_r <= 0;
+//        else if (recv_start || recv_next)                     extif_ready_r <= 1;
+        else if (recv_start || (recv_next && !packet_ready))    extif_ready_r <= 1;
         
 
         if (mrst || extif_rst) packet_nempty_r <= 0;

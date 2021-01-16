@@ -125,16 +125,16 @@ module  sensor_i2c_prot#(
     reg    [ 4:0] run_reg_ext_wr; // [4] - SA (attr), [3] - RA_msb (module) [2] - RA_lsb (func), [1] - DH, [0] - DL (DH, DL - optional)?
     reg           run_extra_wr_d;  // any of run_extra_wr bits, delayed by 1
     reg           run_any_d;       // any of command states, delayed by 1
-    reg    [1:0]  pre_cmd;         // from i2c_start until run_any_d will be active
+    reg    [1:0]  pre_cmd;         // from i2c_start until run_any_d will be active ** pre_cmd[1] never used?
     reg           first_mem_re;
-    reg    [ 2:0] mem_re;
+    reg    [ 3:0] mem_re;
     reg           mem_valid;
     reg    [ 2:0] table_re;
     
     wire          is_extif = (|tdout[SENSI2C_TBL_EXTIF +: SENSI2C_TBL_EXTIF_BITS]);
     wire          start_wr_seq_w =    table_re[2] && !is_extif && !tdout[SENSI2C_TBL_RNWREG]; // [8]
     wire          start_rd_seq_w =    table_re[2] && !is_extif &&  tdout[SENSI2C_TBL_RNWREG]; // [8]
-    wire          start_extra_seq_w = i2c_start && (bytes_left_send !=0);
+    wire          start_extra_seq_w = i2c_start && (bytes_left_send !=0) && !is_extif;
     wire          start_extif_w =     table_re[2] && (is_extif);
     
     reg           snd_start;
@@ -156,13 +156,13 @@ module  sensor_i2c_prot#(
     wire          i2c_rdy;
     reg           next_cmd; // i2c command (start/stop/data) accepted, proceed to the next stage
     reg           next_cmd_d; // next cycle after next_cmd (first at new state)
-    wire          pre_next_cmd = (snd_start || snd_stop || snd9) && i2c_rdy;
+    wire          pre_next_cmd =  (snd_start || snd_stop || snd9) && i2c_rdy;
     wire          next_byte_wr_w;
 //    reg           next_byte_wr;
-    reg           next_byte_wr_or_ext; // write byte or extrenal command
+    reg           next_byte_wr_or_ext; // write byte or external command
     reg           extif_dav_r;
     reg           extif_run;
-    wire          extif_next_w;
+///    wire          extif_next_w;
 //    reg           extif_ackn;
     wire          pre_next_extif = extif_run &&  extif_ready && extif_dav && !next_cmd && !next_cmd_d; // TODO: Verify last terms 
     
@@ -179,19 +179,25 @@ module  sensor_i2c_prot#(
     reg    [ 7:0] extif_byte_r;
     reg    [ 1:0] extif_sel_r;
     wire          extif_last;
+    reg           extif_ackn_d;
+    wire          extif_ackn;
+    wire          extif_inc;    // sent and acknowledged byte
       
     assign seq_mem_re =     mem_re[1:0];
     assign next_byte_wr_w = snd9 && i2c_rdy && !run_reg_wr[5] && !rnw;
     assign extif_dav =      extif_dav_r;
-    assign extif_next_w =   |run_reg_ext_wr[3:0];
+///    assign extif_next_w =   |run_reg_ext_wr[3:0];
 //    assign extif_sa =       extif_sa_r;
     assign extif_byte =     extif_byte_r;
     assign extif_sel =      extif_sel_r;
     // sequencer interface now always 5 bytes form the sequencer! (no need for extif_last - remove)
     assign extif_last =   bytes_left_send == 0;
 //    assign extif_last =     extif_last_w;
-    
+    assign extif_ackn =     extif_dav && extif_ready; 
+    assign extif_inc =      extif_ackn && !extif_ackn_d  && !extif_last;
     always @ (posedge mclk) begin
+        extif_ackn_d <= extif_ackn;
+    
         if (mrst || i2c_rst || start_wr_seq_w) rnw <= 0;
         else if (start_rd_seq_w)               rnw <= 1;
         run_extra_wr_d <= |run_extra_wr;
@@ -228,13 +234,13 @@ module  sensor_i2c_prot#(
         if      (table_re[2])           extif_byte_r <= {1'b0, tdout[SENSI2C_TBL_SA +: SENSI2C_TBL_SA_BITS]};
         else if (next_cmd && extif_run) extif_byte_r <= run_reg_ext_wr[4]? reg_ah : seq_rd;
 
-        next_cmd <= pre_next_cmd || pre_next_extif;
-        
+//        next_cmd <=  pre_next_cmd || pre_next_extif;
+        next_cmd <=  extif_run? pre_next_extif : pre_next_cmd;
         next_cmd_d <= next_cmd;
         
         // same time as next_cmd, no pulse when sending SA during write
 //        next_byte_wr <= next_byte_wr_w; // snd9 && i2c_rdy && !run_reg_wr[5] && !rnw; // (|run_reg_rd); // same time as next_cmd, no pulse when sending SA during write
-        next_byte_wr_or_ext <= next_byte_wr_w || extif_next_w;
+        next_byte_wr_or_ext <= next_byte_wr_w || extif_inc; // extif_next_w;
         
         // counting bytes (and address) in extif mode also
         if     (mrst || i2c_rst) bytes_left_send <= 0;
@@ -249,8 +255,9 @@ module  sensor_i2c_prot#(
         else if (extif_ready && extif_dav && extif_last) extif_run <= 0; 
 
         if      (mrst || i2c_rst)                                                                 extif_dav_r <= 0;
-        else if (start_extif_w || (extif_run && mem_re[2]) || (run_reg_ext_wr[3] && next_cmd_d))  extif_dav_r <= 1;
-        else if (next_cmd)                                                                        extif_dav_r <= 0;
+        else if (start_extif_w || (extif_run && mem_re[3]) || (run_reg_ext_wr[3] && next_cmd_d))  extif_dav_r <= 1;
+//        else if (next_cmd)                                                                        extif_dav_r <= 0;
+        else if (pre_next_extif)                                                                  extif_dav_r <= 0;
 
         // calculate stages for each type of commands
         // start and write sa and some bytes, stop if number of bytes <= 4 at the end        
@@ -259,7 +266,9 @@ module  sensor_i2c_prot#(
         else if (next_cmd)        run_reg_ext_wr <= {1'b0,         // SA (attr)
                                                 run_reg_ext_wr[4], // RA_msb (module) - always after SA (attr)
                                                 run_reg_ext_wr[3], // RA_lsb (func)
-                                                run_reg_ext_wr[2] & (num_bytes_send == 4'h2), // DH
+                                                // normally always use num_bytes_send== 4, then it can be just a shift register (for variable
+                                                // need to modify consumer) 
+                                                run_reg_ext_wr[2] & (num_bytes_send[1] | num_bytes_send[2]), // 2 or 4 bytes (num_bytes_send == 4'h2), // DH
                                                 run_reg_ext_wr[1] | (run_reg_ext_wr[2] & (num_bytes_send == 4'h1)) // DL 
                                                 };
 
@@ -310,7 +319,7 @@ module  sensor_i2c_prot#(
                                                 run_reg_rd[1] & (read_data_bytes == 3'h1)
                                                 };
         // read sequencer memory byte (for the current word)
-        mem_re <= {mem_re[1:0], i2c_start | next_cmd_d & (
+        mem_re <= {mem_re[2:0], i2c_start | next_cmd_d & (
                                (~extif_last & (|run_reg_ext_wr[3:0])) | 
                                (|run_reg_wr[3:1]) |
                                (|run_extra_wr[4:1]) |
@@ -318,7 +327,7 @@ module  sensor_i2c_prot#(
         initial_address <=  initial_address_w[1:0]; // if bytes left to send is 0 mod 4 - will be 3 (read MSB)
         seq_mem_ra <= i2c_start ? initial_address : { // run_extra_wr[4] is not needed - it will be read by i2c_start
                                                        run_reg_wr[3] | run_extra_wr[3] | run_reg_rd[6]  | run_reg_ext_wr[3], //?
-                                                       run_reg_wr[2] | run_extra_wr[2] | run_reg_rd[5]  | run_reg_ext_wr[1] //?
+                                                       run_reg_wr[2] | run_extra_wr[2] | run_reg_rd[5]  | (run_reg_ext_wr[2] & (num_bytes_send[1] | num_bytes_send[2]))//?
                                                     };
         if (mrst || i2c_rst || i2c_start || next_cmd ) mem_valid <= 0;
         else if (mem_re[2])                            mem_valid <= 1;

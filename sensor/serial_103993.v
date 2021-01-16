@@ -103,6 +103,7 @@ module  serial_103993#(
     reg                        xmit_run;  // runing soft xmit
     reg                        xmit_run_d; // runing soft xmit, delayed
     reg                        extif_run; // running xmit from the sequencer
+    reg                        extif_run_in; // receiving bytes from extif
     reg                        extif_run_d; // running xmit from the sequencer
     wire                [ 7:0] xmit_extif_data; // data byte to transmit from the sequencer
     reg                        xmit_stb_fifo; 
@@ -123,6 +124,7 @@ module  serial_103993#(
     wire                       xmit_start_out_seq;
     wire                       xmit_start_out;
     reg                        xmit_done; // any mode - soft or seq;
+    reg                        xmit_extif_done; // simultaneously with xmit_done, only it will increment sequence number
     wire                       extif_rq_w;
     wire                [ 7:0] xmit_any_data;
     wire                       xmit_stb_any;
@@ -137,6 +139,7 @@ module  serial_103993#(
     wire                       packet_over_seq;
 //    wire                       recv_end;      // Discard recv_data, this is packet end
     wire                       recv_prgrs; // packet is being received (to distinguish eop from data byte)
+    wire                       xmit_run_any;
     
     assign extif_rq_w =          packet_ready_seq && !extif_run && !packet_over_seq;
     assign xmit_any_data =       extif_run ? xmit_extif_data : xmit_fifo_out;
@@ -146,10 +149,12 @@ module  serial_103993#(
     assign xmit_start_out_seq =  extif_run && !extif_run_d;
     assign xmit_start_out =      xmit_start_out_fifo || xmit_start_out_seq;
 // TODO: is !xmit_stb_d needed?
-    assign pre_tx_stb =          !xmit_stb_any && !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run && tx_rdy;
+///    assign pre_tx_stb =          !xmit_stb_any && !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run && tx_rdy;
+    assign pre_tx_stb =          !xmit_stb_any && !xmit_stb_d && !xmit_over_d && !mrst && !xmit_rst && !extif_rst && xmit_run_any && tx_rdy;
     assign xmit_busy =           xmit_busy_r;
     assign recv_fifo_wr =        fslp_stb_or_done;
     assign recv_pav =            recv_pav_r;
+    assign xmit_run_any =        xmit_run || extif_run;
 //    assign recv_eop =            recv_end;
     always @(posedge mclk) begin
         fslp_stb_or_done <= fslp_rx_stb || fslp_rx_done;
@@ -164,8 +169,10 @@ module  serial_103993#(
         xmit_busy_r  <= uart_tx_busy || stuffer_busy_d || xmit_pend || xmit_run || extif_run;
     
         if (mrst || xmit_rst)                           xmit_pend <= 0;
+//        else if (xmit_start)                            xmit_pend <= 1;
+//        else if (xmit_start_out_fifo)                   xmit_pend <= 0;
         else if (xmit_start)                            xmit_pend <= 1;
-        else if (xmit_start_out_fifo)                   xmit_pend <= 0;
+        else if (xmit_start_out)                        xmit_pend <= 0;
         
         if (mrst || xmit_rst)                           xmit_run <= 0;
         else if (xmit_pend && !xmit_run && !extif_run)  xmit_run <= 1;
@@ -177,19 +184,27 @@ module  serial_103993#(
         else if (!xmit_run && !xmit_pend && extif_rq_w) extif_run <= 1;
         else if (xmit_done)                             extif_run <= 0; // no need to condition with xmit_run
         extif_run_d <= extif_run  && !mrst && !extif_rst;
+        if (mrst || xmit_rst || !packet_ready_seq)      extif_run_in <= 0;
+        else if (extif_rq_w)                            extif_run_in <= 1;
+        else if (packet_over_seq)                       extif_run_in <= 0;
         
         xmit_stb_d <= xmit_stb_any;
         xmit_over_d <= xmit_over;
         stuffer_busy_d <= stuffer_busy;
         xmit_done <= stuffer_busy_d && !stuffer_busy;
+        xmit_extif_done <= stuffer_busy_d && !stuffer_busy && extif_run;
         
          
         // transmit soft (from fifo) (FIFO should always be not empty until last byte (should nit be replenished)
         xmit_stb_fifo <=  pre_tx_stb &&  xmit_fifo_nempty; // also advances FIFO read
         xmit_over_fifo <= pre_tx_stb && !xmit_fifo_nempty;
         
+        
+        
         // Generate sequencer packet and transmit it 
-        xmit_stb_seq <=  pre_tx_stb && packet_ready_seq;
+///        xmit_stb_seq <=  pre_tx_stb && packet_ready_seq;
+        xmit_stb_seq <=  pre_tx_stb && extif_run_in;
+        
         xmit_over_seq <= pre_tx_stb && packet_over_seq;
         
     end
@@ -205,11 +220,11 @@ module  serial_103993#(
         .extif_byte      (extif_byte),      // input[7:0] 
         .extif_ready     (extif_ready),     // output
         .extif_rst       (extif_rst),       // input
-        .packet_ready    (packet_ready_seq),    // output
+        .packet_ready    (packet_ready_seq),// output
         .packet_byte     (xmit_extif_data), // output[7:0] 
         .packet_byte_stb (xmit_stb_seq),    // input
-        .packet_over     (packet_over_seq),     // output
-        .packet_sent     (xmit_done)        // input
+        .packet_over     (packet_over_seq), // output
+        .packet_sent     (xmit_extif_done)  // input
     );
     
     

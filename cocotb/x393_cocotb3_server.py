@@ -24,19 +24,20 @@ to the simulator and sends back data from the model.
 @license:    GPLv3.0+
 @contact:    andrey@elphel.coml
 """
-import asyncio
+##import asyncio
 import os
-import cocotb
+##import cocotb
 import socket
-import select
+##import select
 #import json
 from socket_command import SocketCommand
 
 from cocotb.triggers import Timer
 from x393interfaces import MAXIGPMaster, PSBus, SAXIRdSim, SAXIWrSim
-from cocotb.drivers import BitDriver
-from cocotb.triggers import Timer, RisingEdge, ReadOnly
-from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
+## from cocotb.drivers import BitDriver
+from cocotb.triggers import RisingEdge ## Timer, ReadOnly
+from cocotb.result import ReturnValue, TestFailure,TestSuccess ## TestError, 
+import cocotb.regression # added
 import logging
 import re
 import struct
