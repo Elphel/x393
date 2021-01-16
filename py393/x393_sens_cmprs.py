@@ -1897,8 +1897,8 @@ class X393SensCmprs(object):
                             num_payload_bytes = (0,1,2,4)[byte_var]
                             self.x393Sensor.set_sensor_i2c_table_reg_wr (
                                             num_sensor = num_sensor,
-                                            page       = indx*4, 
-                                            slave_addr = num_payload_bytes,
+                                            page       = indx * 4 + byte_var, 
+                                            slave_addr = byte_var, # num_payload_bytes,
                                             rah        = mod_index,
                                             num_bytes  = 4,
                                             bit_delay  = i2c_delay, # not used here
@@ -1916,6 +1916,8 @@ class X393SensCmprs(object):
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
                                 run_cmd =   True)
+                if verbose >0 :
+                    print (" --- Enabled i2c sequencer ---")
 
         if exit_step == 21: return False
 

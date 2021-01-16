@@ -911,11 +911,14 @@ class X393Sensor(object):
         if payload_mode < 0:
             raise ValueError('Payload of 3 bytes is not implemented, only 0,1,2 or 4 bytes are valid.')
         _,mod_index = BOSON_MAP[mod_name]
-        wdata = ((mod_index * 4 + payload_mode) << 24) + (func_lsb & 0xff) << 16 + (data & 0xffff)
+        
+        wdata = ((mod_index * 4 + payload_mode) << 24) + ((func_lsb & 0xff) << 16) + (data & 0xffff)
         self.write_sensor_i2c (num_sensor = num_sensor,
                                rel_addr = rel_addr,
                                addr = addr,
                                data = wdata)
+        print ("Boson sequencer command: addr= 0x%x, data = 0x%x"%(addr,wdata))
+        
         
     def write_sensor_reg16(self,
                            num_sensor,
@@ -1635,7 +1638,7 @@ class X393Sensor(object):
                          wait_packet =      True,
                          enable_sequencer = True):
         """
-        Send packet to UART
+        Send packet to UART (assuming sequencer is disabled if needed)
         @param num_sensor - sensor port number (0..3)
         @param wait packet - if False, return empty packet if none is available
         @param enable_sequencer (Re)enable sequencer commands
@@ -1651,6 +1654,10 @@ class X393Sensor(object):
             if not wait_packet:
                 break
         if not recv_pav:
+            if enable_sequencer:
+                self.set_sensor_uart_ctl_boson ( # next byte
+                    num_sensor = num_sensor,
+                    uart_extif_en = True)
             return packet # empty bytearray    
         #read byte array. TODO: improve waiting for tghe next byte?
 #        packet = bytearray()
@@ -1664,7 +1671,11 @@ class X393Sensor(object):
                             uart_recv_next = True)
             if not recv_eop:
                 packet.append(recv_data)
-        #        
+        #  
+        if enable_sequencer:
+            self.set_sensor_uart_ctl_boson ( # next byte
+                num_sensor = num_sensor,
+                uart_extif_en = True)
         return packet        
 
     def jtag_get_tdo(self, chn):
