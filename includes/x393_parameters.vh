@@ -687,7 +687,7 @@
 
     // parameters for the sensor-synchronous clock PLL
 // ALL PARAMETERS HERE SHOULD BE DEFINED (for use in C-generator)    
-//`define TWEAKING_IOSTANDARD
+`define TWEAKING_IOSTANDARD
 `ifdef HISPI
     parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz

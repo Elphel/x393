@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h03930200;       // Initial Boson implementation 
+          parameter FPGA_VERSION =          32'h03930201;       // Initial Boson implementation (cheating with 2.5V - as with HISPI) 
+//        parameter FPGA_VERSION =          32'h03930200;       // Initial Boson implementation (1.8V) 
         //BOSON
 //        parameter FPGA_VERSION =          32'h03930139;       // Adding pullup on senspgm 
 //        parameter FPGA_VERSION =          32'h03930138;       // Fixing output trigger in free running mode 

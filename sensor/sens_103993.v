@@ -186,8 +186,8 @@ module  sens_103993 #(
     input                        extif_rst
 );
 
-    wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
-    wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
+//    wire[7:0]debug_UART_CLK_DIV     = CLK_DIV; //  =                   22,
+//    wire[7:0]debug_UART_RX_DEBOUNCE = RX_DEBOUNCE; //                6,
 
     wire                         dvalid_w;
     reg                          dvalid_r;
@@ -251,12 +251,13 @@ module  sens_103993 #(
     wire                        senspgmin;   // detect sensorboard
     // GP0..GP3 are not yet used, fake-use gp_comb to keep
     wire [3:0] gp;
-    wire       gp_comb = &gp[3:0];
+    wire [2:0] dummy; // to keep iostandard of unused pins in a bank
+    wire       gp_comb = (^gp[3:0]) ^ (^dummy);
 
     assign status = {recv_data[7:0],              // [23:16]
                      recv_eop,                    // 15
                      recv_pav,                    // 14 
-                     mrst ? gp_comb : hact_alive, // 13 using gp_comb to keep
+                     imrst ? hact_alive : gp_comb,// 13 using gp_comb to keep
                      locked_pclk,                 // 12 // wait after mrst
                      clkin_pxd_stopped_mmcm,      // 11
                      clkfb_pxd_stopped_mmcm,      // 10
@@ -565,23 +566,24 @@ module  sens_103993 #(
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW)
     ) sns_dp6_i (
-        .O  (),         // output
+        .O  (dummy[0]),         // output
         .IO (sns_dp6),  // inout
         .I  (1'b0),   // input
         .T  (1'b0)    // input
     );
 
     // dummy I/O to specify IOSTANDARD
+    /*
     iobuf #(
         .DRIVE        (PXD_DRIVE),
         .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW)
     ) sns_dp3_i (
-        .O  (),         // output
+        .O  (dummy[1]),   // output
         .IO (sns_dp[3]),  // inout
-        .I  (1'b0),   // input
-        .T  (1'b0)    // input
+        .I  (1'b0),       // input
+        .T  (1'b0)        // input
     );
 
     // dummy I/O to specify IOSTANDARD
@@ -591,11 +593,34 @@ module  sens_103993 #(
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW)
     ) sns_dn3_i (
-        .O  (),         // output
+        .O  (dummy[2]),   // output
         .IO (sns_dn[3]),  // inout
-        .I  (1'b0),   // input
-        .T  (1'b0)    // input
+        .I  (1'b0),       // input
+        .T  (1'b0)        // input
     );
+    */
+    
+    ibuf_ibufg #(
+        .CAPACITANCE      (PXD_CAPACITANCE),
+        .IBUF_DELAY_VALUE("0"),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IFD_DELAY_VALUE("AUTO"),
+        .IOSTANDARD   (PXD_IOSTANDARD)
+    ) sns_dp3_i (
+        .O(dummy[1]), // output
+        .I(sns_dn[3]) // input
+    );
+    ibuf_ibufg #(
+        .CAPACITANCE      (PXD_CAPACITANCE),
+        .IBUF_DELAY_VALUE("0"),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IFD_DELAY_VALUE("AUTO"),
+        .IOSTANDARD   (PXD_IOSTANDARD)
+    ) sns_dn3_i (
+        .O(dummy[2]), // output
+        .I(sns_dp[3]) // input
+    );
+    
 // end of dummy
 
     
