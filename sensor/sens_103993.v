@@ -496,15 +496,16 @@ module  sens_103993 #(
         .I  (ext_sync)      // input
     );
 
-    // generate MRST
-    obuf #(
+    // generate MRST (for Boson ground/float
+    obuft #(
         .CAPACITANCE  (PXD_CAPACITANCE),
         .DRIVE        (PXD_DRIVE),
         .IOSTANDARD   (PXD_IOSTANDARD),
         .SLEW         (PXD_SLEW)
     ) sns_mrst_i (
         .O  (sns_mrst),      // output
-        .I  (imrst)          // input
+        .I  (imrst),         // input
+        .T  (imrst)       // input // tristate when high
     );
 
 
