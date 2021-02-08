@@ -48,8 +48,8 @@ module  serial_fslp #(
     parameter INITIAL_CRC16 =           16'h1d0f,
 //    parameter BOSON_BAUD =              921600,
     parameter CLK_DIV =                   217,
-    parameter RX_DEBOUNCE =               60
-    
+    parameter RX_DEBOUNCE =               60,
+    parameter UART_STOP_BITS =             1 
     
 )(
     input         mrst,           // @posedge mclk, sync reset
@@ -86,8 +86,9 @@ module  serial_fslp #(
     
 
     boson_uart #(
-        .CLK_DIV     (CLK_DIV),
-        .RX_DEBOUNCE (RX_DEBOUNCE)
+        .CLK_DIV        (CLK_DIV),
+        .RX_DEBOUNCE    (RX_DEBOUNCE),
+        .UART_STOP_BITS (UART_STOP_BITS) 
     ) boson_uart_i (
         .mrst    (mrst),          // input
         .mclk    (mclk),          // input

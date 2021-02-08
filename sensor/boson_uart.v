@@ -41,8 +41,10 @@
 
 module  boson_uart #(
 //    parameter BOSON_BAUD =  921600,
-    parameter CLK_DIV =     217,
-    parameter RX_DEBOUNCE =  60
+    parameter CLK_DIV =      217,
+    parameter RX_DEBOUNCE =   60,
+    parameter UART_STOP_BITS = 1 
+    
 )(
     input         mrst,         // @posedge mclk, sync reset
     input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -78,7 +80,7 @@ module  boson_uart #(
     reg                  [1:0] rx_stb_r;
     reg                        tx_busy_r;
     reg                        tx_rq;    // request to transmit
-    reg                        mrst_d;
+//    reg                        mrst_d;
     reg                        tx_start;
     reg                        tx_continue;
     wire                       debounced;
@@ -88,7 +90,9 @@ module  boson_uart #(
     wire                       rx_errw;
     wire                       start_bit_rx;
     wire                       stop_bit_rx;
-    wire                       stop_bit_tx;
+///    wire                       stop_bit_tx;
+    wire                       stop_bit_last_tx;
+    wire                       stop_bits_tx; // never used?
     wire                       tx_startw; // start next 10-bit transmission
     wire                       tx_continuew;
     assign debounced = (debounce_cntr == 0);
@@ -97,15 +101,21 @@ module  boson_uart #(
     assign mark =       &rx_sr & rxd_r; // all ones
     assign start_bit_rx = (rx_bcntr == 0);
     assign stop_bit_rx =  (rx_bcntr == 9);
-    assign stop_bit_tx =  (tx_bcntr == 9);
-    assign rx_errw = rxd_r ? start_bit_rx : stop_bit_rx; // 1 at start, 0 at stop 
-    assign tx_startw =    tx_bit[0] && stop_bit_tx && tx_rq; 
-///    assign tx_continuew = tx_bit[0] && !stop_bit_tx ;
-    assign tx_continuew = tx_bit[0] && !stop_bit_tx && tx_busy_r;
+///    assign stop_bit_tx =  (tx_bcntr == 9);
+    assign stop_bit_last_tx =  (tx_bcntr == (8 + UART_STOP_BITS));
+    assign stop_bits_tx =  tx_bcntr[3] && |tx_bcntr[2:0]; // >=9
+///    assign rx_errw = rxd_r ? start_bit_rx : stop_bit_rx; // 1 at start, 0 at stop 
+    assign rx_errw = !rxd_r && stop_bit_rx; // 0 at stop (start may be delayed) 
+///    assign tx_startw =    tx_bit[0] && stop_bit_tx && tx_rq; 
+///    assign tx_continuew = tx_bit[0] && !stop_bit_tx && tx_busy_r;
+
+    assign tx_startw =    tx_bit[0] && stop_bit_last_tx && tx_rq; 
+//    assign tx_continuew = tx_bit[0] && !stop_bits_tx && tx_busy_r; // verify
+    assign tx_continuew = tx_bit[0] && !stop_bit_last_tx && tx_busy_r; // verify
+
     
     assign rx_byte = rx_sr[8:1];
     assign rx_stb =  rx_stb_r[1];
-//    assign tx_rdy =  tx_rq;
     assign tx_rdy =  !tx_rq;
     assign tx_busy = tx_busy_r || tx_rq; // !tx_rq;
     assign txd = tx_sr[0];
@@ -125,10 +135,12 @@ module  boson_uart #(
         rx_bit <= rx_bitw;
         
         if      (mrst)   rx_sr <= 10'h3ff; // inactive "1"
-        else if (rx_bit) rx_sr <= {rxd_r,rx_sr[9:1]}; // little endian as RX232
+        else if (rx_bit) rx_sr <= {rxd_r,rx_sr[9:1]}; // little endian as RS232
         
         if      (mark || rx_err || (rx_bit && stop_bit_rx)) rx_bcntr <= 0;
-        else if (rx_bit)                                    rx_bcntr <= rx_bcntr + 1;
+///        else if (rx_bit)                                    rx_bcntr <= rx_bcntr + 1;
+        // will wait at rx_bcntr == 0
+        else if (rx_bit && (!start_bit_rx || !rxd_r))          rx_bcntr <= rx_bcntr + 1;
         
         if      (mark)              rx_err <= 0;
         else if (rx_bit && rx_errw) rx_err <= 1;
@@ -139,28 +151,27 @@ module  boson_uart #(
     always @(posedge mclk) begin
         if (tx_stb)          tx_r <= tx_byte; 
         
-        mrst_d <= mrst;
+///        mrst_d <= mrst;
         tx_bit <= {tx_bit[0],tx_bitw};
         if      (mrst)       clk_div_cntr_tx <= CLK_DIV - 3;
         else if (tx_bit[1])  clk_div_cntr_tx <= CLK_DIV - 3;
         else                 clk_div_cntr_tx <= clk_div_cntr_tx - 1;
         
-//        if      (mrst)       tx_sr <= 10'h3ff;
         if (mrst || !tx_busy) tx_sr <= 10'h3ff;
         else if (tx_start)    tx_sr <= {1'b1, tx_r, 1'b0};
         else if (tx_bit[1])   tx_sr <= {1'b1, tx_sr[9:1]};
         
-        if      (mrst)                     tx_busy_r <= 0;
-        else if (tx_start)                 tx_busy_r <= 1;
-        else if (tx_bit[1] && stop_bit_tx) tx_busy_r <= 0;
+        if      (mrst)                          tx_busy_r <= 0;
+        else if (tx_start)                      tx_busy_r <= 1;
+///        else if (tx_bit[1] && stop_bit_tx) tx_busy_r <= 0;
+        else if (tx_bit[1] && stop_bit_last_tx) tx_busy_r <= 0;
         
         if      (mrst)        tx_rq <= 0;
-///        else if (mrst_d)      tx_rq <= 1; // single-cycle turn-on after mrst
         else if (tx_stb)      tx_rq <= 1; // 0;
         else if (tx_start)    tx_rq <= 0; // 1;
         
-//        if      (mrst)        tx_bcntr <= 0;
-        if (mrst || !tx_busy) tx_bcntr <= 9; // stop bit ?
+///        if (mrst || !tx_busy) tx_bcntr <= 9; // stop bit ? //UART_STOP_BITS
+        if (mrst || !tx_busy) tx_bcntr <= 8 + UART_STOP_BITS;
         else if (tx_start)    tx_bcntr <= 0;
         else if (tx_continue) tx_bcntr <= tx_bcntr + 1;
         

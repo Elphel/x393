@@ -35,7 +35,22 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h03930202;       // Initial Boson implementation (cheating with 2.5V), open drain for Boson reset 
+          parameter FPGA_VERSION =          32'h0393020f;         // added test mode
+//          parameter FPGA_VERSION =          32'h0393020f;       // changing MMCM phase -20.0 (use clk_fb) IBUF_LOW_PWR=FALSE
+//          parameter FPGA_VERSION =          32'h0393020e;       // changing MMCM phase -20.0 (use clk_fb)
+//          parameter FPGA_VERSION =          32'h0393020e;       // changing MMCM phase -19.5 (use clk_fb)
+//          parameter FPGA_VERSION =          32'h0393020d;       // changing MMCM phase -18.0 (use clk_fb)
+//          parameter FPGA_VERSION =          32'h0393020c;       // changing MMCM phase 18.0 (use clk_fb)
+//          parameter FPGA_VERSION =          32'h0393020b;       // clock/feedback clock 
+//          parameter FPGA_VERSION =          32'h0393020a;       // 2.5, diff-term, no low-power, fixing delays 
+//          parameter FPGA_VERSION =          32'h03930209;       // 2.5, diff-term, no low-power 
+//          parameter FPGA_VERSION =          32'h03930208;       // 1.8V, no diff-term 
+//          parameter FPGA_VERSION =          32'h03930207;       // Debugging 2.5V, diff-term 
+//          parameter FPGA_VERSION =          32'h03930206;       // Debugging 
+//          parameter FPGA_VERSION =          32'h03930205;       // Fixing serial pairs order for 103993 
+//          parameter FPGA_VERSION =          32'h03930204;       // Testing 
+//          parameter FPGA_VERSION =          32'h03930203;       // Fixing serial receive with dual stop bits 
+//          parameter FPGA_VERSION =          32'h03930202;       // Initial Boson implementation (cheating with 2.5V), open drain for Boson reset 
 //        parameter FPGA_VERSION =          32'h03930201;       // Initial Boson implementation (cheating with 2.5V - as with HISPI) 
 //        parameter FPGA_VERSION =          32'h03930200;       // Initial Boson implementation (1.8V) 
         //BOSON

@@ -112,8 +112,11 @@ module  sens_103993_din #(
             ) pxd_dly_i(
                 .clk          (mclk),
                 .rst          (mrst),
-                .set          (set_idelay[i]),
-                .ld           (ld_idelay),
+////                .set          (set_idelay[i]),
+////                .ld           (ld_idelay),
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+                .set          (ld_idelay),
+                .ld           (set_idelay[i]),
                 .delay        (dly_data[3 + 8*i +: 5]),
                 .data_in      (din[i]),
                 .data_out     (din_dly[i])

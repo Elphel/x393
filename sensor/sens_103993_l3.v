@@ -75,27 +75,28 @@ module  sens_103993_l3#(
 )(
     output            pclk,   // global clock input, pixel rate (27MHz for 103993) (220MHz for MT9F002)
     // I/O pads
-    input [NUMLANES-1:0] sns_dp,
-    input [NUMLANES-1:0] sns_dn,
-    input                      sns_clkp,
-    input                      sns_clkn,
+    input           [NUMLANES-1:0] sns_dp,
+    input           [NUMLANES-1:0] sns_dn,
+    input                          sns_clkp,
+    input                          sns_clkn,
     // output
-    output              [15:0] pxd_out, 
-    output                     vsync, 
-    output                     hsync,
-    output                     dvalid,
+    output                  [15:0] pxd_out, 
+    output                         vsync, 
+    output                         hsync,
+    output                         dvalid,
     // delay control inputs
-    input                           mclk,
-    input                           mrst,
-    input        [NUMLANES * 8-1:0] dly_data,        // delay value (3 LSB - fine delay) - @posedge mclk
-    input            [NUMLANES-1:0] set_idelay,      // mclk synchronous load idelay value
-    input                           ld_idelay,       // mclk synchronous set idelay value
-    input                           set_clk_phase,   // mclk synchronous set idelay value
-    input                           rst_mmcm,
+    input                          mclk,
+    input                          mrst,
+    input       [NUMLANES * 8-1:0] dly_data,        // delay value (3 LSB - fine delay) - @posedge mclk
+    input           [NUMLANES-1:0] set_idelay,      // mclk synchronous load idelay value
+    input                          ld_idelay,       // mclk synchronous set idelay value
+    input                          set_clk_phase,   // mclk synchronous set idelay value
+    input                          rst_mmcm,
     // MMCP output status
     output                         perr,            // parity error
     output                         ps_rdy,          // output
     output                   [7:0] ps_out,          // output[7:0] reg 
+    output                   [7:0] test_out,
     output                         locked_pxd_mmcm,
     output                         clkin_pxd_stopped_mmcm, // output
     output                         clkfb_pxd_stopped_mmcm  // output
@@ -114,6 +115,7 @@ module  sens_103993_l3#(
     assign hsync =      hsync_r;
     assign dvalid =     dvalid_r;
     assign perr =       perr_r;
+    assign test_out =   sns_d[29:22];
 
     sens_103993_clock #(
         .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
@@ -186,17 +188,20 @@ module  sens_103993_l3#(
         .ld_idelay    (ld_idelay),   // input
         .pclk         (pclk),        // input
         .ipclk2x      (ipclk2x),     // input
-        .din_p        (sns_dp),      // input[2:0] 
-        .din_n        (sns_dn),      // input[2:0] 
+//        .din_p        (sns_dp),      // input[2:0] 
+//        .din_n        (sns_dn),      // input[2:0] 
+        .din_p        ({sns_dp[0],sns_dp[1],sns_dp[2]}),      // input[2:0] 
+        .din_n        ({sns_dn[0],sns_dn[1],sns_dn[2]}),      // input[2:0] 
         .dout         (sns_d)        // output[29:0] 
     );
     always @(posedge pclk) begin
         pxd_out_r <= {sns_d[19:12],sns_d[9:2]};
         vsync_r <=   sns_d[1]; // input - active high
         hsync_r <=   sns_d[11]; // input - active high
-        dvalid_r <= sns_d[21]; // input - active hight
-        cp_r <=         sns_d [0]; 
-        perr_r <= ~ cp_r ^ (^pxd_out_r)  ^ vsync_r  ^ hsync_r ^ dvalid_r; 
+        dvalid_r <=  sns_d[21]; // input - active hight
+        cp_r <=      sns_d[0]; 
+//        perr_r <= ~ cp_r ^ (^pxd_out_r)  ^ vsync_r  ^ hsync_r ^ dvalid_r; 
+        perr_r <= ~ (^sns_d[9:0]) ^ (^sns_d[19:11]) ^ (^sns_d[29:21]); //DS: XOR of all selected bits result in odd parity 
     end
     
 endmodule

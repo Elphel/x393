@@ -84,8 +84,13 @@ module  simul_103993_serializer#(
     reg [1:0] clk_r;
     reg       set_sr;
     wire      cp = (^red) ^ (^green) ^ (^blue) ^ vs ^ hs ^ de;
-    assign dp =    {sr_blue[9],sr_green[9], sr_red[9]};
-    assign dn =   ~{sr_blue[9],sr_green[9], sr_red[9]};
+    // PCB is routed swapping serial outputs
+//    assign dp =    {sr_blue[9],sr_green[9], sr_red[9]};
+//    assign dn =   ~{sr_blue[9],sr_green[9], sr_red[9]};
+    assign dp =    {sr_red[9],sr_green[9], sr_blue[9]};
+    assign dn =   ~{sr_red[9],sr_green[9], sr_blue[9]};
+
+
     assign clkp =  sr_clk [9];
     assign clkn = ~sr_clk [9];
     always @ (posedge pclk) begin

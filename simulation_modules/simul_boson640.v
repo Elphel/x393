@@ -49,9 +49,10 @@ module  simul_boson640#(
     parameter FP =                52, // FP_BP = 52+50
     parameter VSW =               87 // with telemetry, in eows 
 )(
-    input         mrst,// active low
+    inout         mrst,// active low
     input         single,
     input         ext_sync,
+    input         bad_frame_end, // just to introduce a bad_frame 
     output [15:0] pxd,
     output        pclk,
     output        dvalid,
@@ -107,6 +108,12 @@ module  simul_boson640#(
     assign pxd =           pxd_r;
     assign vsync =         frame_state != FSTATE_VSYNC; // active low
     assign hsync =         line_state !=  LSTATE_HS;    // active low
+    
+    
+    wire mrst_w;
+    pullup (mrst_w);
+    buf (weak0,weak1) #(100,100) (mrst,mrst_w);
+    
     initial begin
         $readmemh({`ROOTPATH,DATA_FILE},sensor_data);
     end
@@ -121,7 +128,7 @@ module  simul_boson640#(
         
 //        frame_state_d <=frame_state;
         
-        if (!mrst) begin
+        if (!mrst || bad_frame_end) begin
                     frame_state <= FSTATE_IDLE;
         end else begin
           case (frame_state)
@@ -139,7 +146,8 @@ module  simul_boson640#(
                       line_cntr <= line_cntr - 1;
                     end  
                   end
-           FSTATE_OUT: if (last_in_line) begin
+           FSTATE_OUT:
+                  if (last_in_line) begin
                     if (line_cntr == 0) begin
                       frame_state <= (!single | (ext_sync && !ext_sync_d)) ? FSTATE_VSYNC : FSTATE_IDLE;
                       line_cntr <=   VSW - 1;

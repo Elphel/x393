@@ -91,8 +91,10 @@ module  sens_103993_clock#(
     output       clkin_pxd_stopped_mmcm, // output
     output       clkfb_pxd_stopped_mmcm // output
 );
+    localparam BUF_CLK_FB = BUF_IPCLK2X;
     wire         pclk_pre;
     wire         ipclk2x_pre;     // output
+    wire         clk_fb_pre;
     wire         clk_fb;
     wire         prst = mrst;
     wire         clk_in;
@@ -145,9 +147,12 @@ module  sens_103993_clock#(
             ) clk_dly_i(
                 .clk          (mclk),
                 .rst          (mrst),
-                .set          (set_phase),
-                .ld           (load),
-                .delay        (phase[4:0]),
+//                .set          (set_phase),
+//                .ld           (load),
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+                .set          (load),
+                .ld           (set_phase),
+                .delay        (phase[7:3]), // skip lsb, not MSB
                 .data_in      (clk_int),
                 .data_out     (clk_in)
             );
@@ -186,6 +191,7 @@ module  sens_103993_clock#(
                 .clkin1              (clk_in),          // input 27MHz
                 .clkin2              (1'b0),            // input 
                 .sel_clk2            (1'b0),            // input
+//                .clkfbin             (pclk), // clk_fb),          // input
                 .clkfbin             (clk_fb),          // input
                 .rst                 (rst_mmcm),        // input
                 .pwrdwn              (1'b0),            // input
@@ -207,7 +213,7 @@ module  sens_103993_clock#(
                 .clkout1b(), // output
                 .clkout2b(), // output
                 .clkout3b(), // output
-                .clkfbout            (clk_fb), // output
+                .clkfbout            (clk_fb_pre), // output
                 .clkfboutb(), // output
                 .locked              (locked_pxd_mmcm),
                 .clkin_stopped       (clkin_pxd_stopped_mmcm), // output
@@ -229,6 +235,7 @@ module  sens_103993_clock#(
                 .STARTUP_WAIT        ("FALSE")
             ) mmcm_or_pll_i (
                 .clkin               (clk_in),          // input
+//                .clkfbin             (pclk), // clk_fb),          // input
                 .clkfbin             (clk_fb),          // input
                 .rst                 (rst_mmcm),        // input
                 .pwrdwn              (1'b0),            // input
@@ -238,7 +245,7 @@ module  sens_103993_clock#(
                 .clkout3(), // output
                 .clkout4(), // output
                 .clkout5(), // output
-                .clkfbout            (clk_fb), // output
+                .clkfbout            (clk_fb_pre), // output
                 .locked              (locked_pxd_mmcm)
                  // output
             );
@@ -248,6 +255,17 @@ module  sens_103993_clock#(
             assign ps_out_w = 0; // alternatively - register delay written
         end
     endgenerate
+    
+    generate
+        if      (BUF_CLK_FB == "BUFG")  BUFG  clk2x_i (.O(clk_fb), .I(clk_fb_pre));
+        else if (BUF_CLK_FB == "BUFH")  BUFH  clk2x_i (.O(clk_fb), .I(clk_fb_pre));
+        else if (BUF_CLK_FB == "BUFR")  BUFR  clk2x_i (.O(clk_fb), .I(clk_fb_pre), .CE(1'b1), .CLR(prst));
+        else if (BUF_CLK_FB == "BUFMR") BUFMR clk2x_i (.O(clk_fb), .I(clk_fb_pre));
+        else if (BUF_CLK_FB == "BUFIO") BUFIO clk2x_i (.O(clk_fb), .I(clk_fb_pre));
+        else assign clk_fb = clk_fb_pre;
+    endgenerate
+
+
     
     generate
         if      (BUF_IPCLK2X == "BUFG")  BUFG  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));

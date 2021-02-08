@@ -2091,6 +2091,7 @@ assign axi_grst = axi_rst_pre;
         .UART_CLK_DIV                (UART_CLK_DIV),       // 217),
         .UART_RX_DEBOUNCE            (UART_RX_DEBOUNCE),   // 60),
         .UART_EXTIF_MODE             (UART_EXTIF_MODE),     // 1)
+        .UART_STOP_BITS              (UART_STOP_BITS),
 `endif    
 `ifdef DEBUG_RING
         .DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY), 

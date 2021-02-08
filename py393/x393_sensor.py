@@ -185,7 +185,8 @@ class X393Sensor(object):
                     address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSIO_STATUS_REG_REL))
 
     def print_status_sensor_io (self,
-                                num_sensor="All", sensorType = SENSOR_INTERFACE_PARALLEL):
+                                num_sensor="All",
+                                sensorType = SENSOR_INTERFACE_PARALLEL):
         """
         Print sensor_io status word (no sync)
         @param num_sensor - number of the sensor port (0..3)
@@ -212,7 +213,7 @@ class X393Sensor(object):
             print ("   busy =                   %d"%((status>>25) & 1))
             print ("   seq =                    %d"%((status>>26) & 0x3f))
         elif (sensorType == SENSOR_INTERFACE_BOSON):
-            print ("   ps_out =                 %d"%((status>> 0) & 0xff))
+            print ("   ps_out =               0x%x"%((status>> 0) & 0xff))
             print ("   ps_rdy =                 %d"%((status>> 8) & 1))
             print ("   perr =                   %d"%((status>> 9) & 1))
             print ("   clkfb_pxd_stopped_mmcm = %d"%((status>>10) & 1))
@@ -600,7 +601,9 @@ class X393Sensor(object):
                             gpio0 =      None,
                             gpio1 =      None,
                             gpio2 =      None,
-                            gpio3 =      None):
+                            gpio3 =      None,
+                            test_patt =  None,
+                            test_mode =  None):
         """
         Combine sensor I/O control parameters into a control word
         @param mrst -  True - activate MRST signal (low), False - deactivate MRST (high), None - no change
@@ -610,8 +613,16 @@ class X393Sensor(object):
         @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param test_patt - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
+        @param test_mode - 0..7 - 0 normal data, 1+ - test petterns (1 - diagnal by 3, 2 - horizontal gradient , 3 - vertical gradient
         @return sensor i/o control word
         """
+        RESET_TEST_OUT =    24
+        SET_TEST_OUT =      25
+        SENS_TEST_MODES =   26
+        SENS_TEST_BITS =     3
+        SENS_TEST_SET=      29
+        
         rslt = 0
         if not mrst is None:
             rslt |= (3,2)[mrst] <<     vrlg.SENS_CTRL_MRST
@@ -627,6 +638,12 @@ class X393Sensor(object):
             rslt |= (4 | (gpio2 & 3)) << vrlg.SENS_CTRL_GP2
         if not gpio3 is None:
             rslt |= (4 | (gpio3 & 3)) << vrlg.SENS_CTRL_GP3
+        if not test_patt is None:
+            rslt |= 1 << (RESET_TEST_OUT, SET_TEST_OUT)[test_patt]
+        if not test_mode is None:
+            test_mode_masked = test_mode & ((1 << SENS_TEST_BITS) - 1)
+            rslt |= test_mode_masked << SENS_TEST_MODES
+            rslt |= 1 << SENS_TEST_SET
         return rslt
 
     def func_sensor_uart_ctl_boson (self,
@@ -1312,7 +1329,9 @@ class X393Sensor(object):
                             gpio0 =      None,
                             gpio1 =      None,
                             gpio2 =      None,
-                            gpio3 =      None):
+                            gpio3 =      None,
+                            test_patt =  None,
+                            test_mode =  None):
         """
         Set sensor I/O controls, including I/O signals
         @param num_sensor - sensor port number (0..3)
@@ -1323,6 +1342,9 @@ class X393Sensor(object):
         @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
+        @param test_patt - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
+        @param test_mode - 0..7 - 0 normal data, 1+ - test petterns (1 - diagnal by 3, 2 - horizontal gradient , 3 - vertical gradient
+
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -1334,7 +1356,9 @@ class X393Sensor(object):
                             gpio0 =      gpio0,
                             gpio1 =      gpio1,
                             gpio2 =      gpio2,
-                            gpio3 =      gpio3)
+                            gpio3 =      gpio3,
+                            test_patt =  test_patt,
+                            test_mode =  test_mode)
                 return
         except:
             pass
@@ -1347,7 +1371,9 @@ class X393Sensor(object):
                             gpio0 =      gpio0,
                             gpio1 =      gpio1,
                             gpio2 =      gpio2,
-                            gpio3 =      gpio3)
+                            gpio3 =      gpio3,
+                            test_patt =  test_patt,
+                            test_mode =  test_mode)
 
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
@@ -1396,7 +1422,7 @@ class X393Sensor(object):
                            num_sensor,
                            uart_tx_byte):
         """
-        Write byte tio the sensor UART transmit FIFO
+        Write byte to the sensor UART transmit FIFO
         @param num_sensor - sensor port number (0..3)
         @param uart_tx_byte - Byte to write to FIFO
         """
@@ -1480,7 +1506,41 @@ class X393Sensor(object):
             pass
         if not mmcm_phase is None:
             self.x393_axi_tasks.write_control_register(reg_addr + 3, mmcm_phase & 0xff)
-
+    def set_sensor_io_dly_boson (self,
+                                    num_sensor,
+                                    mmcm_phase = None, #24 steps in 3ns period
+                                    lane0_dly =  None,
+                                    lane1_dly =  None,
+                                    lane2_dly =  None):
+        """
+        Set sensor port input delays and mmcm phase
+        @param num_sensor - sensor port number (0..3) or all, 'A'
+        @param mmcm_phase - MMCM clock phase
+        @param lane0_dly - delay in the lane0 (3 LSB are not used) // All 4 lane delays should be set simultaneously
+        @param lane1_dly - delay in the lane1 (3 LSB are not used)
+        @param lane2_dly - delay in the lane2 (3 LSB are not used)
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_io_dly_boson (num_sensor = num_sensor,
+                                                  mmcm_phase = mmcm_phase,
+                                                  lane0_dly =  lane0_dly,
+                                                  lane1_dly =  lane1_dly,
+                                                  lane2_dly =  lane2_dly)
+                return
+        except:
+            pass
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS
+        try: # if any delay is None - do not set
+            dlys=(lane0_dly & 0xff) | ((lane1_dly & 0xff) << 8) | ((lane2_dly & 0xff) << 16)            
+            self.x393_axi_tasks.write_control_register(reg_addr + 2, dlys)
+        except:
+            return # do not apply delays
+        if not mmcm_phase is None:
+            self.x393_axi_tasks.write_control_register(reg_addr + 3, mmcm_phase & 0xff)
+        self.set_sensor_io_ctl_boson (num_sensor, set_delays = True)
+        
     def set_sensor_hispi_lanes(self,
                                num_sensor,
                                lane0 = 0,

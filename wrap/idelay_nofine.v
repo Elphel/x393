@@ -47,8 +47,8 @@ module  idelay_nofine
 ) (
     input clk,
     input rst,
-    input set,
-    input ld,
+    input set, // apply pipeline register to delay
+    input ld,  // load pipeline register
     input [4:0] delay,
     input data_in,
     output data_out

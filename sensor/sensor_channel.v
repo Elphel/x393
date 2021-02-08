@@ -445,6 +445,7 @@ module  sensor_channel#(
     parameter UART_INITIAL_CRC16 =           16'h1d0f,
     parameter UART_CLK_DIV =                   217,
     parameter UART_RX_DEBOUNCE =               60,
+    parameter UART_STOP_BITS =                  1,
     parameter UART_EXTIF_MODE =                 1, // 1,2 or 3 if there are several different extif
 `endif    
     
@@ -1243,6 +1244,7 @@ module  sensor_channel#(
             .INITIAL_CRC16          (UART_INITIAL_CRC16), // 16'h1d0f),
             .CLK_DIV                (UART_CLK_DIV),       // 217),
             .RX_DEBOUNCE            (UART_RX_DEBOUNCE),   // 60),
+            .UART_STOP_BITS         (UART_STOP_BITS),     //
             .EXTIF_MODE             (UART_EXTIF_MODE)     // 1)
             
         ) sens_103993_i (

@@ -48,6 +48,7 @@ module  serial_103993#(
     parameter INITIAL_CRC16 =           16'h1d0f,
     parameter CLK_DIV =                   217,
     parameter RX_DEBOUNCE =               60,
+    parameter UART_STOP_BITS =             1,  
     parameter EXTIF_MODE =                 1, // 1,2 or 3 if there are several different extif
     parameter RECV_CNTR_WIDTH =            8  // received packet counter width
 )(
@@ -237,7 +238,8 @@ module  serial_103993#(
         .REPLACED_ESCAPE_BYTE      (REPLACED_ESCAPE_BYTE),      // 'h91),
         .INITIAL_CRC16             (INITIAL_CRC16),             // 16'h1d0f),
         .CLK_DIV                   (CLK_DIV),                   // 217),
-        .RX_DEBOUNCE               (RX_DEBOUNCE)                // 60)
+        .RX_DEBOUNCE               (RX_DEBOUNCE),               // 60)
+        .UART_STOP_BITS            (UART_STOP_BITS)             // 1) 
     ) serial_fslp_i (
         .mrst           (mrst),            // input
         .mclk           (mclk),            // input

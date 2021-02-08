@@ -677,17 +677,19 @@
     parameter UART_INITIAL_CRC16 =           16'h1d0f,
 `ifdef SIMULATION
     parameter UART_CLK_DIV =                   22,
-    parameter UART_RX_DEBOUNCE =               6,
+    parameter UART_RX_DEBOUNCE =                6,
+    parameter UART_STOP_BITS =                  2, // for testing, maybe change later back to 1
 `else
-    parameter UART_CLK_DIV =                   217,
+    parameter UART_CLK_DIV =                  217,
     parameter UART_RX_DEBOUNCE =               60,
+    parameter UART_STOP_BITS =                  1,
 `endif
     parameter UART_EXTIF_MODE =                 1, // 1,2 or 3 if there are several different extif
 // endof for BOSON:
 
     // parameters for the sensor-synchronous clock PLL
 // ALL PARAMETERS HERE SHOULD BE DEFINED (for use in C-generator)    
-`define TWEAKING_IOSTANDARD
+//`define TWEAKING_IOSTANDARD 1
 `ifdef HISPI
     parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
@@ -704,9 +706,10 @@
 `elsif BOSON    
     parameter CLKIN_PERIOD_SENSOR =        37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
-    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
-    parameter IPCLK2X_PHASE =            0.000,
+//MMCME2_ADV_i has a CLKFBOUT_PHASE value (-20.000)  with CLKFBOUT_USE_FINE_PS set to FALSE. It should be a multiple of [45 / CLKFBOUT_MULT_F] = [45 / 30.000] = 1.500.
+    parameter CLKFBOUT_PHASE_SENSOR =   -19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =                0.000,
+    parameter IPCLK2X_PHASE =              0.000,
     `ifdef TWEAKING_IOSTANDARD
         parameter PXD_IOSTANDARD =           "LVCMOS25", // with 1.8 actually applied voltage
         parameter SENSI2C_IOSTANDARD =       "LVCMOS25", // with 1.8 actually applied voltage
@@ -790,7 +793,11 @@
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
-    parameter HISPI_IBUF_LOW_PWR =        "TRUE",
+`ifdef BOSON
+    parameter HISPI_IBUF_LOW_PWR =        "FALSE", // "TRUE",
+`else
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // try 
+`endif    
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
 //    parameter HISPI_IOSTANDARD =          "PPDS_25", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 //    parameter HISPI_IOSTANDARD =          "DIFF_HSTL_II_18", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)

@@ -1949,7 +1949,8 @@ simul_axi_hp_wr #(
 
 
 `elsif BOSON
-    wire boson_single = 1;
+    reg                       boson_single = 1;
+    reg                 [3:0] boson_restart = 0; // extra reset to break the frame
     wire [BOSON_OUT_BITS-1:0] boson_pxd1;
     wire [BOSON_OUT_BITS-1:0] boson_pxd2;
     wire [BOSON_OUT_BITS-1:0] boson_pxd3;
@@ -1971,7 +1972,15 @@ simul_axi_hp_wr #(
     wire                      boson_hsync3;
     wire                      boson_hsync4;
     
-    
+    // delay start of the sensor video (disable in external sync mode)
+    initial begin
+        #100000;
+        boson_single = 0;
+        #100000;
+        boson_restart = 4'b0101; // only 2 channels restarted 
+        #1000;
+        boson_restart = 0;
+    end
     simul_boson640 #(
         .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
         .WIDTH         (BOSON_WIDTH),      // 160), 640),
@@ -1986,6 +1995,7 @@ simul_axi_hp_wr #(
         .mrst          (sns1_dp[7]),       // input
         .single        (boson_single),     // input 1'b0), // 
         .ext_sync      (sns1_ctl),         // input
+        .bad_frame_end (boson_restart[0]),     // input - just to introduce a bad_frame 
         .pxd           (boson_pxd1),       // output[15:0] 
         .pclk          (boson_pclk1),      // output
         .dvalid        (boson_dvalid1),    // output
@@ -2025,6 +2035,7 @@ simul_axi_hp_wr #(
         .mrst          (sns2_dp[7]),       // input
         .single        (boson_single),     // input 1'b0), //
         .ext_sync      (sns2_ctl),         // input
+        .bad_frame_end (boson_restart[1]),     // input - just to introduce a bad_frame 
         .pxd           (boson_pxd2),       // output[15:0] 
         .pclk          (boson_pclk2),      // output
         .dvalid        (boson_dvalid2),    // output
@@ -2064,6 +2075,7 @@ simul_axi_hp_wr #(
         .mrst          (sns3_dp[7]),       // input
         .single        (boson_single),     // input
         .ext_sync      (sns3_ctl),         // input
+        .bad_frame_end (boson_restart[2]),    // input - just to introduce a bad_frame 
         .pxd           (boson_pxd3),       // output[15:0] 
         .pclk          (boson_pclk3),      // output
         .dvalid        (boson_dvalid3),    // output
@@ -2103,6 +2115,7 @@ simul_axi_hp_wr #(
         .mrst          (sns4_dp[7]),       // input
         .single        (boson_single),     // input
         .ext_sync      (sns4_ctl),         // input
+        .bad_frame_end (boson_restart[3]),     // input - just to introduce a bad_frame 
         .pxd           (boson_pxd4),       // output[15:0] 
         .pclk          (boson_pclk4),      // output
         .dvalid        (boson_dvalid4),    // output
