@@ -1706,6 +1706,7 @@ class X393ExportC(object):
         dw.append(("skip_too_late",vrlg.MCONTR_LINTILE_SKIP_LATE,1,0, "Skip over missed blocks to preserve frame structure (increment pointers)"))
         dw.append(("copy_frame",   vrlg.MCONTR_LINTILE_COPY_FRAME,1,0, "Copy frame number from the master (sensor) channel. Combine with reset_frame to reset bjuffer"))
         dw.append(("abort_late",   vrlg.MCONTR_LINTILE_ABORT_LATE,1,0, "abort frame if not finished by the new frame sync (wait pending memory transfers)"))
+        dw.append(("no_pending",   vrlg.MCONTR_LINTILE_NO_PENDING,1,0, "Do not process frame_start until the previous one is finished"))
         return dw
     """
         self.x393_axi_tasks.write_control_register(
@@ -2328,6 +2329,10 @@ class X393ExportC(object):
         dw.append(("uart_recv_rst_set",  vrlg.SENS_UART_RECV_RST+1,  1,   0,  "set 'uart_recv_rst' field"))
         dw.append(("uart_xmit_start",    vrlg.SENS_UART_XMIT_START,  1,   0,  "UART: start transmiting prepared packet"))
         dw.append(("uart_recv_next",     vrlg.SENS_UART_RECV_NEXT,   1,   0,  "UART: advance receive FIFO to next byte"))
+        dw.append(("alt_status",         vrlg.SENS_ALT_STATUS,       1,   0,  "Change meaning of the certain status fields"))
+        dw.append(("alt_status_set",     vrlg.SENS_ALT_STATUS_SET,   1,   0,  "set 'alt_status' field"))
+        dw.append(("test_modes", vrlg.SENS_TEST_MODES,vrlg.SENS_TEST_BITS,0,  "Test patterns instead of the image. 0: normal, 1: LSB - col/3, MSB - row/3, 2:column, 3:row"))
+        dw.append(("test_modes_set",     vrlg.SENS_TEST_SET,         1,   0,  "set 'test_modes' field"))
         return dw
 
 

@@ -479,6 +479,7 @@ class X393SensCmprs(object):
                               histogram_width_m1 =        None, # 2559, #0,
                               histogram_height_m1 =       None, # 1935, #0,
                               bits16 =                    False,
+                              no_pending =                False,
                               verbose =                   1
                               ):
         """
@@ -521,8 +522,7 @@ class X393SensCmprs(object):
         @param histogram_top -       histogram window top margin
         @param histogram_width_m1 -  one less than window width. If 0 - use frame right margin (end of HACT)
         @param histogram_height_m1 - one less than window height. If 0 - use frame bottom margin (end of VACT)
-
-        ???
+        @param no_pending  ignore new frame start if previous frame is not finished
         @param verbose - verbose level
         @return True if all done, False if exited prematurely through exit_step
         """
@@ -633,6 +633,7 @@ class X393SensCmprs(object):
             print ("num_macro_rows_m1 =         ", num_macro_rows_m1)
             print ("cmode =                     ", cmode)
             print ("bits16 =                    ", bits16)
+            print ("no_pending =                ", no_pending)
             print ("verbose =                   ", verbose)
         if exit_step == 10: return False
 
@@ -680,7 +681,8 @@ class X393SensCmprs(object):
 #            window_height =    window_height,           # input [31:0] window_height;    # 16 bit
             window_height =    window_height_memory,   # input [31:0] window_height;    # 16 bit
             window_left =      window_left >> 4,        # input [31:0] window_left;
-            window_top =       window_top);             # input [31:0] window_top;
+            window_top =       window_top,             # input [31:0] window_top;
+            no_pending =       no_pending)
     # Enable arbitration of sensor-to-memory controller
         if exit_step == 12: return False
 
@@ -813,6 +815,14 @@ class X393SensCmprs(object):
                             uart_xmit_start = False,
                             uart_recv_next =  False)
             
+            self.x393Sensor.set_sensor_uart_ctl_boson ( # trying to read initial message - no, something different
+                            num_sensor = num_sensor,
+                            uart_extif_en =   False,
+                            uart_xmit_rst =   False,
+                            uart_recv_rst =   False,
+                            uart_xmit_start = False,
+                            uart_recv_next =  False)
+
             self.x393Sensor.set_sensor_io_ctl_boson (
                                num_sensor = num_sensor,
                                mrst =       False,
@@ -830,6 +840,18 @@ class X393SensCmprs(object):
                 sensor_status = self.x393Sensor.get_new_status(num_sensor=num_sensor)
                 locked_pxd_mmcm = ((sensor_status >> 12) & 1) != 0
             print ("PCLK MMCM locked")
+            """
+            fn = self.get_frame_number_i2c(channel=num_sensor)
+            print ("Frame number = %d"%(fn))
+            for _ in range (2):
+                self.skip_frame_i2c(
+                   channel_mask = (1 << num_sensor),
+                   loop_delay = 0.01,
+                   timeout = 5.0) # 2.0)
+            fn = self.get_frame_number_i2c(channel=num_sensor)
+            print ("Frame number (after skip to make sure Boson is in booted state before UART commands) = %d"%(fn))
+            """
+            '''
             self.x393Sensor.set_sensor_uart_ctl_boson (
                             num_sensor = num_sensor,
                             uart_extif_en =   True,
@@ -837,6 +859,7 @@ class X393SensCmprs(object):
                             uart_recv_rst =   False,
                             uart_xmit_start = False,
                             uart_recv_next =  False)
+            '''                
 
         if exit_step == 17: return False
 
@@ -911,6 +934,17 @@ class X393SensCmprs(object):
             chn_en =     True,
             bits16 =     bits16) #False)
 
+        if sensorType ==  x393_sensor.SENSOR_INTERFACE_BOSON:        
+            fn = self.get_frame_number_i2c(channel=num_sensor)
+            print ("Frame number = %d"%(fn))
+            for _ in range (70): # 65): #70): #80): #100): # 60 10 2
+                self.skip_frame_i2c(
+                   channel_mask = (1 << num_sensor),
+                   loop_delay = 0.01,
+                   timeout = 5.0) # 2.0)
+            fn = self.get_frame_number_i2c(channel=num_sensor)
+            print ("Frame number (after skip to make sure Boson is in booted state before UART commands) = %d"%(fn))
+
         if verbose >0 :
             print ("===================== CMPRS_EN_ARBIT =========================")
     # just temporarily - enable channel immediately
@@ -927,6 +961,8 @@ class X393SensCmprs(object):
             en_input =   True,
             repet_mode = True, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
             trig = False)
+        
+        
         return True
 
     def specify_window (self,
@@ -1489,6 +1525,7 @@ class X393SensCmprs(object):
                               circbuf_chn_size=           0x4000000, # 64 Mib - all 4 channels?
                               reset_afi =                 False, # reset AFI multiplexer
                               bits16 =                    False,
+                              no_pending =                False,
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
@@ -1545,7 +1582,8 @@ class X393SensCmprs(object):
                     buffer_pages_circbuf_chn0..3,   buffer_pages_raw_chn0..3, page size is 4096
 
         @param circbuf_chn_size - circular buffer size for each channel, in bytes
-
+        @param no_pending  ignore new frame start if previous frame is not finished
+        
         @param verbose - verbose level
         @return True if all done, False if exited prematurely by  exit_step
         """
@@ -1751,6 +1789,7 @@ class X393SensCmprs(object):
                           histogram_width_m1 =      histogram_width_m1,
                           histogram_height_m1 =     histogram_height_m1,
                           bits16 =                  bits16,
+                          no_pending =              no_pending,
                           verbose =                 verbose)
                 if not rslt : return False
                 if exit_step == 20: return False

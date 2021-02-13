@@ -80,7 +80,8 @@ module  mcntrl_linear_rw #(
     parameter MCONTR_LINTILE_REPEAT =          10, // read/write pages until disabled 
     parameter MCONTR_LINTILE_DIS_NEED =        11, // disable 'need' request 
     parameter MCONTR_LINTILE_SKIP_LATE =       12, // skip actual R/W operation when it is too late, advance pointers
-    parameter MCONTR_LINTILE_ABORT_LATE =      14,  // abort frame if not finished by the new frame sync (wait pending memory)
+    parameter MCONTR_LINTILE_ABORT_LATE =      14, // abort frame if not finished by the new frame sync (wait pending memory)
+    parameter MCONTR_LINTILE_NO_PENDING =      15, // ignore new frame start if previous frame is not finished
     
 // TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
 // first buffer page, waiting for the request from mcntrl_linear during that first page. And if it will arrive - 
@@ -182,6 +183,7 @@ module  mcntrl_linear_rw #(
     wire                          chn_rst;      // resets command, including fifo;
     reg                           chn_rst_d;    // delayed by 1 cycle do detect turning off
     wire                          abort_en;     // enable frame abort (mode register bit)
+    wire                          no_pending;   // ignore new frame start if previous frame is not finished
     reg                           aborting_r;   // waiting pending memory transactions at if the frame was not finished at frame sync
 //    reg                           xfer_reset_page_r;
     reg                           xfer_page_rst_r=1;
@@ -245,7 +247,7 @@ module  mcntrl_linear_rw #(
     wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
       
     
-    reg                    [14:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
+    reg                    [16:0] mode_reg;//mode register: {no_pending,abort_en,copy_frame,skip_too_late,dis_need,repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
     
     reg   [NUM_RC_BURST_BITS-1:0] start_range_addr; // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg   [NUM_RC_BURST_BITS-1:0] frame_size;       // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
@@ -302,7 +304,7 @@ module  mcntrl_linear_rw #(
     // Set parameter registers
     always @(posedge mclk) begin
         if      (mrst)               mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[14:0]; // 4:0]; // [4:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[16:0]; // 4:0]; // [4:0];
 
         if (mrst) single_frame_r <= 0;
         else      single_frame_r <= single_frame_w;
@@ -429,6 +431,7 @@ module  mcntrl_linear_rw #(
     assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
     assign skip_too_late =   mode_reg[MCONTR_LINTILE_SKIP_LATE];
     assign abort_en =        mode_reg[MCONTR_LINTILE_ABORT_LATE];
+    assign no_pending =      mode_reg[MCONTR_LINTILE_NO_PENDING];
     
 `ifdef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS    
     assign status_data=      {last_row_w, last_in_row,line_unfinished[7:0], frame_finished_r, busy_r}; 
@@ -490,10 +493,10 @@ module  mcntrl_linear_rw #(
 //        if  (mrst || frame_start_delayed) frame_start_pending <= 0;
         if  (mrst) frame_start_pending <= 0;
 //        else       frame_start_pending <= {frame_start_pending[0], busy_r && (frame_start_pending[0] | frame_start_late)};
-        else       frame_start_pending <= busy_r && (frame_start_pending | frame_start_late);
+        else       frame_start_pending <= !no_pending && busy_r && (frame_start_pending | frame_start_late);
 
         if  (mrst) frame_start_pending_long <= 0;
-        else       frame_start_pending_long <= {frame_start_pending_long[0], (busy_r || skip_run) && (frame_start_pending_long[0] | frame_start_late)};
+        else       frame_start_pending_long <= {frame_start_pending_long[0], ~no_pending & (busy_r | skip_run) && (frame_start_pending_long[0] | frame_start_late)};
 
         if (mrst) frame_start_r <= 0;
 //        else      frame_start_r <= {frame_start_r[3:0], frame_start_late & frame_en};

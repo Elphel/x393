@@ -176,8 +176,8 @@ module  sens_103993_clock#(
                 .CLKOUT0_PHASE       (PCLK_PHASE),
                 .CLKOUT1_PHASE       (IPCLK2X_PHASE),
                 .CLKFBOUT_USE_FINE_PS("FALSE"),
-                .CLKOUT0_USE_FINE_PS ("TRUE"),
-                .CLKOUT1_USE_FINE_PS ("TRUE"),
+                .CLKOUT0_USE_FINE_PS ("FALSE"), //"TRUE"),
+                .CLKOUT1_USE_FINE_PS ("FALSE"), //"TRUE"),
                 .CLKOUT0_DIVIDE_F    (CLKFBOUT_MULT_SENSOR),  // /30, -> 27MHz 
                 .CLKOUT1_DIVIDE      (CLKFBOUT_MULT_SENSOR / 10), // /3, -> 270MHz
                 .COMPENSATION        ("ZHOLD"),

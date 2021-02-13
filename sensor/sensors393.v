@@ -190,6 +190,15 @@ module  sensors393 #(
         parameter SENS_UART_RECV_RST =    4,  //  5: 4
         parameter SENS_UART_XMIT_START =  6,  //  6
         parameter SENS_UART_RECV_NEXT =   7,  //  7
+        parameter SENS_ALT_STATUS =      24,
+        parameter SENS_ALT_STATUS_SET =  25,
+        parameter SENS_TEST_MODES =      26,
+        parameter SENS_TEST_BITS =        3,
+        parameter SENS_TEST_SET=         29,
+        parameter SENS_TEST_WIDTH_BITS = 10,
+        parameter SENS_TEST_HEIGHT_BITS= 10,
+        parameter SENS_TEST_WIDTH_INC =   3,
+        parameter SENS_TEST_HEIGHT_INC =  3,
         
 `else        
         parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
@@ -790,6 +799,16 @@ module  sensors393 #(
                 .SENS_UART_RECV_RST            (SENS_UART_RECV_RST),
                 .SENS_UART_XMIT_START          (SENS_UART_XMIT_START),
                 .SENS_UART_RECV_NEXT           (SENS_UART_RECV_NEXT),
+                .SENS_ALT_STATUS               (SENS_ALT_STATUS),
+                .SENS_ALT_STATUS_SET           (SENS_ALT_STATUS_SET),
+                .SENS_TEST_MODES               (SENS_TEST_MODES),
+                .SENS_TEST_BITS                (SENS_TEST_BITS),
+                .SENS_TEST_SET                 (SENS_TEST_SET), 
+                .SENS_TEST_WIDTH_BITS          (SENS_TEST_WIDTH_BITS),
+                .SENS_TEST_HEIGHT_BITS         (SENS_TEST_HEIGHT_BITS),
+                .SENS_TEST_WIDTH_INC           (SENS_TEST_WIDTH_INC),
+                .SENS_TEST_HEIGHT_INC          (SENS_TEST_HEIGHT_INC),
+                
 `else        
                 .SENS_CTRL_QUADRANTS           (SENS_CTRL_QUADRANTS),
                 .SENS_CTRL_ODD                 (SENS_CTRL_ODD),

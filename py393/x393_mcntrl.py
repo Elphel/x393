@@ -53,7 +53,8 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
                                    enable =       True,
                                    chn_reset =    False,
                                    copy_frame =   False,
-                                   abort_late =   False):
+                                   abort_late =   False,
+                                   no_pending =   False):
     """
     Combines arguments to create a 12-bit encoded data for scanline mode memory R/W
     @param skip_too_late - Skip over missed blocks to preserve frame structure (increment pointers),
@@ -71,6 +72,7 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
     @param chn_reset   immediately reset all the internal circuitry
     @param copy_frame  copy frame number from the master channel (non-persistent)
     @param abort_late  abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
+    @param no_pending  ignore new frame start if previous frame is not finished
     """
     rslt = 0;
     rslt |= (1,0)[chn_reset] <<     vrlg.MCONTR_LINTILE_NRESET # inverted
@@ -86,7 +88,8 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
     rslt |= (0,1)[disable_need] <<  vrlg.MCONTR_LINTILE_DIS_NEED
     rslt |= (0,1)[skip_too_late] << vrlg.MCONTR_LINTILE_SKIP_LATE
     rslt |= (0,1)[copy_frame] <<    vrlg.MCONTR_LINTILE_COPY_FRAME
-    rslt |= (0,1)[copy_frame] <<    vrlg.MCONTR_LINTILE_ABORT_LATE
+    rslt |= (0,1)[abort_late] <<    vrlg.MCONTR_LINTILE_ABORT_LATE
+    rslt |= (0,1)[no_pending] <<    vrlg.MCONTR_LINTILE_NO_PENDING
     return rslt
 
 '''

@@ -595,15 +595,15 @@ class X393Sensor(object):
         return rslt
 
     def func_sensor_io_ctl_boson (self,
-                            mrst =       None,
-                            mmcm_rst =   None,
-                            set_delays = False,
-                            gpio0 =      None,
-                            gpio1 =      None,
-                            gpio2 =      None,
-                            gpio3 =      None,
-                            test_patt =  None,
-                            test_mode =  None):
+                            mrst =         None,
+                            mmcm_rst =     None,
+                            set_delays =   False,
+                            gpio0 =        None,
+                            gpio1 =        None,
+                            gpio2 =        None,
+                            gpio3 =        None,
+                            alt_status =   None,
+                            test_pattern = None):
         """
         Combine sensor I/O control parameters into a control word
         @param mrst -  True - activate MRST signal (low), False - deactivate MRST (high), None - no change
@@ -613,16 +613,10 @@ class X393Sensor(object):
         @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
-        @param test_patt - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
-        @param test_mode - 0..7 - 0 normal data, 1+ - test petterns (1 - diagnal by 3, 2 - horizontal gradient , 3 - vertical gradient
+        @param alt_status - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
+        @param test_pattern - 0..7 - 0 normal data, 1+ - test petterns (1 - diagnal by 3, 2 - horizontal gradient , 3 - vertical gradient
         @return sensor i/o control word
         """
-        RESET_TEST_OUT =    24
-        SET_TEST_OUT =      25
-        SENS_TEST_MODES =   26
-        SENS_TEST_BITS =     3
-        SENS_TEST_SET=      29
-        
         rslt = 0
         if not mrst is None:
             rslt |= (3,2)[mrst] <<     vrlg.SENS_CTRL_MRST
@@ -638,12 +632,13 @@ class X393Sensor(object):
             rslt |= (4 | (gpio2 & 3)) << vrlg.SENS_CTRL_GP2
         if not gpio3 is None:
             rslt |= (4 | (gpio3 & 3)) << vrlg.SENS_CTRL_GP3
-        if not test_patt is None:
-            rslt |= 1 << (RESET_TEST_OUT, SET_TEST_OUT)[test_patt]
-        if not test_mode is None:
-            test_mode_masked = test_mode & ((1 << SENS_TEST_BITS) - 1)
-            rslt |= test_mode_masked << SENS_TEST_MODES
-            rslt |= 1 << SENS_TEST_SET
+        if not alt_status is None:
+            rslt |= (2,3)[alt_status] << vrlg.SENS_ALT_STATUS
+
+        if not test_pattern is None:
+            test_mode_masked = test_pattern & ((1 << vrlg.SENS_TEST_BITS) - 1)
+            rslt |= test_mode_masked << vrlg.SENS_TEST_MODES
+            rslt |= 1 << vrlg.SENS_TEST_SET
         return rslt
 
     def func_sensor_uart_ctl_boson (self,
@@ -1323,15 +1318,15 @@ class X393Sensor(object):
 
     def set_sensor_io_ctl_boson (self,
                            num_sensor,
-                            mrst =       None,
-                            mmcm_rst =   None,
-                            set_delays = False,
-                            gpio0 =      None,
-                            gpio1 =      None,
-                            gpio2 =      None,
-                            gpio3 =      None,
-                            test_patt =  None,
-                            test_mode =  None):
+                            mrst =          None,
+                            mmcm_rst =      None,
+                            set_delays =    False,
+                            gpio0 =         None,
+                            gpio1 =         None,
+                            gpio2 =         None,
+                            gpio3 =         None,
+                            alt_status =    None,
+                            test_pattern =  None):
         """
         Set sensor I/O controls, including I/O signals
         @param num_sensor - sensor port number (0..3)
@@ -1342,8 +1337,8 @@ class X393Sensor(object):
         @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
-        @param test_patt - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
-        @param test_mode - 0..7 - 0 normal data, 1+ - test petterns (1 - diagnal by 3, 2 - horizontal gradient , 3 - vertical gradient
+        @param alt_status - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
+        @param test_pattern - 0..7 - 0 normal data, 1+ - test patterns (1 - LSB col//3. MSB row//3, 2 - horizontal gradient , 3 - vertical gradient
 
         """
         try:
@@ -1357,8 +1352,8 @@ class X393Sensor(object):
                             gpio1 =      gpio1,
                             gpio2 =      gpio2,
                             gpio3 =      gpio3,
-                            test_patt =  test_patt,
-                            test_mode =  test_mode)
+                            alt_status =  alt_status,
+                            test_pattern =  test_pattern)
                 return
         except:
             pass
@@ -1372,8 +1367,8 @@ class X393Sensor(object):
                             gpio1 =      gpio1,
                             gpio2 =      gpio2,
                             gpio3 =      gpio3,
-                            test_patt =  test_patt,
-                            test_mode =  test_mode)
+                            alt_status =  alt_status,
+                            test_pattern =  test_pattern)
 
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
@@ -1602,13 +1597,50 @@ class X393Sensor(object):
 #                                      seq_num = seq_num) # input [5:0] seq_num;
 #        return seq_num
 
+    def uart_wait_responsive(self,
+                             num_sensor,
+                             retries = 100):
+        """
+        Request temperature until responds (needed after startup)
+        @param  num_sensor - sensor port number (0..3)
+        @param  retries - retries to read temperature before giving up
+        @return elapsed time
+        """
+        wait_to_read = 0.01 # sec
+        time_start=time.time()
+        for _ in range(retries):
+            _=self.uart_send_packet(
+                num_sensor,
+                0x00050030, # bosonlookupFPATempDegCx10
+                bytearray([]),
+                True, # wait_ready
+                True, # reset_recv,
+                True, # reset_xmit)
+                0)
+            time.sleep(wait_to_read)
+            rec_pack=self.uart_receive_packet(
+                         num_sensor,
+                         wait_packet =      False,
+                         enable_sequencer = False)
+            if rec_pack:
+                break
+        et= time.time() - time_start
+        print ("Elapsed time: %f"%(et))
+        return et    
+        """
+uart_send_packet 0  0x00050030 bytearray(b'') # bosonlookupFPATempDegCx10
+uart_print_packet 0 False False
+        
+        """
+
     def uart_send_packet(self,
                          num_sensor,
                          command,
                          data, #bytearray
                          wait_ready=True,
                          reset_recv=True,
-                         reset_xmit=True):
+                         reset_xmit=True,
+                         verbose =  1):
         """
         Send packet to UART
         @param num_sensor - sensor port number (0..3)
@@ -1617,6 +1649,7 @@ class X393Sensor(object):
         @param wait_ready Wait until all data is sent to UART
         @param reset_recv Reset UART receive channel simultaneously with transmit one
         @param reset_xmit Reset UART transmit channel before sending bytes
+        @param verbose verbose level
         Note: sequencer commands are disabled (may be (re)-enabled after reading response
         """
         
@@ -1644,7 +1677,8 @@ class X393Sensor(object):
                         num_sensor = num_sensor,
                         uart_xmit_rst =   False,
                         uart_recv_rst =   False)
-        print(packet)
+        if verbose > 0:
+            print(packet)
         for b in packet:
             self.set_sensor_uart_fifo_byte_boson (
                         num_sensor=num_sensor,
@@ -2590,7 +2624,8 @@ input               mem                 mtd4                ram1                
                               num_sensor,
                               command,
                               reset_frame = False,
-                              abort_late =   False,
+                              abort_late =  False,
+                              no_pending =  False,
                               verbose = 1):
         """
         Control memory access (write) of a sensor channel
@@ -2601,9 +2636,9 @@ input               mem                 mtd4                ram1                
                single      - acquire single frame ,
                repetitive  - repetitive mode
         @param reset_frame - reset frame number. Needed after changing frame start address (i.e. initial set-up) !
-        @param abort_late    abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
-
-        @param vebose -      verbose level
+        @param abort_late  - abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
+        @param no_pending  - ignore new frame start if previous frame is not finished
+        @param vebose -    - verbose level
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -2613,6 +2648,7 @@ input               mem                 mtd4                ram1                
                                                command =     command,
                                                reset_frame = reset_frame,
                                                abort_late =  abort_late,
+                                               no_pending =  no_pending,                                               
                                                verbose =     verbose)
                 return
         except:
@@ -2648,7 +2684,8 @@ input               mem                 mtd4                ram1                
                                    write_mem =    True,
                                    enable =       en,
                                    chn_reset =    rst,
-                                   abort_late =   abort_late)
+                                   abort_late =   abort_late,
+                                   no_pending =   no_pending)
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode)
         if verbose > 0 :
             print ("write_control_register(0x%08x, 0x%08x)"%(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode))
@@ -2662,7 +2699,8 @@ input               mem                 mtd4                ram1                
                              window_width,
                              window_height,
                              window_left,
-                             window_top):
+                             window_top,
+                             no_pending =   False):
         """
         Setup memory controller for a sensor channel
         @param num_sensor -       sensor port number (0..3)
@@ -2674,7 +2712,23 @@ input               mem                 mtd4                ram1                
         @param window_height -    16-bit window height (in scan lines)
         @param window_left -      13-bit window left margin in 8-bursts (16 bytes)
         @param window_top -       16-bit window top margin (in scan lines
+        @param no_pending  ignore new frame start if previous frame is not finished
+
         """
+        verbose = 1
+        if verbose >0 :
+            print ("----------- setup_sensor_channel -------------")
+            print ("num_sensor =                ", num_sensor)
+            print ("frame_sa =                  ", frame_sa)
+            print ("frame_sa_inc =              ", frame_sa_inc)
+            print ("last_frame_num =            ", last_frame_num)
+            print ("frame_full_width =          ", frame_full_width)
+            print ("window_width =              ", window_width)
+            print ("window_height =             ", window_height)
+            print ("window_left =               ", window_left)
+            print ("window_top =                ", window_top)
+            print ("no_pending =                ", no_pending)
+        
         base_addr = vrlg.MCONTR_SENS_BASE + vrlg.MCONTR_SENS_INC * num_sensor;
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
                                    skip_too_late = True,
@@ -2686,7 +2740,8 @@ input               mem                 mtd4                ram1                
                                    write_mem =    True,
                                    enable =       True,
                                    chn_reset =    False,
-                                   abort_late =   False) # default, change with  control_sensor_memory()
+                                   abort_late =   False,
+                                   no_pending =   no_pending) # default, change with  control_sensor_memory()
 
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,
                                                   frame_sa); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)

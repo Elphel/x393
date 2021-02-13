@@ -208,6 +208,15 @@ module  sensor_channel#(
       parameter SENS_UART_RECV_RST =    4,  //  5: 4
       parameter SENS_UART_XMIT_START =  6,  //  6
       parameter SENS_UART_RECV_NEXT =   7,  //  7
+      parameter SENS_ALT_STATUS =      24,
+      parameter SENS_ALT_STATUS_SET =  25,
+      parameter SENS_TEST_MODES =      26,
+      parameter SENS_TEST_BITS =        3,
+      parameter SENS_TEST_SET=         29,
+      parameter SENS_TEST_WIDTH_BITS = 10,
+      parameter SENS_TEST_HEIGHT_BITS= 10,
+      parameter SENS_TEST_WIDTH_INC =   3,
+      parameter SENS_TEST_HEIGHT_INC =  3,
       
 `elsif PAR12        
       parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
@@ -1188,6 +1197,7 @@ module  sensor_channel#(
             .SENSIO_STATUS          (SENSIO_STATUS),
             .SENSIO_DELAYS          (SENSIO_DELAYS),
             .SENSIO_STATUS_REG      (SENSIO_STATUS_REG),
+
             .SENS_CTRL_MRST         (SENS_CTRL_MRST),
             .SENS_CTRL_RST_MMCM     (SENS_CTRL_RST_MMCM),
             .SENS_CTRL_LD_DLY       (SENS_CTRL_LD_DLY),
@@ -1200,6 +1210,16 @@ module  sensor_channel#(
             .SENS_UART_RECV_RST     (SENS_UART_RECV_RST),
             .SENS_UART_XMIT_START   (SENS_UART_XMIT_START),
             .SENS_UART_RECV_NEXT    (SENS_UART_RECV_NEXT),
+            .SENS_ALT_STATUS        (SENS_ALT_STATUS),
+            .SENS_ALT_STATUS_SET    (SENS_ALT_STATUS_SET),
+            .SENS_TEST_MODES        (SENS_TEST_MODES),
+            .SENS_TEST_BITS         (SENS_TEST_BITS),
+            .SENS_TEST_SET          (SENS_TEST_SET), 
+            .SENS_TEST_WIDTH_BITS   (SENS_TEST_WIDTH_BITS),
+            .SENS_TEST_HEIGHT_BITS  (SENS_TEST_HEIGHT_BITS),
+            .SENS_TEST_WIDTH_INC    (SENS_TEST_WIDTH_INC),
+            .SENS_TEST_HEIGHT_INC   (SENS_TEST_HEIGHT_INC),
+            
             .IODELAY_GRP            (IODELAY_GRP),
             .IDELAY_VALUE           (IDELAY_VALUE),
             .REFCLK_FREQUENCY       (SENS_REFCLK_FREQUENCY),

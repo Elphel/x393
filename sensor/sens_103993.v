@@ -76,6 +76,16 @@ module  sens_103993 #(
     parameter SENS_UART_XMIT_START =        6,  //  6
     parameter SENS_UART_RECV_NEXT =         7,  //  7
 
+    parameter SENS_ALT_STATUS =            24,
+    parameter SENS_ALT_STATUS_SET =        25,
+    parameter SENS_TEST_MODES =            26,
+    parameter SENS_TEST_BITS =              3,
+    parameter SENS_TEST_SET=               29,
+    parameter SENS_TEST_WIDTH_BITS =       10,
+    parameter SENS_TEST_HEIGHT_BITS =      10,
+    parameter SENS_TEST_WIDTH_INC =         3,
+    parameter SENS_TEST_HEIGHT_INC =        3,
+
 //    parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
 //    parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
 //    parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
@@ -185,43 +195,43 @@ module  sens_103993 #(
     output                       extif_ready, // acknowledges extif_dav
     input                        extif_rst
 );
+/*
+    localparam               SENS_ALT_STATUS =        24;
+    localparam               SENS_ALT_STATUS_SET =    25;
+    localparam               SENS_TEST_MODES =        26;
+    localparam               SENS_TEST_BITS =          3;
+    localparam               SENS_TEST_SET=           29;
+    localparam               SENS_TEST_WIDTH_BITS =   10;
+    localparam               SENS_TEST_HEIGHT_BITS =  10;
+    localparam               SENS_TEST_WIDTH_INC =     3;
+    localparam               SENS_TEST_HEIGHT_INC =    3;
+*/    
+    
 
-    localparam               RESET_TEST_OUT =    24;
-    localparam               SET_TEST_OUT =      25;
-    localparam               SENS_TEST_MODES =   26;
-    localparam               SENS_TEST_BITS =     3;
-    localparam               SENS_TEST_SET=      29;
-    localparam               SENS_WIDTH_BITS =   10;
-    localparam               SENS_HEIGHT_BITS =  10;
-    localparam               SENS_WIDTH_INC =     3;
-    localparam               SENS_HEIGHT_INC =    3;
+    wire                            dvalid_w;
+    wire                     [15:0] pxd_w;
+    wire                     [15:0] pxd_test;
+    reg  [SENS_TEST_WIDTH_BITS-1:0] col_num_test;         
+    reg [SENS_TEST_HEIGHT_BITS-1:0] row_num_test;
+    reg                       [7:0] col_num8_test;         
+    reg                       [7:0] row_num8_test;
+    reg                       [3:0] col_div_test;        
+    reg                       [3:0] row_div_test;        
+    reg                             dvalid_r;
+    reg                      [31:0] data_r; 
+    reg                             set_uart_ctrl; // set UART control bits (both TX and receive)
+    reg                             set_uart_tx;   // set UART tx data (full, starting witgh channel number = 0)
+    reg                             set_idelays;    
+    reg                             set_iclk_phase;
+    reg                             set_ctrl_r;
+    reg                             set_status_r;
     
-    
-
-    wire                         dvalid_w;
-    wire                  [15:0] pxd_w;
-    wire                  [15:0] pxd_test;
-    reg    [SENS_WIDTH_BITS-1:0] col_num_test;         
-    reg   [SENS_HEIGHT_BITS-1:0] row_num_test;
-    reg                    [7:0] col_num8_test;         
-    reg                    [7:0] row_num8_test;
-    reg                    [3:0] col_div_test;        
-    reg                    [3:0] row_div_test;        
-    reg                          dvalid_r;
-    reg                   [31:0] data_r; 
-    reg                          set_uart_ctrl; // set UART control bits (both TX and receive)
-    reg                          set_uart_tx;   // set UART tx data (full, starting witgh channel number = 0)
-    reg                          set_idelays;    
-    reg                          set_iclk_phase;
-    reg                          set_ctrl_r;
-    reg                          set_status_r;
-    
-    wire                         perr; // parity error from deserializer
-    wire                         ps_rdy;
-    wire                   [7:0] ps_out;
-    wire                   [7:0] test_out; // should be 0x17 from unused serial signals      
-    wire                         clkin_pxd_stopped_mmcm;
-    wire                         clkfb_pxd_stopped_mmcm;
+    wire                            perr; // parity error from deserializer
+    wire                            ps_rdy;
+    wire                      [7:0] ps_out;
+    wire                      [7:0] test_out; // should be 0x17 from unused serial signals      
+    wire                            clkin_pxd_stopped_mmcm;
+    wire                            clkfb_pxd_stopped_mmcm;
     
     // programmed resets to the sensor 
     reg                         imrst = 0;  // active low 
@@ -244,7 +254,8 @@ module  sens_103993 #(
     wire                        perr_mclk;
     reg                         hact_alive;
     reg                         perr_persistent;
-    
+    reg                         nonlock_persistent; // detects if MMCM looses lock (or input clock)
+
     // new for Boson
     wire                        txd;
     wire                        rxd;
@@ -273,7 +284,7 @@ module  sens_103993 #(
                      recv_pav,                            // 14 
                      imrst ? hact_alive : gp_comb,        // 13 using gp_comb to keep
                      locked_pclk,                         // 12 // wait after mrst
-                     clkin_pxd_stopped_mmcm,              // 11
+                     test_patt? nonlock_persistent : clkin_pxd_stopped_mmcm,              // 11
                      clkfb_pxd_stopped_mmcm,              // 10
                      perr_persistent,                     //  9 deserializer parity error
                      test_patt? perr : ps_rdy,            //  8
@@ -346,8 +357,7 @@ module  sens_103993 #(
         else if (set_ctrl_r && data_r[SENS_CTRL_GP3 + 2])   gp_r[7:6] <= data_r[SENS_CTRL_GP3+:2]; 
 
         if      (mrst)                                      test_patt <= 0;
-        else if (set_ctrl_r && data_r[RESET_TEST_OUT])      test_patt <= 0;
-        else if (set_ctrl_r && data_r[SET_TEST_OUT])        test_patt <= 1;
+        else if (set_ctrl_r && data_r[SENS_ALT_STATUS_SET]) test_patt <= data_r[SENS_ALT_STATUS];
 
         if      (mrst)                                      test_mode <= 0;
         else if (set_ctrl_r && data_r[SENS_TEST_SET])       test_mode <= data_r[SENS_TEST_MODES+:SENS_TEST_BITS];
@@ -370,6 +380,9 @@ module  sens_103993 #(
 
         if      (mrst || set_ctrl_r)                        perr_persistent <= 0;
         else if (perr_mclk)                                 perr_persistent <= 1;
+        
+        if      (mrst || set_ctrl_r)                                                nonlock_persistent <= 0;
+        else if (!locked_pclk || clkin_pxd_stopped_mmcm || clkfb_pxd_stopped_mmcm)  nonlock_persistent <= 1;
         
     end
 
@@ -503,8 +516,8 @@ module  sens_103993 #(
     ((test_mode == 2) ? {6'b0,col_num_test[9:0]}:
                         {6'b0,row_num_test[9:0]});
     always @(posedge pclk) begin
-        if      (!dvalid_w)             col_div_test <= SENS_WIDTH_INC-1;
-        else                            col_div_test <= (col_div_test == 0)? (SENS_WIDTH_INC-1) : (col_div_test - 1);
+        if      (!dvalid_w)             col_div_test <= SENS_TEST_WIDTH_INC-1;
+        else                            col_div_test <= (col_div_test == 0)? (SENS_TEST_WIDTH_INC-1) : (col_div_test - 1);
     
         if      (!dvalid_w)             col_num8_test <= 0;
         else if (col_div_test == 0)     col_num8_test <= col_num8_test + 1; 
@@ -512,8 +525,8 @@ module  sens_103993 #(
         if      (!dvalid_w)             col_num_test <= 0;
         else                            col_num_test <= col_num_test + 1; 
     
-        if      (!vsync)                row_div_test <= SENS_HEIGHT_INC-1;
-        else if (!dvalid_w && dvalid_r) row_div_test <= (row_div_test == 0)? (SENS_HEIGHT_INC-1) : (row_div_test - 1);
+        if      (!vsync)                row_div_test <= SENS_TEST_HEIGHT_INC-1;
+        else if (!dvalid_w && dvalid_r) row_div_test <= (row_div_test == 0)? (SENS_TEST_HEIGHT_INC-1) : (row_div_test - 1);
          
         if      (!vsync)                                       row_num8_test <= 0;
         else if (!dvalid_w && dvalid_r && (row_div_test == 0)) row_num8_test <= row_num8_test + 1; 

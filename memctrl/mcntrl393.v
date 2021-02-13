@@ -264,6 +264,7 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_SKIP_LATE =      12,  // skip actual R/W operation when it is too late, advance pointers
     parameter MCONTR_LINTILE_COPY_FRAME =     13,  // copy frame number from the master channel (single event, not a persistent mode)
     parameter MCONTR_LINTILE_ABORT_LATE =     14,  // abort frame if not finished by the new frame sync (wait pending memory)
+    parameter MCONTR_LINTILE_NO_PENDING =     16, // ignore new frame start if previous frame is not finished
     parameter MCNTRL_SCANLINE_DLY_WIDTH =     12,  // delay start pulse by 1..64 mclk
     parameter MCNTRL_SCANLINE_DLY_DEFAULT = 1024  // initial delay value for start pulse
     
@@ -1122,6 +1123,7 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
                 .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
                 .MCONTR_LINTILE_ABORT_LATE         (MCONTR_LINTILE_ABORT_LATE),
+                .MCONTR_LINTILE_NO_PENDING         (MCONTR_LINTILE_NO_PENDING),
                 .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
                 .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
             ) mcntrl_linear_wr_sensor_i (
@@ -1281,6 +1283,7 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
         .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
         .MCONTR_LINTILE_ABORT_LATE         (MCONTR_LINTILE_ABORT_LATE),
+        .MCONTR_LINTILE_NO_PENDING         (MCONTR_LINTILE_NO_PENDING),
         .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
         .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
          
@@ -1357,6 +1360,7 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
         .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
         .MCONTR_LINTILE_ABORT_LATE         (MCONTR_LINTILE_ABORT_LATE),
+        .MCONTR_LINTILE_NO_PENDING         (MCONTR_LINTILE_NO_PENDING),
         .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
         .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
     ) mcntrl_linear_rw_chn3_i (

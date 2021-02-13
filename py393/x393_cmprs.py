@@ -437,7 +437,7 @@ class X393Cmprs(object):
                                    write_mem =    False,
                                    enable =       en,
                                    chn_reset =    rst,
-                                   copy_frame = copy_frame,
+                                   copy_frame =   copy_frame,
                                    abort_late =   abort_late)
         
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_TILED_MODE,  mode) 

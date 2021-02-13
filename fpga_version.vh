@@ -35,9 +35,14 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h0393020f;         // added test mode
-//          parameter FPGA_VERSION =          32'h0393020f;       // changing MMCM phase -20.0 (use clk_fb) IBUF_LOW_PWR=FALSE
-//          parameter FPGA_VERSION =          32'h0393020e;       // changing MMCM phase -20.0 (use clk_fb)
+          parameter FPGA_VERSION =          32'h03930215;         // pclk phase -3.0 (multiple of 1.5) 
+//          parameter FPGA_VERSION =          32'h03930214;         // pclk phase +3.0 (multiple of 1.5) 
+//          parameter FPGA_VERSION =          32'h03930213;         // bug fixing in frame_start_pending_long 
+//          parameter FPGA_VERSION =          32'h03930212;         // test mode interface, no-pending frames 
+//          parameter FPGA_VERSION =          32'h03930211;         // test mode, IBUF_LOW_PWR=TRUE, CLKFBOUT_PHASE_SENSOR = -21.0 
+//          parameter FPGA_VERSION =          32'h03930210;         // added test mode
+//          parameter FPGA_VERSION =          32'h0393020f;       // changing MMCM phase -19.5 (use clk_fb) IBUF_LOW_PWR=FALSE
+//          parameter FPGA_VERSION =          32'h0393020e;       // changing MMCM phase -19.5 (use clk_fb)
 //          parameter FPGA_VERSION =          32'h0393020e;       // changing MMCM phase -19.5 (use clk_fb)
 //          parameter FPGA_VERSION =          32'h0393020d;       // changing MMCM phase -18.0 (use clk_fb)
 //          parameter FPGA_VERSION =          32'h0393020c;       // changing MMCM phase 18.0 (use clk_fb)

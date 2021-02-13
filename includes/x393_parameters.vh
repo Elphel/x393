@@ -303,6 +303,7 @@
     parameter MCONTR_LINTILE_SKIP_LATE =          12,  // skip actual R/W operation when it is too late, advance pointers
     parameter MCONTR_LINTILE_COPY_FRAME =         13,  // copy frame number from the master channel (single event, not a persistent mode)
     parameter MCONTR_LINTILE_ABORT_LATE =         14,  // abort frame if not finished by the new frame sync (wait pending memory)
+    parameter MCONTR_LINTILE_NO_PENDING =         15, // ignore new frame start if previous frame is not finished
     
     parameter MCNTRL_SCANLINE_DLY_WIDTH =         12,  // delay start pulse by 1..64 mclk
     
@@ -512,6 +513,16 @@
         parameter SENS_UART_RECV_RST =    4,  //  5: 4
         parameter SENS_UART_XMIT_START =  6,  //  6
         parameter SENS_UART_RECV_NEXT =   7,  //  7
+        parameter SENS_ALT_STATUS =      24,
+        parameter SENS_ALT_STATUS_SET =  25,
+        parameter SENS_TEST_MODES =      26,
+        parameter SENS_TEST_BITS =        3,
+        parameter SENS_TEST_SET=         29,
+        parameter SENS_TEST_WIDTH_BITS = 10,
+        parameter SENS_TEST_HEIGHT_BITS= 10,
+        parameter SENS_TEST_WIDTH_INC =   3,
+        parameter SENS_TEST_HEIGHT_INC =  3,
+        
 //`else
         parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,
@@ -707,8 +718,8 @@
     parameter CLKIN_PERIOD_SENSOR =        37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
 //MMCME2_ADV_i has a CLKFBOUT_PHASE value (-20.000)  with CLKFBOUT_USE_FINE_PS set to FALSE. It should be a multiple of [45 / CLKFBOUT_MULT_F] = [45 / 30.000] = 1.500.
-    parameter CLKFBOUT_PHASE_SENSOR =   -19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =                0.000,
+    parameter CLKFBOUT_PHASE_SENSOR =   -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =                -3.000, // trying both ways (PCLK_PHASE inside sens_103993)
     parameter IPCLK2X_PHASE =              0.000,
     `ifdef TWEAKING_IOSTANDARD
         parameter PXD_IOSTANDARD =           "LVCMOS25", // with 1.8 actually applied voltage
@@ -794,7 +805,7 @@
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
 `ifdef BOSON
-    parameter HISPI_IBUF_LOW_PWR =        "FALSE", // "TRUE",
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // "TRUE",
 `else
     parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // try 
 `endif    
