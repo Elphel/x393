@@ -1908,7 +1908,7 @@ class X393ExportC(object):
         dw.append(("ps_out",                 0, 8,0,  "Sensor MMCM current phase"))
         dw.append(("ps_rdy",                 8, 1,0,  "Sensor MMCM phase ready"))
         dw.append(("perr",                   9, 1,0,  "Parity error in video stream"))
-        dw.append(("clkfb_pxd_stopped_mmcm",10, 1,0,  "Sensor MMCM feedback clock stopped"))
+        dw.append(("recv_odd_even",         10, 1,0,  "UART receive odd/even output byte (next byte should have it inverted)"))
         dw.append(("clkin_pxd_stopped_mmcm",11, 1,0,  "Sensor MMCM input clock stopped"))
         dw.append(("locked_pxd_mmcm",       12, 1,0,  "Sensor MMCM locked - wait after removing sensor mrst!"))
         dw.append(("hact_alive",            13, 1,0,  "HACT signal from the sensor (or internal) is toggling"))
@@ -1919,8 +1919,6 @@ class X393ExportC(object):
         dw.append(("xmit_busy",             25, 1,0,  "UART transmitter busy"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
         return dw
-
-
 
     def _enc_status_sens_i2c(self):
         dw=[]

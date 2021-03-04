@@ -83,7 +83,8 @@ module  serial_103993#(
 //    output                     recv_dav,   // read byte available
     output                     recv_pav,    // packet available
     output                     recv_eop,    // end of packet (discard  recv_data, apply recv_next)
-    output               [7:0] recv_data
+    output               [7:0] recv_data,
+    output                     recv_odd_even    // odd/even output counter for status (next byte should have inverted)
 
 );
     wire                [ 7:0] xmit_fifo_out;
@@ -141,6 +142,7 @@ module  serial_103993#(
 //    wire                       recv_end;      // Discard recv_data, this is packet end
     wire                       recv_prgrs; // packet is being received (to distinguish eop from data byte)
     wire                       xmit_run_any;
+    reg                        recv_odd_even_r;
     
     assign extif_rq_w =          packet_ready_seq && !extif_run && !packet_over_seq;
     assign xmit_any_data =       extif_run ? xmit_extif_data : xmit_fifo_out;
@@ -156,6 +158,7 @@ module  serial_103993#(
     assign recv_fifo_wr =        fslp_stb_or_done;
     assign recv_pav =            recv_pav_r;
     assign xmit_run_any =        xmit_run || extif_run;
+    assign recv_odd_even =       recv_odd_even_r;
 //    assign recv_eop =            recv_end;
     always @(posedge mclk) begin
         fslp_stb_or_done <= fslp_rx_stb || fslp_rx_done;
@@ -207,7 +210,8 @@ module  serial_103993#(
         xmit_stb_seq <=  pre_tx_stb && extif_run_in;
         
         xmit_over_seq <= pre_tx_stb && packet_over_seq;
-        
+        if      (mrst)                  recv_odd_even_r <= 0;
+        else if (recv_fifo_re_regen[1]) recv_odd_even_r <= !recv_odd_even_r;
     end
     
     serial_103993_extif #(

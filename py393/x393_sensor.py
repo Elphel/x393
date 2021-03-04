@@ -1732,7 +1732,7 @@ uart_print_packet 0 False False
                          wait_packet =      True,
                          enable_sequencer = True):
         """
-        Send packet to UART (assuming sequencer is disabled if needed)
+        Read packet from UART (assuming sequencer is disabled if needed)
         @param num_sensor - sensor port number (0..3)
         @param wait packet - if False, return empty packet if none is available
         @param enable_sequencer (Re)enable sequencer commands

@@ -88,6 +88,48 @@ module  sens_103993_din #(
                     .I    (din_p[i]), // input
                     .IB   (din_n[i])  // input
                 );
+            end else if (LVDS_UNTUNED_SPLIT == "40") begin
+                ibufds_ibufgds_40 #(
+                    .CAPACITANCE      (LVDS_CAPACITANCE),
+                    .DIFF_TERM        (LVDS_DIFF_TERM),
+                    .DQS_BIAS         (LVDS_DQS_BIAS),
+                    .IBUF_DELAY_VALUE (LVDS_IBUF_DELAY_VALUE),
+                    .IBUF_LOW_PWR     (LVDS_IBUF_LOW_PWR),
+                    .IFD_DELAY_VALUE  (LVDS_IFD_DELAY_VALUE),
+                    .IOSTANDARD       (LVDS_IOSTANDARD)
+                ) ibufds_ibufgds0_i (
+                    .O    (din[i]),   // output
+                    .I    (din_p[i]), // input
+                    .IB   (din_n[i])  // input
+                );
+            end else if (LVDS_UNTUNED_SPLIT == "50") begin
+                ibufds_ibufgds_50 #(
+                    .CAPACITANCE      (LVDS_CAPACITANCE),
+                    .DIFF_TERM        (LVDS_DIFF_TERM),
+                    .DQS_BIAS         (LVDS_DQS_BIAS),
+                    .IBUF_DELAY_VALUE (LVDS_IBUF_DELAY_VALUE),
+                    .IBUF_LOW_PWR     (LVDS_IBUF_LOW_PWR),
+                    .IFD_DELAY_VALUE  (LVDS_IFD_DELAY_VALUE),
+                    .IOSTANDARD       (LVDS_IOSTANDARD)
+                ) ibufds_ibufgds0_i (
+                    .O    (din[i]),   // output
+                    .I    (din_p[i]), // input
+                    .IB   (din_n[i])  // input
+                );
+            end else if (LVDS_UNTUNED_SPLIT == "60") begin
+                ibufds_ibufgds_60 #(
+                    .CAPACITANCE      (LVDS_CAPACITANCE),
+                    .DIFF_TERM        (LVDS_DIFF_TERM),
+                    .DQS_BIAS         (LVDS_DQS_BIAS),
+                    .IBUF_DELAY_VALUE (LVDS_IBUF_DELAY_VALUE),
+                    .IBUF_LOW_PWR     (LVDS_IBUF_LOW_PWR),
+                    .IFD_DELAY_VALUE  (LVDS_IFD_DELAY_VALUE),
+                    .IOSTANDARD       (LVDS_IOSTANDARD)
+                ) ibufds_ibufgds0_i (
+                    .O    (din[i]),   // output
+                    .I    (din_p[i]), // input
+                    .IB   (din_n[i])  // input
+                );
             end else begin
                 ibufds_ibufgds #(
                     .CAPACITANCE      (LVDS_CAPACITANCE),

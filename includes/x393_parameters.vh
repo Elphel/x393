@@ -707,28 +707,41 @@
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
+    parameter HISPI_IBUF_LOW_PWR =       "TRUE", // "FALSE", // try 
     `ifdef TWEAKING_IOSTANDARD
         parameter PXD_IOSTANDARD =           "LVCMOS25", // with 1.8 actually applied voltage
         parameter SENSI2C_IOSTANDARD =       "LVCMOS25", // with 1.8 actually applied voltage
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE",   // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "TRUE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+        parameter HISPI_IOSTANDARD =          "MINI_LVDS_25", // "LVDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
     `else
         parameter PXD_IOSTANDARD =           "LVCMOS18",
         parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+        parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
     `endif
 `elsif BOSON    
     parameter CLKIN_PERIOD_SENSOR =        37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
 //MMCME2_ADV_i has a CLKFBOUT_PHASE value (-20.000)  with CLKFBOUT_USE_FINE_PS set to FALSE. It should be a multiple of [45 / CLKFBOUT_MULT_F] = [45 / 30.000] = 1.500.
-    parameter CLKFBOUT_PHASE_SENSOR =   -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =                -3.000, // trying both ways (PCLK_PHASE inside sens_103993)
+    parameter CLKFBOUT_PHASE_SENSOR =      -22.5, // -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =                0.0, // -3.000, // trying both ways (PCLK_PHASE inside sens_103993)
     parameter IPCLK2X_PHASE =              0.000,
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // try 
     `ifdef TWEAKING_IOSTANDARD
         parameter PXD_IOSTANDARD =           "LVCMOS25", // with 1.8 actually applied voltage
         parameter SENSI2C_IOSTANDARD =       "LVCMOS25", // with 1.8 actually applied voltage
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE",   // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "TRUE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+        parameter HISPI_IOSTANDARD =          "LVDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
     `else
-        parameter PXD_IOSTANDARD =           "LVCMOS18",
-        parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
+        parameter PXD_IOSTANDARD =            "LVCMOS18",
+        parameter SENSI2C_IOSTANDARD =        "LVCMOS18",
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE", // "60", // "FALSE", // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+        parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
     `endif
-
 `else
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
@@ -737,19 +750,17 @@
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS25",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
-
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // try 
+    `ifdef TWEAKING_IOSTANDARD
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE",   // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "TRUE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+        parameter HISPI_IOSTANDARD =          "MINI_LVDS_25", // "LVDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
+    `else
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+        parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+    `endif
 `endif
-
-`ifdef TWEAKING_IOSTANDARD
-    parameter HISPI_UNTUNED_SPLIT =       "FALSE",   // Very power-hungry
-    parameter HISPI_DIFF_TERM =           "TRUE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
-    parameter HISPI_IOSTANDARD =          "LVDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
-`else
-    parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
-    parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
-    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
-`endif
-
 
 //    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
 //    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",
@@ -804,11 +815,6 @@
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
-`ifdef BOSON
-    parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // "TRUE",
-`else
-    parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // try 
-`endif    
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
 //    parameter HISPI_IOSTANDARD =          "PPDS_25", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 //    parameter HISPI_IOSTANDARD =          "DIFF_HSTL_II_18", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)

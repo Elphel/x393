@@ -269,6 +269,7 @@ module  sens_103993 #(
     wire                        recv_pav;  // output
     wire                        recv_eop;    // output fifo not empty
     wire                 [7:0]  recv_data;    // output[7:0] 
+    wire                        recv_odd_even;// output odd/even output counter for status (next byte should have inverted)    
     
     wire                        senspgmin;   // detect sensorboard
     // GP0..GP3 are not yet used, fake-use gp_comb to keep
@@ -285,7 +286,7 @@ module  sens_103993 #(
                      imrst ? hact_alive : gp_comb,        // 13 using gp_comb to keep
                      locked_pclk,                         // 12 // wait after mrst
                      test_patt? nonlock_persistent : clkin_pxd_stopped_mmcm,              // 11
-                     clkfb_pxd_stopped_mmcm,              // 10
+                     recv_odd_even,                       // clkfb_pxd_stopped_mmcm,              // 10
                      perr_persistent,                     //  9 deserializer parity error
                      test_patt? perr : ps_rdy,            //  8
                      test_patt? test_out[7:0]:ps_out[7:0],// [7:0]
@@ -449,7 +450,9 @@ module  sens_103993 #(
         .recv_next                 (recv_next),   // input
         .recv_pav                  (recv_pav),    // output at least one received packet is in fifo
         .recv_eop                  (recv_eop),    // output end of packet (discard recv_data; apply recv_next)
-        .recv_data                 (recv_data)    // output[7:0] 
+        .recv_data                 (recv_data),   // output[7:0]
+        .recv_odd_even             (recv_odd_even)// output odd/even output counter for status (next byte should have inverted)
+         
     );
 
 

@@ -35,7 +35,17 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h03930215;         // pclk phase -3.0 (multiple of 1.5) 
+            parameter FPGA_VERSION =          32'h0393021f;         // (ext resistor) low_pwr, DIFF_SSTL18_I pclk phase 0.0 mmcm phase -22.5 (multiple of 1.5) 
+//          parameter FPGA_VERSION =          32'h0393021e;         // internal 100ohm,  low_pwr, LVDS_25 pclk phase 0.0 mmcm phase -22.5 (multiple of 1.5) 
+//          parameter FPGA_VERSION =          32'h0393021d;         // (ext resistor) low_pwr, DIFF_SSTL18_I pclk phase 0.0 mmcm phase -22.5 (multiple of 1.5) 
+//          parameter FPGA_VERSION =          32'h0393021c;         // untuned_60 DIFF_SSTL18_I pclk phase 0.0 mmcm phase -21.0 (multiple of 1.5) set TWEAKING_IOSTANDARD 1
+//          parameter FPGA_VERSION =          32'h0393021b;         // untuned_50 DIFF_SSTL18_I pclk phase 0.0 mmcm phase -21.0 (multiple of 1.5)
+//          parameter FPGA_VERSION =          32'h0393021a;         // ext 100Ohm/DIFF_SSTL18_I pclk phase 0.0 mmcm phase -21.0 (multiple of 1.5) set TWEAKING_IOSTANDARD 1
+//          parameter FPGA_VERSION =          32'h03930219;         // MINI_LVDS_25 pclk phase 0.0 mmcm phase -21.0 (multiple of 1.5) set TWEAKING_IOSTANDARD 1
+//          parameter FPGA_VERSION =          32'h03930218;         // pclk phase 0.0 mmcm phase -21.0 (multiple of 1.5) set TWEAKING_IOSTANDARD 1
+//          parameter FPGA_VERSION =          32'h03930217;       // pclk phase 0.0 (multiple of 1.5) set TWEAKING_IOSTANDARD 1
+//          parameter FPGA_VERSION =          32'h03930216;       // pclk phase -3.0 (multiple of 1.5) set TWEAKING_IOSTANDARD 1
+//          parameter FPGA_VERSION =          32'h03930215;         // pclk phase -3.0 (multiple of 1.5) 
 //          parameter FPGA_VERSION =          32'h03930214;         // pclk phase +3.0 (multiple of 1.5) 
 //          parameter FPGA_VERSION =          32'h03930213;         // bug fixing in frame_start_pending_long 
 //          parameter FPGA_VERSION =          32'h03930212;         // test mode interface, no-pending frames 

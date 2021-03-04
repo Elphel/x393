@@ -934,10 +934,11 @@ class X393SensCmprs(object):
             chn_en =     True,
             bits16 =     bits16) #False)
 
-        if sensorType ==  x393_sensor.SENSOR_INTERFACE_BOSON:        
+        if sensorType ==  x393_sensor.SENSOR_INTERFACE_BOSON:
+            skip_frames = 70 # 65 < min <70. 70 shows 4 frames, 100 shows 35 frames over uart  
             fn = self.get_frame_number_i2c(channel=num_sensor)
             print ("Frame number = %d"%(fn))
-            for _ in range (70): # 65): #70): #80): #100): # 60 10 2
+            for _ in range (skip_frames): # 65): #70): #80): #100): # 60 10 2
                 self.skip_frame_i2c(
                    channel_mask = (1 << num_sensor),
                    loop_delay = 0.01,
@@ -1933,7 +1934,7 @@ class X393SensCmprs(object):
                     for module in x393_sensor.BOSON_MAP:
                         mod_index, indx = x393_sensor.BOSON_MAP[module]
                         for byte_var in range(4):
-                            num_payload_bytes = (0,1,2,4)[byte_var]
+#                            num_payload_bytes = (0,1,2,4)[byte_var]
                             self.x393Sensor.set_sensor_i2c_table_reg_wr (
                                             num_sensor = num_sensor,
                                             page       = indx * 4 + byte_var, 
