@@ -64,9 +64,10 @@
   `define PRELOAD_BRAMS
   `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
- `define BOSON 1 /*************** CHANGE here and x393_hispi/x393_parallel/x393_lwir in bitstream tool settings ****************/
+//  `define BOSON 1 /*************** CHANGE here and x393_hispi/x393_parallel/x393_lwir/x393_boson in bitstream tool settings ****************/
 //  `define LWIR /*************** CHANGE here and x393_hispi/x393_parallel/x393_lwir in bitstream tool settings ****************/
 //  `define HISPI /*************** CHANGE here and x393_hispi/x393_parallel in bitstream tool settings ****************/
+// also change in utilization and timimg summary tools (x393_parallel_utilization.report, ...)
   `ifdef BOSON
   
   `elsif LWIR

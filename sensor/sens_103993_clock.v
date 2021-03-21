@@ -1,5 +1,5 @@
 /*!
- * <b>Module:</b>sens_hispi_clock
+ * <b>Module:</b>sens_103993_clock
  * @file sens_103993_clock.v
  * @date 2020-12-16  
  * @author Andrey Filippov     

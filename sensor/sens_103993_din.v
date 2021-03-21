@@ -1,6 +1,6 @@
 /*!
  * <b>Module:</b>sens_103993_din
- * @file sens_hispi_din.v
+ * @file sens_103993_din.v
  * @date 2020-12-16  
  * @author Andrey Filippov     
  *
@@ -56,13 +56,13 @@ module  sens_103993_din #(
 )(
     input                           mclk,
     input                           mrst,
-    input  [NUMLANES * 8-1:0] dly_data,     // delay value (3 LSB - fine delay) - @posedge mclk
-    input      [NUMLANES-1:0] set_idelay,   // mclk synchronous load idelay value
-    input                           ld_idelay,    // mclk synchronous set idealy value
-    input                           pclk,    // 27 MHz
-//    input                           ipclk,   // 165 MHz
-    input                           ipclk2x, // 330 MHz
-//    input                           irst,    // reset @posedge iclk
+    input  [NUMLANES * 8-1:0] dly_data,         // delay value (3 LSB - fine delay) - @posedge mclk
+    input      [NUMLANES-1:0] set_idelay,       // mclk synchronous load idelay value
+    input                           ld_idelay,  // mclk synchronous apply idelay value
+    input                           pclk,       // 27 MHz
+//    input                           ipclk,    // 165 MHz
+    input                           ipclk2x,    // 330 MHz
+//    input                           irst,     // reset @posedge iclk
     input      [NUMLANES-1:0] din_p,
     input      [NUMLANES-1:0] din_n,
     output [NUMLANES * 10-1:0] dout

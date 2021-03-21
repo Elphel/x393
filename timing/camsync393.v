@@ -48,7 +48,7 @@
 //`define GENERATE_TRIG_OVERDUE 1
 `undef GENERATE_TRIG_OVERDUE
 module camsync393       #(
-    parameter CAMSYNC_ADDR =               'h160, //TODO: assign valid address
+    parameter CAMSYNC_ADDR =               'h708, //TODO: assign valid address
     parameter CAMSYNC_MASK =               'h7f8,
     parameter CAMSYNC_MODE =               'h0,
     parameter CAMSYNC_TRIG_SRC =           'h1, // setup trigger source

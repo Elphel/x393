@@ -56,8 +56,8 @@ module  pxd_clock #(
     input        rst,            // reset
     input        mclk,           // clock for setting delay values
     input  [7:0] dly_data,       // delay value (3 LSB - fine delay) - @posedge mclk
-    input        set_idelay,     // mclk synchronous load idelay value
-    input        ld_idelay       // mclk synchronous set idealy value
+    input        set_idelay,     // mclk synchronous apply loaded delay values
+    input        ld_idelay       // mclk synchronous load delay value to pipeline register
 );
     wire pxclk_iobuf;
 
@@ -97,8 +97,8 @@ module  pxd_clock #(
     ) pxclk_dly_i(
         .clk          (mclk),
         .rst          (rst),
-        .set          (set_idelay),
-        .ld           (ld_idelay),
+        .set          (set_idelay), // apply loaded delay values
+        .ld           (ld_idelay),  // load delay value to pipeline register
         .delay        (dly_data[7:3]),
         .data_in      (pxclk_iobuf),
         .data_out     (pxclk_in)

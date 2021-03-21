@@ -78,7 +78,7 @@ module  sens_hispi_clock#(
     input        mrst,
     input  [7:0] phase,
     input        set_phase,
-    input        load,      // only used when delay, not phase
+    input        apply_phase,      // only used when delay, not phase
     input        rst_mmcm,
     input        clp_p,
     input        clk_n,
@@ -144,8 +144,11 @@ module  sens_hispi_clock#(
             ) clk_dly_i(
                 .clk          (mclk),
                 .rst          (mrst),
-                .set          (set_phase),
-                .ld           (load),
+//                .set          (set_phase), // apply pipeline register
+//                .ld           (load),      // load pipeline register
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+                .set          (apply_phase), // apply pipeline register
+                .ld           (set_phase),      // load pipeline register
                 .delay        (phase[4:0]),
                 .data_in      (clk_int),
                 .data_out     (clk_in)

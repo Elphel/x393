@@ -192,7 +192,7 @@ dm_single #(
         .din(din_dm_r[3:0]) ,           // parallel data to be sent out
         .tin(tin_dq_r),                 // tristate for data out (sent out earlier than data!) 
         .set_odelay(set_r),             // clk_div synchronous load odelay value from dly_data
-        .ld_odelay(ld_odly_dm)         // clk_div synchronous set odealy value from loaded
+        .ld_odelay(ld_odly_dm)          // clk_div synchronous set odealy value from loaded
 );
 
 `ifdef NOFINEDELAY_DQS

@@ -58,7 +58,7 @@ module  sens_hispi_din #(
     input                           mrst,
     input  [HISPI_NUMLANES * 8-1:0] dly_data,     // delay value (3 LSB - fine delay) - @posedge mclk
     input      [HISPI_NUMLANES-1:0] set_idelay,   // mclk synchronous load idelay value
-    input                           ld_idelay,    // mclk synchronous set idealy value
+    input                           apply_idelay,    // mclk synchronous set idealy value
     input                           ipclk,   // 165 MHz
     input                           ipclk2x, // 330 MHz
     input                           irst,    // reset @posedge iclk
@@ -111,8 +111,11 @@ module  sens_hispi_din #(
             ) pxd_dly_i(
                 .clk          (mclk),
                 .rst          (mrst),
-                .set          (set_idelay[i]),
-                .ld           (ld_idelay),
+//                .set          (set_idelay[i]),
+//                .ld           (apply_idelay),
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+                .set          (apply_idelay),
+                .ld           (set_idelay[i]),
                 .delay        (dly_data[3 + 8*i +: 5]),
                 .data_in      (din[i]),
                 .data_out     (din_dly[i])

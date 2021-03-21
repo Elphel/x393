@@ -1,6 +1,6 @@
 /*!
  * <b>Module:</b>sens_103993_l3
- * @file sens_hispi12l4.v
+ * @file sens_103993_l3.v
  * @date 2015-10-13  
  * @author Andrey Filippov     
  *

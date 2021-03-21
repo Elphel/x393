@@ -204,7 +204,7 @@ module  sens_10398 #(
     reg         iarst = 0;
     reg         imrst = 0;  // active low 
     reg         rst_mmcm=1; // rst and command - en/dis 
-    reg         ld_idelay=0;
+    reg         apply_idelay=0;
     reg         ignore_embed=0; // do not process sensor data marked as "embedded"
 
 //    wire [14:0] status;
@@ -317,8 +317,8 @@ module  sens_10398 #(
         if      (mrst)                                               ignore_embed <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_IGNORE_EMBED + 1])   ignore_embed <= data_r[SENS_CTRL_IGNORE_EMBED]; 
          
-        if  (mrst) ld_idelay <= 0;
-        else       ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
+        if  (mrst) apply_idelay <= 0;
+        else       apply_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
 
         if      (mrst)                                      gp_r[1:0] <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_GP0 + 2])   gp_r[1:0] <= data_r[SENS_CTRL_GP0+:2]; 
@@ -482,7 +482,7 @@ module  sens_10398 #(
         .set_lanes_map          (set_lanes_map),          // input 
         .set_fifo_dly           (set_fifo_dly),           // input
         .set_idelay             ({4{set_idelays}}),       // input[3:0] 
-        .ld_idelay              (ld_idelay),              // input
+        .apply_idelay           (apply_idelay),           // input
         .set_clk_phase          (set_iclk_phase),         // input
         .rst_mmcm               (rst_mmcm),               // input
         .ignore_embedded        (ignore_embed),           // input

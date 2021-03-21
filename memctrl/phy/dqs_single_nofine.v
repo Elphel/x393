@@ -61,8 +61,8 @@ module  dqs_single_nofine #(
     input [7:0] dly_data,
     input [3:0] din,
     input [3:0] tin,
-    input       set_odelay,
-    input       ld_odelay,
+    input       set_odelay, // apply loaded pipeline register data
+    input       ld_odelay,  // load  pipeline register data
     input       set_idelay,
     input       ld_idelay
 );
@@ -113,6 +113,7 @@ IOBUFDS_DCIEN #(
     .IBUFDISABLE(1'b0),
     .I(dqs_data_dly), //dqs_data),
     .T(dqs_tri));
+    
 idelay_nofine # (
     .IODELAY_GRP(IODELAY_GRP),
     .DELAY_VALUE(IDELAY_VALUE>>3),

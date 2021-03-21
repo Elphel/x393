@@ -60,9 +60,9 @@ module  pxd_single#(
     input        irst,         // reset @ posedge iclk
     input        mclk,         // clock for setting delay values
     input  [7:0] dly_data,     // delay value (3 LSB - fine delay) - @posedge mclk
-    input        set_idelay,   // mclk synchronous load idelay value
-    input        ld_idelay,    // mclk synchronous set idealy value
-    input  [1:0] quadrant       // select one of 4 90-degree shifts for the data (MT9P0xx) have VACT, HACT shifted from PXD
+    input        set_idelay,   // mclk synchronous apply loaded delay values
+    input        ld_idelay,    // mclk synchronous load delay value to pipeline register
+    input  [1:0] quadrant      // select one of 4 90-degree shifts for the data (MT9P0xx) have VACT, HACT shifted from PXD
 );
     wire pxd_iobuf;
     wire pxd_delayed;
@@ -114,8 +114,8 @@ module  pxd_single#(
     ) pxd_dly_i(
         .clk          (mclk),
         .rst          (mrst),
-        .set          (set_idelay),
-        .ld           (ld_idelay),
+        .set          (set_idelay), // apply loaded delay values
+        .ld           (ld_idelay),  // load delay value to pipeline register
         .delay        (dly_data[7:3]),
         .data_in      (pxd_iobuf),
         .data_out     (pxd_delayed)

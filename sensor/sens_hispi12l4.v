@@ -105,7 +105,7 @@ module  sens_hispi12l4#(
     input                           set_lanes_map,   // set number of physical lane for each logical one
     input                           set_fifo_dly,
     input      [HISPI_NUMLANES-1:0] set_idelay,      // mclk synchronous load idelay value
-    input                           ld_idelay,       // mclk synchronous set idealy value
+    input                           apply_idelay,    // mclk synchronous set idealy value
     input                           set_clk_phase,   // mclk synchronous set idealy value
     input                           rst_mmcm,
     input                           ignore_embedded, // ignore lines with embedded data
@@ -253,7 +253,7 @@ module  sens_hispi12l4#(
         .mrst                   (mrst),                   // input
         .phase                  (dly_data[7:0]),          // input[7:0] 
         .set_phase              (set_clk_phase),          // input
-        .load                   (ld_idelay),              // input
+        .apply_phase            (apply_idelay),           // input
         .rst_mmcm               (rst_mmcm),               // input
         .clp_p                  (sns_clkp),               // input
         .clk_n                  (sns_clkn),               // input
@@ -285,7 +285,7 @@ module  sens_hispi12l4#(
         .mrst         (mrst),        // input
         .dly_data     (dly_data),    // input[31:0] 
         .set_idelay   (set_idelay),  // input[3:0] 
-        .ld_idelay    (ld_idelay),   // input
+        .apply_idelay (apply_idelay),   // input
         .ipclk        (ipclk),       // input
         .ipclk2x      (ipclk2x),     // input
         .irst         (irst),        // input

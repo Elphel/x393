@@ -191,7 +191,7 @@ module  sens_parallel12 #(
     reg         imrst = 0;
     reg         rst_mmcm=1; // rst and command - en/dis 
     reg  [SENS_CTRL_QUADRANTS_WIDTH-1:0]  quadrants=0; //90-degree shifts for data [1:0], hact [3:2] and vact [5:4], [6] odd/even
-    reg         ld_idelay=0;
+    reg         apply_idelay=0; // ld_idelay=0;
     reg         sel_ext_clk=0; // select clock source from the sensor (0 - use internal clock - to sensor)
 
 
@@ -324,8 +324,8 @@ module  sens_parallel12 #(
         if      (mclk_rst)                                      quadrants <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_QUADRANTS_EN])  quadrants <= data_r[SENS_CTRL_QUADRANTS +: SENS_CTRL_QUADRANTS_WIDTH]; 
 
-        if  (mclk_rst) ld_idelay <= 0;
-        else           ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
+        if  (mclk_rst) apply_idelay <= 0;
+        else           apply_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
         
         if  (mclk_rst) set_width_r <= 0;
         else           set_width_r <= {set_width_r[0],cmd_we && (cmd_a== SENSIO_WIDTH)}; 
@@ -485,8 +485,11 @@ module  sens_parallel12 #(
         .irst           (irst),            // input
         .mclk           (mclk),            // input
         .dly_data       (data_r[7:0]),          // input[7:0] 
-        .set_idelay     (set_pxd_delay[0]),// input
-        .ld_idelay      (ld_idelay),       // input
+//        .set_idelay     (set_pxd_delay[0]),// input
+//        .ld_idelay      (ld_idelay),       // input
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+        .set_idelay     (apply_idelay),// input
+        .ld_idelay      (set_pxd_delay[0]),       // input
         .quadrant       (quadrants[1:0])   // input[1:0] 
     );
     
@@ -531,8 +534,11 @@ module  sens_parallel12 #(
         .irst           (irst),            // input
         .mclk           (mclk),            // input
         .dly_data       (data_r[15:8]),    // input[7:0] 
-        .set_idelay     (set_pxd_delay[0]),// input
-        .ld_idelay      (ld_idelay),       // input
+//        .set_idelay     (set_pxd_delay[0]),// input
+//        .ld_idelay      (ld_idelay),       // input
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+        .set_idelay     (apply_idelay),// input
+        .ld_idelay      (set_pxd_delay[0]),       // input
         .quadrant       (quadrants[1:0])   // input[1:0] 
     );
 `endif    
@@ -566,8 +572,11 @@ module  sens_parallel12 #(
 //                .dly_data       (data_r[8*((i+2)&3)+:8]), // input[7:0] alternating bytes of 32-bit word
 //                .set_idelay     (set_pxd_delay[(i+2)>>2]),// input 0 for pxd[3:2], 1 for pxd[7:4], 2 for pxd [11:8]
                 .dly_data       (data_r[8 * (i & 3) +: 8]), // input[7:0] alternating bytes of 32-bit word
-                .set_idelay     (set_pxd_delay[i >> 2]),// input 0 for pxd[3:2], 1 for pxd[7:4], 2 for pxd [11:8]
-                .ld_idelay      (ld_idelay),       // input
+//                .set_idelay     (set_pxd_delay[i >> 2]),// input 0 for pxd[3:2], 1 for pxd[7:4], 2 for pxd [11:8]
+//                .ld_idelay      (ld_idelay),       // input
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+                .set_idelay     (apply_idelay),       // input
+                .ld_idelay      (set_pxd_delay[i >> 2]), // input
                 .quadrant       (quadrants[1:0])   // input[1:0] 
             );
         end
@@ -594,8 +603,12 @@ module  sens_parallel12 #(
         .irst           (irst),           // input
         .mclk           (mclk),           // input
         .dly_data       (data_r[7:0]),    // input[7:0] 
-        .set_idelay     (set_other_delay),// input
-        .ld_idelay      (ld_idelay),      // input
+//        .set_idelay     (set_other_delay),// input
+//        .ld_idelay      (ld_idelay),      // input
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+        .set_idelay     (apply_idelay),       // input
+        .ld_idelay      (set_other_delay), // input
+        
         .quadrant       (quadrants[3:2])  // input[1:0] 
     );
     
@@ -620,8 +633,11 @@ module  sens_parallel12 #(
         .irst           (irst),            // input
         .mclk           (mclk),          // input
         .dly_data       (data_r[15:8]),  // input[7:0] 
-        .set_idelay     (set_other_delay),// input
-        .ld_idelay      (ld_idelay),     // input
+//        .set_idelay     (set_other_delay),// input
+//        .ld_idelay      (ld_idelay),     // input
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+        .set_idelay     (apply_idelay),       // input
+        .ld_idelay      (set_other_delay), // input
         .quadrant       (quadrants[5:4]) // input[1:0] 
     );
     // receive clock from sensor
@@ -642,8 +658,11 @@ module  sens_parallel12 #(
         .rst        (mclk_rst),        // input
         .mclk       (mclk),            // input
         .dly_data   (data_r[23:16]),   // input[7:0] 
-        .set_idelay (set_other_delay), // input
-        .ld_idelay  (ld_idelay)        // input
+//        .set_idelay (set_other_delay), // input
+//        .ld_idelay  (ld_idelay)        // input
+/// Seems to be a major old bug may need to be changed in idelay_nofine and idelay_fine_pipe (odelay too?) 
+        .set_idelay     (apply_idelay),       // input
+        .ld_idelay      (set_other_delay) // input
     );
     // generate dclk output
     oddr_ss #(

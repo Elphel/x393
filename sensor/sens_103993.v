@@ -690,7 +690,8 @@ module  sens_103993 #(
     
 // end of dummy
 
-    
+// pulldown to detect sensor presense
+//    mpulldown i_snsrxd_pulldown          (sns_rxd);
     // READ RXD    
     ibuf_ibufg #(
         .CAPACITANCE      (PXD_CAPACITANCE),
