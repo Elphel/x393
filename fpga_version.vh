@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-   parameter FPGA_VERSION = 32'h03931002; // parallel, adding camsync trigger decimation  
+   parameter FPGA_VERSION = 32'h03931003; // parallel, adding camsync trigger decimation - debugging  // git commit
+// parameter FPGA_VERSION = 32'h03931002; // parallel, adding camsync trigger decimation  
 // parameter FPGA_VERSION = 32'h03931001; // parallel, fixing delays  // git commit
 // parameter FPGA_VERSION = 32'h03930220; // pull down ot serial in to detect sensor presense NOT created 
 // parameter FPGA_VERSION = 32'h0393021f; // (ext resistor) low_pwr, DIFF_SSTL18_I pclk phase 0.0 mmcm phase -22.5 (multiple of 1.5) 

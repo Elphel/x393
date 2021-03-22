@@ -295,6 +295,7 @@ module camsync393       #(
     reg    [6:0]  trigger_filter_cntr;
     reg    [3:0]  trig_r;
     wire   [3:0]  trig_w;
+    reg    [3:0]  trig_d; // not clear if trig_w is always single-cycle, using trig_d to cut long ones
     wire   [3:0]  trig_r_mclk;
 //    wire          trig_dly16; // trigger1 delayed by 16 clk cycles to get local timestamp
 `ifdef GENERATE_TRIG_OVERDUE    
@@ -461,10 +462,10 @@ module camsync393       #(
     assign set_trig_delay2_w =  cmd_we && (cmd_a == CAMSYNC_TRIG_DELAY2);
     assign set_trig_delay3_w =  cmd_we && (cmd_a == CAMSYNC_TRIG_DELAY3);
     
-    assign set_decimate[0] =    decimate_we && (cmd_a == 0);
-    assign set_decimate[1] =    decimate_we && (cmd_a == 1);
-    assign set_decimate[2] =    decimate_we && (cmd_a == 2);
-    assign set_decimate[3] =    decimate_we && (cmd_a == 3);
+    assign set_decimate[0] =    decimate_we && (cmd_a[1:0] == 0);
+    assign set_decimate[1] =    decimate_we && (cmd_a[1:0] == 1);
+    assign set_decimate[2] =    decimate_we && (cmd_a[1:0] == 2);
+    assign set_decimate[3] =    decimate_we && (cmd_a[1:0] == 3);
     
     assign pre_input_use = {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],
                             cmd_data[9],cmd_data[7],cmd_data[5],cmd_data[3],cmd_data[1]};
@@ -693,6 +694,7 @@ module camsync393       #(
     assign trig_w[3] = (input_use_intern && (master_chn == 3)) ? (start_late_first && start_en): dly_cntr_end[3];
     
     always @ (posedge pclk) begin
+        trig_d[3:0] <= trig_w[3:0];
 
         triggered_mode_pclk<= triggered_mode_r;
         bit_length_short[7:0] <= bit_length[7:0]-bit_length_plus1[7:2]-1; // 3/4 of the duration
@@ -821,26 +823,26 @@ module camsync393       #(
             end
         end
 // Trigger decimation
-        pre_dec0 <= eprst? 0 : {pre_dec0[1:0], trig_w[0]}; // trig_w should be single-cycle
-        pre_dec1 <= eprst? 0 : {pre_dec1[1:0], trig_w[1]};
-        pre_dec2 <= eprst? 0 : {pre_dec2[1:0], trig_w[2]};
-        pre_dec3 <= eprst? 0 : {pre_dec3[1:0], trig_w[3]};
+        pre_dec0 <= eprst? 0 : {pre_dec0[1:0], trig_w[0] &~trig_d[0]}; // trig_w should be single-cycle (now trig_d makes that)
+        pre_dec1 <= eprst? 0 : {pre_dec1[1:0], trig_w[1] &~trig_d[1]};
+        pre_dec2 <= eprst? 0 : {pre_dec2[1:0], trig_w[2] &~trig_d[2]};
+        pre_dec3 <= eprst? 0 : {pre_dec3[1:0], trig_w[3] &~trig_d[3]};
         
         if (eprst || reset_decimate[0]) dis_trig[0] <= 0;
         else if (pre_dec0[0])           dis_trig[0] <= 1;
-        else if (pre_dec0[2])           dis_trig[0] <= (decim_cnt0 == 0);
+        else if (pre_dec0[2])           dis_trig[0] <= (decim_cnt0 != 0);
 
         if (eprst || reset_decimate[1]) dis_trig[1] <= 0;
         else if (pre_dec1[0])           dis_trig[1] <= 1;
-        else if (pre_dec1[2])           dis_trig[1] <= (decim_cnt1 == 0);
+        else if (pre_dec1[2])           dis_trig[1] <= (decim_cnt1 != 0);
 
         if (eprst || reset_decimate[2]) dis_trig[2] <= 0;
         else if (pre_dec2[0])           dis_trig[2] <= 1;
-        else if (pre_dec2[2])           dis_trig[2] <= (decim_cnt2 == 0);
+        else if (pre_dec2[2])           dis_trig[2] <= (decim_cnt2 != 0);
 
         if (eprst || reset_decimate[3]) dis_trig[3] <= 0;
         else if (pre_dec3[0])           dis_trig[3] <= 1;
-        else if (pre_dec3[2])           dis_trig[3] <= (decim_cnt3 == 0);
+        else if (pre_dec3[2])           dis_trig[3] <= (decim_cnt3 != 0);
         
         if (pre_dec0[0]) decim_cnt0 <= dis_trig[0] ? (decim_cnt0 - 1) : decim_val0; 
         if (pre_dec1[0]) decim_cnt1 <= dis_trig[1] ? (decim_cnt1 - 1) : decim_val1; 
