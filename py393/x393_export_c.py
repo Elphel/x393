@@ -1113,6 +1113,13 @@ class X393ExportC(object):
             (("X393_CAMSYNC_TRIG_PERIOD",                 c,  vrlg.CAMSYNC_TRIG_PERIOD +             ba, 0, z3,   "u32*", "rw",                     "CAMSYNC trigger period")),
             (("X393_CAMSYNC_TRIG_DELAY",                  c,  vrlg.CAMSYNC_TRIG_DELAY0 +             ba, 1, z3,   "u32*", "rw",                     "CAMSYNC trigger delay"))]
         
+        ba = vrlg.CAMSYNC_DECIMATE_ADDR
+        ia = 0
+        c =  "sens_chn"
+        sdefines +=[
+            (('CAMSYNC trigger decimation',)),
+            (("X393_CAMSYNC_TRIG_DECIMATION",             c,  0 +                                    ba, 1, z3,   "u32*", "rw",                     "CAMSYNC trigger decimation"))]
+        
         ba = vrlg.CMDFRAMESEQ_ADDR_BASE
         ia = vrlg.CMDFRAMESEQ_ADDR_INC
         c =  "sens_chn"
@@ -2590,7 +2597,7 @@ class X393ExportC(object):
         return dw
     def _enc_camsync_mode(self):
         dw=[]
-        dw.append(("en",             vrlg.CAMSYNC_EN_BIT-1,             1,   1, "Enable CAMSYNC module"))
+        dw.append(("en",             vrlg.CAMSYNC_EN_BIT-1,           1,   1, "Enable CAMSYNC module"))
         dw.append(("en_set",         vrlg.CAMSYNC_EN_BIT,             1,   1, "Set 'en' bit"))
         dw.append(("en_snd",         vrlg.CAMSYNC_SNDEN_BIT-1,        1,   1, "Enable sending timestamps (valid with 'en_snd_set')"))
         dw.append(("en_snd_set",     vrlg.CAMSYNC_SNDEN_BIT,          1,   0, "Set 'en_snd'"))

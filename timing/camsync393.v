@@ -50,6 +50,9 @@
 module camsync393       #(
     parameter CAMSYNC_ADDR =               'h708, //TODO: assign valid address
     parameter CAMSYNC_MASK =               'h7f8,
+    parameter CAMSYNC_DECIMATE_ADDR =      'h714,
+    parameter CAMSYNC_DECIMATE_MASK =      'h7fc,
+    parameter CAMSYNC_DECIMATE_BITS =      16,
     parameter CAMSYNC_MODE =               'h0,
     parameter CAMSYNC_TRIG_SRC =           'h1, // setup trigger source
     parameter CAMSYNC_TRIG_DST =           'h2, // setup trigger destination line(s)
@@ -221,6 +224,9 @@ module camsync393       #(
     wire    [2:0] cmd_a;       // command address
     wire   [31:0] cmd_data;    // command data TODO: trim  
     wire          cmd_we;      // command write enable
+    wire          decimate_we; // write trigger decimate (per-cnannel)
+    wire    [3:0] set_decimate; // @mclk per channel - set decimate value (0 - every trigger, 1 - every second, 2 - every third, ...)
+    wire    [3:0] reset_decimate; // @pclk - reset decimate counter, so next pulse will go through
     
     wire          set_mode_reg_w;
     wire          set_trig_src_w;
@@ -232,6 +238,23 @@ module camsync393       #(
     wire          set_trig_period_w;
     wire    [9:0] pre_input_use;
     wire    [9:0] pre_input_pattern;        
+
+    reg     [3:0] dis_trig; // disable trigger propagation per channel (for decimation)
+    reg     [2:0] pre_dec0; // registered/delayed pre-decimated trigger
+    reg     [2:0] pre_dec1; // registered/delayed pre-decimated trigger
+    reg     [2:0] pre_dec2; // registered/delayed pre-decimated trigger
+    reg     [2:0] pre_dec3; // registered/delayed pre-decimated trigger
+    
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_val0;      
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_val1;      
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_val2;      
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_val3;      
+
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_cnt0;      
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_cnt1;      
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_cnt2;      
+    reg  [CAMSYNC_DECIMATE_BITS-1:0] decim_cnt3;      
+
 
 // delaying everything by 1 clock to reduce data fan in
     reg           high_zero;       // 24 MSBs are zero 
@@ -271,6 +294,7 @@ module camsync393       #(
     reg           trigger_condition_filtered_d; // trigger condition filtered delayed (to detect leading edge)
     reg    [6:0]  trigger_filter_cntr;
     reg    [3:0]  trig_r;
+    wire   [3:0]  trig_w;
     wire   [3:0]  trig_r_mclk;
 //    wire          trig_dly16; // trigger1 delayed by 16 clk cycles to get local timestamp
 `ifdef GENERATE_TRIG_OVERDUE    
@@ -437,6 +461,11 @@ module camsync393       #(
     assign set_trig_delay2_w =  cmd_we && (cmd_a == CAMSYNC_TRIG_DELAY2);
     assign set_trig_delay3_w =  cmd_we && (cmd_a == CAMSYNC_TRIG_DELAY3);
     
+    assign set_decimate[0] =    decimate_we && (cmd_a == 0);
+    assign set_decimate[1] =    decimate_we && (cmd_a == 1);
+    assign set_decimate[2] =    decimate_we && (cmd_a == 2);
+    assign set_decimate[3] =    decimate_we && (cmd_a == 3);
+    
     assign pre_input_use = {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],
                             cmd_data[9],cmd_data[7],cmd_data[5],cmd_data[3],cmd_data[1]};
     assign pre_input_pattern = {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],
@@ -458,6 +487,14 @@ module camsync393       #(
     wire [9:0] gpio_active_w =    ((gpio_active ^ pre_gpio_active) & output_mask) ^ gpio_active;
 
     always @(posedge mclk) begin
+        if      (mrst)            decim_val0 <= 0;
+        else if (set_decimate[0]) decim_val0 <= cmd_data[CAMSYNC_DECIMATE_BITS - 1 : 0];
+        if      (mrst)            decim_val1 <= 0;
+        else if (set_decimate[1]) decim_val1 <= cmd_data[CAMSYNC_DECIMATE_BITS - 1 : 0];
+        if      (mrst)            decim_val2 <= 0;
+        else if (set_decimate[2]) decim_val2 <= cmd_data[CAMSYNC_DECIMATE_BITS - 1 : 0];
+        if      (mrst)            decim_val3 <= 0;
+        else if (set_decimate[3]) decim_val3 <= cmd_data[CAMSYNC_DECIMATE_BITS - 1 : 0];
 
         if (mrst) begin
                                                  en <=               0;
@@ -567,7 +604,6 @@ module camsync393       #(
         ts_master_snap_pclk <=  ts_snd_en_pclk? start_pclk2_masked: rcv_done;
                             
         ts_snd_en_pclk<=ts_snd_en;
-//        input_use_intern <= pre_input_use_intern;
         input_use_intern <= pre_input_use_intern || !triggered_mode_pclk;
         ts_external_pclk<= ts_external; //  && !input_use_intern;
      
@@ -580,7 +616,6 @@ module camsync393       #(
         
         if (restart_cntr_run[0]) begin
             if (!ext_int_arm[0])  restart_cntr[31:0] <= restart_cntr[31:0] - 1;
-//        end else if (!restart_cntr_run[0])  restart_cntr[31:0] <= repeat_period[31:0];
         end else                  restart_cntr[31:0] <= repeat_period[31:0];
 
         ext_int_pre_pause <= !(|restart_cntr[31:3]);
@@ -618,18 +653,7 @@ module camsync393       #(
         ext_int_mode_pclk <= ext_int_mode_mclk;
       
     end
-/* 
-    always @ (posedge pclk) begin
-        if      (eprst)                dly_cntr_run <= 0;
-        else if (!triggered_mode_pclk) dly_cntr_run <= 0;
-        else if (start_dly)            dly_cntr_run <= 4'hf;
-        else                           dly_cntr_run <= dly_cntr_run &
-                 {(dly_cntr_chn3[31:0]!=0)?1'b1:1'b0,  
-                  (dly_cntr_chn2[31:0]!=0)?1'b1:1'b0,
-                  (dly_cntr_chn1[31:0]!=0)?1'b1:1'b0,
-                  (dly_cntr_chn0[31:0]!=0)?1'b1:1'b0};
-    end
-*/    
+
     always @ (posedge pclk) begin
         if (eprst) dly_cntr_run <= 0;
         else       dly_cntr_run <= dly_cntr_start | (dly_cntr_run & dly_cntr_non_zero);                 
@@ -661,6 +685,12 @@ module camsync393       #(
 
     assign pre_rcv_error= (sr_rcv_first[31:26]!=CAMSYNC_PRE_MAGIC) || (sr_rcv_second[5:0]!=CAMSYNC_POST_MAGIC);
     assign trigger_condition_mask_w = input_use[9:0] &  ~(ext_int_mode_pclk?(10'b1 << CAMSYNC_GPIO_EXT_IN):10'b0);
+    
+// preparing to divide trigger frequency    
+    assign trig_w[0] = (input_use_intern && (master_chn == 0)) ? (start_late_first && start_en): dly_cntr_end[0];
+    assign trig_w[1] = (input_use_intern && (master_chn == 1)) ? (start_late_first && start_en): dly_cntr_end[1];
+    assign trig_w[2] = (input_use_intern && (master_chn == 2)) ? (start_late_first && start_en): dly_cntr_end[2];
+    assign trig_w[3] = (input_use_intern && (master_chn == 3)) ? (start_late_first && start_en): dly_cntr_end[3];
     
     always @ (posedge pclk) begin
 
@@ -724,10 +754,10 @@ module camsync393       #(
         else                 dly_cntr_chn3[31:0] <= input_dly_chn3[31:0];
         
         /// bypass delay to trig_r in internal trigger mode
-        trig_r[0] <= (input_use_intern && (master_chn ==0)) ? (start_late_first && start_en): dly_cntr_end[0];
-        trig_r[1] <= (input_use_intern && (master_chn ==1)) ? (start_late_first && start_en): dly_cntr_end[1];
-        trig_r[2] <= (input_use_intern && (master_chn ==2)) ? (start_late_first && start_en): dly_cntr_end[2];
-        trig_r[3] <= (input_use_intern && (master_chn ==3)) ? (start_late_first && start_en): dly_cntr_end[3];
+        trig_r[0] <= trig_w[0] & ~dis_trig[0]; // (input_use_intern && (master_chn ==0)) ? (start_late_first && start_en): dly_cntr_end[0];
+        trig_r[1] <= trig_w[1] & ~dis_trig[1]; // (input_use_intern && (master_chn ==1)) ? (start_late_first && start_en): dly_cntr_end[1];
+        trig_r[2] <= trig_w[2] & ~dis_trig[2]; // (input_use_intern && (master_chn ==2)) ? (start_late_first && start_en): dly_cntr_end[2];
+        trig_r[3] <= trig_w[3] & ~dis_trig[3]; // (input_use_intern && (master_chn ==3)) ? (start_late_first && start_en): dly_cntr_end[3];
         
 /// 64-bit serial receiver (52 bit payload, 6 pre magic and 6 bits post magic for error checking
         if      (!rcv_run_or_deaf)         bit_rcv_duration[7:0] <= bit_length_short[7:0]; // 3/4 bit length-1
@@ -790,9 +820,35 @@ module camsync393       #(
                 ts_rcv_usec_chn3[19:0] <=  ts_snd_usec_chn3[19:0];
             end
         end
+// Trigger decimation
+        pre_dec0 <= eprst? 0 : {pre_dec0[1:0], trig_w[0]}; // trig_w should be single-cycle
+        pre_dec1 <= eprst? 0 : {pre_dec1[1:0], trig_w[1]};
+        pre_dec2 <= eprst? 0 : {pre_dec2[1:0], trig_w[2]};
+        pre_dec3 <= eprst? 0 : {pre_dec3[1:0], trig_w[3]};
+        
+        if (eprst || reset_decimate[0]) dis_trig[0] <= 0;
+        else if (pre_dec0[0])           dis_trig[0] <= 1;
+        else if (pre_dec0[2])           dis_trig[0] <= (decim_cnt0 == 0);
+
+        if (eprst || reset_decimate[1]) dis_trig[1] <= 0;
+        else if (pre_dec1[0])           dis_trig[1] <= 1;
+        else if (pre_dec1[2])           dis_trig[1] <= (decim_cnt1 == 0);
+
+        if (eprst || reset_decimate[2]) dis_trig[2] <= 0;
+        else if (pre_dec2[0])           dis_trig[2] <= 1;
+        else if (pre_dec2[2])           dis_trig[2] <= (decim_cnt2 == 0);
+
+        if (eprst || reset_decimate[3]) dis_trig[3] <= 0;
+        else if (pre_dec3[0])           dis_trig[3] <= 1;
+        else if (pre_dec3[2])           dis_trig[3] <= (decim_cnt3 == 0);
+        
+        if (pre_dec0[0]) decim_cnt0 <= dis_trig[0] ? (decim_cnt0 - 1) : decim_val0; 
+        if (pre_dec1[0]) decim_cnt1 <= dis_trig[1] ? (decim_cnt1 - 1) : decim_val1; 
+        if (pre_dec2[0]) decim_cnt2 <= dis_trig[2] ? (decim_cnt2 - 1) : decim_val2; 
+        if (pre_dec3[0]) decim_cnt3 <= dis_trig[3] ? (decim_cnt3 - 1) : decim_val3; 
 
 
-    end
+    end //  always @ (posedge pclk) begin
 
     
     // Making delayed start that waits for timestamp use timestamp_got, otherwise - nothing to wait
@@ -802,27 +858,29 @@ module camsync393       #(
     cmd_deser #(
         .ADDR       (CAMSYNC_ADDR),
         .ADDR_MASK  (CAMSYNC_MASK),
+        .ADDR1      (CAMSYNC_DECIMATE_ADDR),
+        .ADDR_MASK1 (CAMSYNC_DECIMATE_MASK),
         .NUM_CYCLES (6),
         .ADDR_WIDTH (3),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (1'b0),        //rst),         // input
-        .clk        (mclk),        // input
-        .srst       (mrst),        // input
-        .ad         (cmd_ad),      // input[7:0] 
-        .stb        (cmd_stb),     // input
-        .addr       (cmd_a),       // output[3:0] 
-        .data       (cmd_data),    // output[31:0] 
-        .we         (cmd_we)       // output
+        .rst        (1'b0),                 //rst),         // input
+        .clk        (mclk),                 // input
+        .srst       (mrst),                 // input
+        .ad         (cmd_ad),               // input[7:0] 
+        .stb        (cmd_stb),              // input
+        .addr       (cmd_a),                // output[3:0] 
+        .data       (cmd_data),             // output[31:0] 
+        .we         ({decimate_we, cmd_we}) // output
     );
 
     timestamp_to_parallel timestamp_to_parallel0_i (
-        .clk        (mclk),        // input
+        .clk        (mclk),             // input
         .pre_stb    (ts_snd_stb_chn0),  // input
         .tdata      (ts_snd_data_chn0), // input[7:0] 
         .sec        (ts_snd_sec_chn0),  // output[31:0] reg 
         .usec       (ts_snd_usec_chn0), // output[19:0] reg 
-        .done       (local_got[0])    // output
+        .done       (local_got[0])      // output
     );
 
     timestamp_to_parallel timestamp_to_parallel1_i (
@@ -942,6 +1000,11 @@ module camsync393       #(
     pulse_cross_clock i_ts_stb_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[3]), .out_pulse(ts_stb[3]),.busy());
 
     pulse_cross_clock i_suppress_immediate_set_pclk(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(suppress_immediate_set_mclk), .out_pulse(suppress_immediate_set_pclk),.busy());
+
+    pulse_cross_clock i_rdecim_to_pclk0 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[0]), .out_pulse(reset_decimate[0]),.busy());
+    pulse_cross_clock i_rdecim_to_pclk1 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[1]), .out_pulse(reset_decimate[1]),.busy());
+    pulse_cross_clock i_rdecim_to_pclk2 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[2]), .out_pulse(reset_decimate[2]),.busy());
+    pulse_cross_clock i_rdecim_to_pclk3 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[3]), .out_pulse(reset_decimate[3]),.busy());
 
     
 endmodule

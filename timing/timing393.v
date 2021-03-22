@@ -45,6 +45,9 @@ module  timing393       #(
     parameter RTC_SEC_USEC_ADDR =               'h32,  // ..'h33 address where seconds of the snapshot can be read (microseconds - next address)
     parameter RTC_MASK =                        'h7fc,
     parameter CAMSYNC_MASK =                    'h7f8,
+    parameter CAMSYNC_DECIMATE_ADDR =           'h714,
+    parameter CAMSYNC_DECIMATE_MASK =           'h7fc,
+    parameter CAMSYNC_DECIMATE_BITS =           16,
     parameter CAMSYNC_MODE =                    'h0,
     parameter CAMSYNC_TRIG_SRC =                'h1, // setup trigger source
     parameter CAMSYNC_TRIG_DST =                'h2, // setup trigger destination line(s)
@@ -261,6 +264,9 @@ module  timing393       #(
     camsync393 #(
         .CAMSYNC_ADDR           (CAMSYNC_ADDR),
         .CAMSYNC_MASK           (CAMSYNC_MASK),
+        .CAMSYNC_DECIMATE_ADDR  (CAMSYNC_DECIMATE_ADDR),
+        .CAMSYNC_DECIMATE_MASK  (CAMSYNC_DECIMATE_MASK),
+        .CAMSYNC_DECIMATE_BITS  (CAMSYNC_DECIMATE_BITS),
         .CAMSYNC_MODE           (CAMSYNC_MODE),
         .CAMSYNC_TRIG_SRC       (CAMSYNC_TRIG_SRC),
         .CAMSYNC_TRIG_DST       (CAMSYNC_TRIG_DST),
