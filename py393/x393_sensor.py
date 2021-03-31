@@ -1929,9 +1929,11 @@ uart_print_packet 0 False False
         clk_reg_addr=[[0x14,0x15], #CLKFBOUT
                       [0x08, 0x09],
                       [0x0a, 0x0b],
-                      [0x0c, 0x09],
-                      [0x08, 0x09],
-                      [0x08, 0x09],
+                      [0x0c, 0x0d],
+                      [0x0e, 0x0f],
+                      [0x10, 0x11],
+                      [0x06, 0x07],
+                      [0x12, 0x13],
                       ]
         return clk_reg_addr[clk_out + 1]
         
