@@ -184,7 +184,6 @@ module  sensors393 #(
         parameter SENS_CTRL_GP1=         15,  // 17:15
         parameter SENS_CTRL_GP2=         18,  // 20:18 00 - float, 01 - low, 10 - high, 11 - trigger
         parameter SENS_CTRL_GP3=         21,  // 23:21 00 - float, 01 - low, 10 - high, 11 - trigger
-    
         parameter SENS_UART_EXTIF_EN =    0,  //  1: 0
         parameter SENS_UART_XMIT_RST =    2,  //  3: 2
         parameter SENS_UART_RECV_RST =    4,  //  5: 4
@@ -195,6 +194,7 @@ module  sensors393 #(
         parameter SENS_TEST_MODES =      26,
         parameter SENS_TEST_BITS =        3,
         parameter SENS_TEST_SET=         29,
+        parameter SENS_CTRL_DPR=         30,  // 30:31 DRP command
         parameter SENS_TEST_WIDTH_BITS = 10,
         parameter SENS_TEST_HEIGHT_BITS= 10,
         parameter SENS_TEST_WIDTH_INC =   3,
@@ -377,7 +377,7 @@ module  sensors393 #(
     parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK1X_PHASE =            0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS18",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
@@ -385,7 +385,8 @@ module  sensors393 #(
     parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
+    parameter PCLK_PHASE =               0.000,
+    parameter IPCLK1X_PHASE =            0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS18",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
@@ -393,7 +394,7 @@ module  sensors393 #(
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK1X_PHASE =            0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS25",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
@@ -401,13 +402,23 @@ module  sensors393 #(
 
 `ifdef LWIR
 `else
-    parameter BUF_IPCLK_SENS0 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    `ifdef BOSON
+      parameter BUF_PCLK_SENS0 =         "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+      parameter BUF_CLK_FB_SENS0 =       "BUFR", //G", // "BUFR",  
+      parameter BUF_PCLK_SENS1 =         "BUFR", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+      parameter BUF_CLK_FB_SENS1 =       "BUFR", // "BUFR",  
+      parameter BUF_PCLK_SENS2 =         "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+      parameter BUF_CLK_FB_SENS2 =       "BUFR", //G", // "BUFR",  
+      parameter BUF_PCLK_SENS3 =         "BUFR", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+      parameter BUF_CLK_FB_SENS3 =       "BUFR", // "BUFR",  
+    `endif
+    parameter BUF_IPCLK1X_SENS0 =        "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS0 =        "BUFR", //G", // "BUFR",  
-    parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK1X_SENS1 =        "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",  
-    parameter BUF_IPCLK_SENS2 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK1X_SENS2 =        "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS2 =        "BUFR", //G", // "BUFR",  
-    parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK1X_SENS3 =        "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFR",  
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =       0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
@@ -794,6 +805,7 @@ module  sensors393 #(
                 .SENS_CTRL_GP1                 (SENS_CTRL_GP1),
                 .SENS_CTRL_GP2                 (SENS_CTRL_GP2),
                 .SENS_CTRL_GP3                 (SENS_CTRL_GP3),
+                .SENS_CTRL_DPR                 (SENS_CTRL_DPR),
                 .SENS_UART_EXTIF_EN            (SENS_UART_EXTIF_EN),
                 .SENS_UART_XMIT_RST            (SENS_UART_XMIT_RST),
                 .SENS_UART_RECV_RST            (SENS_UART_RECV_RST),
@@ -943,13 +955,20 @@ module  sensors393 #(
 
                 .SENS_PHASE_WIDTH              (SENS_PHASE_WIDTH),
                 .SENS_BANDWIDTH                (SENS_BANDWIDTH),
-                .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
+                .CLKIN_PERIOD_SENSOR           (CLKIN_PERIOD_SENSOR),
                 .CLKFBOUT_MULT_SENSOR          (CLKFBOUT_MULT_SENSOR),
                 .CLKFBOUT_PHASE_SENSOR         (CLKFBOUT_PHASE_SENSOR),
-                .IPCLK_PHASE                   (IPCLK_PHASE),
+`ifdef BOSON
+                .PCLK_PHASE                    (PCLK_PHASE),
+`endif                
+                .IPCLK1X_PHASE                 (IPCLK1X_PHASE),
                 .IPCLK2X_PHASE                 (IPCLK2X_PHASE),
-                .BUF_IPCLK                     ((i & 2) ? ((i & 1) ? BUF_IPCLK_SENS3 :   BUF_IPCLK_SENS2)   : ((i & 1) ?BUF_IPCLK_SENS1   :BUF_IPCLK_SENS0 )),
-                .BUF_IPCLK2X                   ((i & 2) ? ((i & 1) ? BUF_IPCLK2X_SENS3 : BUF_IPCLK2X_SENS2) : ((i & 1) ?BUF_IPCLK2X_SENS1 :BUF_IPCLK2X_SENS0 )),
+`ifdef BOSON
+                .BUF_PCLK    ((i & 2) ? ((i & 1) ? BUF_PCLK_SENS3:   BUF_PCLK_SENS2):   ((i & 1) ?BUF_PCLK_SENS1:   BUF_PCLK_SENS0)),
+                .BUF_CLK_FB  ((i & 2) ? ((i & 1) ? BUF_CLK_FB_SENS3: BUF_CLK_FB_SENS2): ((i & 1) ?BUF_CLK_FB_SENS1: BUF_CLK_FB_SENS0)),
+`endif                
+                .BUF_IPCLK1X ((i & 2) ? ((i & 1) ? BUF_IPCLK1X_SENS3:BUF_IPCLK1X_SENS2):((i & 1) ?BUF_IPCLK1X_SENS1:BUF_IPCLK1X_SENS0)),
+                .BUF_IPCLK2X ((i & 2) ? ((i & 1) ? BUF_IPCLK2X_SENS3:BUF_IPCLK2X_SENS2):((i & 1) ?BUF_IPCLK2X_SENS1:BUF_IPCLK2X_SENS0)),
                 .SENS_DIVCLK_DIVIDE            (SENS_DIVCLK_DIVIDE),
                 .SENS_REF_JITTER1              (SENS_REF_JITTER1),
                 .SENS_REF_JITTER2              (SENS_REF_JITTER2),

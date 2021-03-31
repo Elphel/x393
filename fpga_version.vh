@@ -35,7 +35,12 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-   parameter FPGA_VERSION = 32'h03934001; // Boson640, adding camsync trigger decimation  // git commit
+   parameter FPGA_VERSION = 32'h03934005; // Boson640, testing
+//   parameter FPGA_VERSION = 32'h03934005; // Boson640, implementing DRP to control MMCME2/PLLE2 trying more BUFR
+//   parameter FPGA_VERSION = 32'h03934004; // Boson640, implementing DRP to control MMCME2/PLLE2
+//   parameter FPGA_VERSION = 32'h03934003; // Boson640, mitigating LVDS errors
+// parameter FPGA_VERSION = 32'h03934002; // Boson640, mitigating LVDS errors
+// parameter FPGA_VERSION = 32'h03934001; // Boson640, adding camsync trigger decimation  // git commit
 ///parameter FPGA_VERSION = 32'h03931003; // parallel, adding camsync trigger decimation - debugging  // git commit
 // parameter FPGA_VERSION = 32'h03931002; // parallel, adding camsync trigger decimation  
 // parameter FPGA_VERSION = 32'h03931001; // parallel, fixing delays  // git commit

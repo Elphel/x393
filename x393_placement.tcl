@@ -473,3 +473,45 @@ set_property PACKAGE_PIN AA5 [get_ports RXN]
 set_property PACKAGE_PIN AA6 [get_ports RXP]
 set_property PACKAGE_PIN AB3 [get_ports TXN]
 set_property PACKAGE_PIN AB4 [get_ports TXP]
+
+if { $BOSON } {
+#  set_property LOC MMCME2_ADV_X0Y0 [get_cells -hier -filter {NAME=~"*sensor_channel_block[0]*/mmcm_or_pll_i/*E2_ADV_i"}]
+#  set_property LOC  PLLE2_ADV_X0Y0 [get_cells -hier -filter {NAME=~"*sensor_channel_block[1]*/mmcm_or_pll_i/*E2_ADV_i"}]
+#  set_property LOC MMCME2_ADV_X0Y1 [get_cells -hier -filter {NAME=~"*sensor_channel_block[2]*/mmcm_or_pll_i/*E2_ADV_i"}]
+#  set_property LOC  PLLE2_ADV_X0Y1 [get_cells -hier -filter {NAME=~"*sensor_channel_block[3]*/mmcm_or_pll_i/*E2_ADV_i"}]
+   if       { $LWIR} {
+    set_msg_config -id "Vivado 12-180" -suppress
+    if {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[0]*/mmcm_or_pll_i/MMCME2_ADV_i"}]]!=0} {
+        set_property LOC MMCME2_ADV_X0Y0 [get_cells -hier -filter {NAME=~"*sensor_channel_block[0]*/mmcm_or_pll_i/MMCME2_ADV_i"}]
+    } elseif {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[0]*/mmcm_or_pll_i/PLLE2_ADV_i"}]]!=0} {
+        set_property LOC PLLE2_ADV_X0Y0 [get_cells -hier -filter {NAME=~"*sensor_channel_block[0]*/mmcm_or_pll_i/PLLE2_ADV_i"}]
+    }
+    if {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[1]*/mmcm_or_pll_i/MMCME2_ADV_i"}]]!=0} {
+        set_property LOC MMCME2_ADV_X0Y0 [get_cells -hier -filter {NAME=~"*sensor_channel_block[1]*/mmcm_or_pll_i/MMCME2_ADV_i"}]
+    } elseif {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[1]*/mmcm_or_pll_i/PLLE2_ADV_i"}]]!=0} {
+        set_property LOC PLLE2_ADV_X0Y0 [get_cells -hier -filter {NAME=~"*sensor_channel_block[1]*/mmcm_or_pll_i/PLLE2_ADV_i"}]
+    }
+    if {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[2]*/mmcm_or_pll_i/MMCME2_ADV_i"}]]!=0} {
+        set_property LOC MMCME2_ADV_X0Y1 [get_cells -hier -filter {NAME=~"*sensor_channel_block[2]*/mmcm_or_pll_i/MMCME2_ADV_i"}]
+    } elseif {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[2]*/mmcm_or_pll_i/PLLE2_ADV_i"}]]!=0} {
+        set_property LOC PLLE2_ADV_X0Y1 [get_cells -hier -filter {NAME=~"*sensor_channel_block[2]*/mmcm_or_pll_i/PLLE2_ADV_i"}]
+    }
+    if {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[3]*/mmcm_or_pll_i/MMCME2_ADV_i"}]]!=0} {
+        set_property LOC MMCME2_ADV_X0Y1 [get_cells -hier -filter {NAME=~"*sensor_channel_block[3]*/mmcm_or_pll_i/MMCME2_ADV_i"}]
+    } elseif {[llength [get_cells -hier -filter {NAME=~"*sensor_channel_block[3]*/mmcm_or_pll_i/PLLE2_ADV_i"}]]!=0} {
+        set_property LOC PLLE2_ADV_X0Y1 [get_cells -hier -filter {NAME=~"*sensor_channel_block[3]*/mmcm_or_pll_i/PLLE2_ADV_i"}]
+    }
+    reset_msg_config -id "Vivado 12-180" -suppress
+   }
+#debugging:
+#set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+#set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets sensors393_i/sensor_channel_block[1].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+#set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+#set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets sensors393_i/sensor_channel_block[3].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[1].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[3].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ibufds_ibufgds0_i/clk_in]
+    
+}

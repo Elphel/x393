@@ -46,9 +46,12 @@ module  sens_103993_clock#(
     parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
     parameter CLKFBOUT_PHASE_SENSOR =      0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter PCLK_PHASE =                 0.000,
+    parameter IPCLK1X_PHASE =              0.000, // dummy here
     parameter IPCLK2X_PHASE =              0.000,
     parameter BUF_PCLK =                  "BUFR",  
-    parameter BUF_IPCLK2X =               "BUFR",  
+    parameter BUF_IPCLK1X =               "BUFR", // not used here
+    parameter BUF_IPCLK2X =               "BUFR",
+    parameter BUF_CLK_FB =                "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =         1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =         0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
@@ -91,7 +94,7 @@ module  sens_103993_clock#(
     output       clkin_pxd_stopped_mmcm, // output
     output       clkfb_pxd_stopped_mmcm // output
 );
-    localparam BUF_CLK_FB = BUF_IPCLK2X;
+//    localparam BUF_CLK_FB = BUF_IPCLK2X;
     wire         pclk_pre;
     wire         ipclk2x_pre;     // output
     wire         clk_fb_pre;
@@ -218,6 +221,7 @@ module  sens_103993_clock#(
                 .CLKFBOUT_PHASE      (CLKFBOUT_PHASE_SENSOR),
                 .CLKOUT0_PHASE       (PCLK_PHASE),
                 .CLKOUT1_PHASE       (IPCLK2X_PHASE),
+                .CLKOUT2_PHASE       (IPCLK1X_PHASE), // not used here
                 .CLKFBOUT_USE_FINE_PS("FALSE"),
                 .CLKOUT0_USE_FINE_PS ("FALSE"), //"TRUE"),
                 .CLKOUT1_USE_FINE_PS ("FALSE"), //"TRUE"),
@@ -272,6 +276,7 @@ module  sens_103993_clock#(
                 .CLKFBOUT_PHASE      (CLKFBOUT_PHASE_SENSOR),
                 .CLKOUT0_PHASE       (PCLK_PHASE),
                 .CLKOUT1_PHASE       (IPCLK2X_PHASE),
+                .CLKOUT2_PHASE       (IPCLK1X_PHASE), // not used here
                 .CLKOUT0_DIVIDE      (CLKFBOUT_MULT_SENSOR),      // /30, -> 27MHz 
                 .CLKOUT1_DIVIDE      (CLKFBOUT_MULT_SENSOR / 10), // /3, -> 270MHz
                 .REF_JITTER1         (SENS_REF_JITTER1),
@@ -328,6 +333,10 @@ module  sens_103993_clock#(
         else assign pclk = pclk_pre;
     endgenerate
 
+    generate
+        if      (BUF_IPCLK1X == "BUFG") begin // not used here
+        end
+    endgenerate
 
 
 endmodule

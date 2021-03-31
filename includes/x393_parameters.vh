@@ -5,7 +5,7 @@
  *
  * @brief Parameters for the x393 (simulation and implementation)
  *
- * @copyright Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015-2021 Elphel, Inc.
  *
  * <b>License:</b>
  *
@@ -518,6 +518,8 @@
         parameter SENS_TEST_MODES =      26,
         parameter SENS_TEST_BITS =        3,
         parameter SENS_TEST_SET=         29,
+        parameter SENS_CTRL_DPR=         30,  // 30:31 DRP command
+        
         parameter SENS_TEST_WIDTH_BITS = 10,
         parameter SENS_TEST_HEIGHT_BITS= 10,
         parameter SENS_TEST_WIDTH_INC =   3,
@@ -705,7 +707,8 @@
     parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
+    parameter PCLK_PHASE =               0.000, // not used
+    parameter IPCLK1X_PHASE =            0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter HISPI_IBUF_LOW_PWR =       "TRUE", // "FALSE", // try 
     `ifdef TWEAKING_IOSTANDARD
@@ -725,8 +728,13 @@
     parameter CLKIN_PERIOD_SENSOR =        37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
 //MMCME2_ADV_i has a CLKFBOUT_PHASE value (-20.000)  with CLKFBOUT_USE_FINE_PS set to FALSE. It should be a multiple of [45 / CLKFBOUT_MULT_F] = [45 / 30.000] = 1.500.
+`ifdef SIMULATION
+    parameter CLKFBOUT_PHASE_SENSOR =      54.0,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+`else
     parameter CLKFBOUT_PHASE_SENSOR =      -22.5, // -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =                0.0, // -3.000, // trying both ways (PCLK_PHASE inside sens_103993)
+`endif
+    parameter PCLK_PHASE =                 0.000, // not used
+    parameter IPCLK1X_PHASE =              0.000, // -3.000, // trying both ways (PCLK_PHASE inside sens_103993)
     parameter IPCLK2X_PHASE =              0.000,
     parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // try 
     `ifdef TWEAKING_IOSTANDARD
@@ -746,8 +754,10 @@
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
+    parameter PCLK_PHASE =               0.000, // not used
+    parameter IPCLK1X_PHASE =            0.000, // -3.000, // trying both ways (PCLK_PHASE inside sens_103993)
     parameter IPCLK2X_PHASE =            0.000,
+    
     parameter PXD_IOSTANDARD =           "LVCMOS25",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE", // "FALSE", // try 
@@ -765,29 +775,69 @@
 //    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
 //    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",
 `ifdef BOSON
-    parameter BUF_IPCLK_SENS0 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS0 =        "BUFR", // "BUFIO", /// "BUFR", //G", // "BUFR",
+// clock region X0Y0
+    parameter HISPI_MMCM0 =              "TRUE",
+    parameter BUF_IPCLK1X_SENS0 =        "BUFR",
+    parameter BUF_IPCLK2X_SENS0 =        "BUFIO",
+    parameter BUF_PCLK_SENS0 =           "BUFR",
+    parameter BUF_CLK_FB_SENS0 =         "NONE",
 
-    parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",
+// clock region X0Y0, use PLL
+    parameter HISPI_MMCM1 =              "FALSE", // if false - will have to use only BUFG at the PLL outputs (only MMCM drives BUFIO and BUFR)
+    parameter BUF_IPCLK1X_SENS1 =        "BUFG",  // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS1 =        "BUFG", //"BUFIO",// "BUFG", // "BUFIO", // "BUFR",
+    parameter BUF_PCLK_SENS1 =           "BUFG",
+    parameter BUF_CLK_FB_SENS1 =         "NONE", //"BUFG",
 
-    parameter BUF_IPCLK_SENS2 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS2 =        "BUFR", // "BUFIO", ///"BUFR", //G", // "BUFR",
+// clock region X0Y1
+    parameter HISPI_MMCM2 =              "TRUE",
+    parameter BUF_IPCLK1X_SENS2 =        "BUFR",
+    parameter BUF_IPCLK2X_SENS2 =        "BUFIO",
+    parameter BUF_PCLK_SENS2 =           "BUFR",
+    parameter BUF_CLK_FB_SENS2 =         "NONE",
 
-    parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR2", ///"BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFIO", ///"BUFG", // "BUFR",
+// clock region X0Y1
+    parameter HISPI_MMCM3 =              "FALSE", // if false - will have to use only BUFG at the PLL outputs (only MMCM drives BUFIO and BUFR)
+    parameter BUF_IPCLK1X_SENS3 =        "BUFG",  // "BUFR2", ///"BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS3 =        "BUFG",  // "BUFIO", ///"BUFG", // "BUFR",
+    parameter BUF_PCLK_SENS3 =           "BUFG",
+    parameter BUF_CLK_FB_SENS3 =         "NONE", //"BUFG",
+    
+    parameter HISPI_DELAY_CLK0=          "FALSE", // "TRUE", // when true, uses general routing resources after idelay
+    parameter HISPI_DELAY_CLK1=          "FALSE", // "TRUE",
+    parameter HISPI_DELAY_CLK2=          "FALSE", // "TRUE",
+    parameter HISPI_DELAY_CLK3=          "FALSE", // "TRUE",
+    
 `else
-    parameter BUF_IPCLK_SENS0 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter HISPI_MMCM0 =              "TRUE",
+    parameter BUF_IPCLK1X_SENS0 =        "BUFR",  // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS0 =        "BUFIO", /// "BUFR", //G", // "BUFR",
+    parameter BUF_PCLK_SENS0 =           "BUFR",  //  not used
+    parameter BUF_CLK_FB_SENS0 =         "BUFR",  //  not used
 
-    parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",
+    parameter HISPI_MMCM1 =              "FALSE", // if false - will have to use only BUFG at the PLL outputs (only MMCM drives BUFIO and BUFR)
+    parameter BUF_IPCLK1X_SENS1 =        "BUFG",  // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS1 =        "BUFG",  // "BUFR",
+    parameter BUF_PCLK_SENS1 =           "BUFR",  //  not used
+    parameter BUF_CLK_FB_SENS1 =         "BUFR",  //  not used
 
-    parameter BUF_IPCLK_SENS2 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter HISPI_MMCM2 =              "TRUE",
+    parameter BUF_IPCLK1X_SENS2 =        "BUFR",  // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
     parameter BUF_IPCLK2X_SENS2 =        "BUFIO", ///"BUFR", //G", // "BUFR",
+    parameter BUF_PCLK_SENS2 =           "BUFR",  //  not used
+    parameter BUF_CLK_FB_SENS2 =         "BUFR",  //  not used
 
-    parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR2", ///"BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFIO", ///"BUFG", // "BUFR",
+    parameter HISPI_MMCM3 =              "FALSE", // if false - will have to use only BUFG at the PLL outputs (only MMCM drives BUFIO and BUFR)
+    parameter BUF_IPCLK1X_SENS3 =        "BUFG",  // "BUFR2", ///"BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS3 =        "BUFG",  // "BUFIO", ///"BUFG", // "BUFR",
+    parameter BUF_PCLK_SENS3 =           "BUFR",  //  not used
+    parameter BUF_CLK_FB_SENS3 =         "BUFR",  //  not used
+
+    parameter HISPI_DELAY_CLK0=           "TRUE",
+    parameter HISPI_DELAY_CLK1=           "TRUE",
+    parameter HISPI_DELAY_CLK2=           "TRUE",
+    parameter HISPI_DELAY_CLK3=           "TRUE",
+
 `endif
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =       0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
@@ -804,10 +854,6 @@
     parameter HISPI_NUMLANES =             4,
 `endif
 
-    parameter HISPI_DELAY_CLK0=           "TRUE",
-    parameter HISPI_DELAY_CLK1=           "TRUE",
-    parameter HISPI_DELAY_CLK2=           "TRUE",
-    parameter HISPI_DELAY_CLK3=           "TRUE",
     parameter HISPI_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
     parameter HISPI_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
     parameter HISPI_FIFO_DEPTH =          4,
@@ -821,20 +867,6 @@
 //`endif  DIFF_HSTL_II_18
 //VivadoRoute: [Route 35-54] Net: sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/sr_reg[3]__0 is not completely routed. sensor_channel.v    /x393/sensor    line 42 Problem of the external builder
 //VivadoRoute: [Route 35-54] Net: sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/sr_reg[3]__0 is not completely routed. sensor_channel.v    /x393/sensor    line 42 Problem of the external builder
-
-
-`ifdef BOSON
-    parameter HISPI_MMCM0 =               "TRUE",
-    parameter HISPI_MMCM1 =               "TRUE",
-    parameter HISPI_MMCM2 =               "TRUE",
-    parameter HISPI_MMCM3 =               "TRUE",
-`else
-    parameter HISPI_MMCM0 =               "TRUE",
-    parameter HISPI_MMCM1 =               "FALSE",
-    parameter HISPI_MMCM2 =               "TRUE",
-    parameter HISPI_MMCM3 =               "FALSE",
-
-`endif
 
     parameter CMPRS_NUM_AFI_CHN =         1, // 2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
     parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60

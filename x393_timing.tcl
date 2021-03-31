@@ -105,11 +105,16 @@ if { $BOSON} {
     create_generated_clock -name iclk2x1  [get_nets sensors393_i/sensor_channel_block\[1\].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ipclk2x_pre ]
     create_generated_clock -name iclk2x2  [get_nets sensors393_i/sensor_channel_block\[2\].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ipclk2x_pre ]
     create_generated_clock -name iclk2x3  [get_nets sensors393_i/sensor_channel_block\[3\].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ipclk2x_pre ]
+#only for lanes (not l3)
+    create_generated_clock -name iclk1x0  [get_nets sensors393_i/sensor_channel_block\[0\].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ipclk1x_pre ]
+    create_generated_clock -name iclk1x1  [get_nets sensors393_i/sensor_channel_block\[1\].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ipclk1x_pre ]
+    create_generated_clock -name iclk1x2  [get_nets sensors393_i/sensor_channel_block\[2\].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ipclk1x_pre ]
+    create_generated_clock -name iclk1x3  [get_nets sensors393_i/sensor_channel_block\[3\].sensor_channel_i/sens_103993_i/sens_103993_l3_i/sens_103993_clock_i/ipclk1x_pre ]
     
-    set_clock_groups -name sensor0_clocks_iclk_pclk2x -asynchronous -group {iclk0 iclk2x0}
-    set_clock_groups -name sensor1_clocks_iclk_pclk2x -asynchronous -group {iclk1 iclk2x1}
-    set_clock_groups -name sensor2_clocks_iclk_pclk2x -asynchronous -group {iclk2 iclk2x2}
-    set_clock_groups -name sensor3_clocks_iclk_pclk2x -asynchronous -group {iclk3 iclk2x3}
+    set_clock_groups -name sensor0_clocks_iclk_pclk2x -asynchronous -group {iclk0 iclk2x0 iclk1x0}
+    set_clock_groups -name sensor1_clocks_iclk_pclk2x -asynchronous -group {iclk1 iclk2x1 iclk1x1}
+    set_clock_groups -name sensor2_clocks_iclk_pclk2x -asynchronous -group {iclk2 iclk2x2 iclk1x2}
+    set_clock_groups -name sensor3_clocks_iclk_pclk2x -asynchronous -group {iclk3 iclk2x3 iclk1x3}
       	
 } elseif       { $LWIR} {
 # Nothing here yet

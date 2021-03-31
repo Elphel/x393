@@ -213,6 +213,7 @@ module  sensor_channel#(
       parameter SENS_TEST_MODES =      26,
       parameter SENS_TEST_BITS =        3,
       parameter SENS_TEST_SET=         29,
+      parameter SENS_CTRL_DPR=         30,  // 30:31 DRP command
       parameter SENS_TEST_WIDTH_BITS = 10,
       parameter SENS_TEST_HEIGHT_BITS= 10,
       parameter SENS_TEST_WIDTH_INC =   3,
@@ -373,7 +374,8 @@ module  sensor_channel#(
     parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
+//    parameter PCLK_PHASE =               0.000,
+    parameter IPCLK1X_PHASE =            0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS18",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
@@ -381,8 +383,8 @@ module  sensor_channel#(
     parameter CLKIN_PERIOD_SENSOR =      37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     30,      // 27 MHz --> 810 MHz (3*270MHz)
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    //IPCLK* will be used as PCLK*
-    parameter IPCLK_PHASE =              0.000,
+    parameter PCLK_PHASE =               0.000,
+    parameter IPCLK1X_PHASE =            0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS18",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
@@ -390,15 +392,20 @@ module  sensor_channel#(
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =              0.000,
+//    parameter PCLK_PHASE =               0.000,
+    parameter IPCLK1X_PHASE =            0.000,
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS25",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
 `endif
     
 `ifdef LWIR
-`else // all but LWIR    
-    parameter BUF_IPCLK =             "BUFR",
+`else // all but LWIR
+    `ifdef BOSON
+       parameter BUF_PCLK =           "BUFR",
+       parameter BUF_CLK_FB =         "BUFR",
+    `endif                
+    parameter BUF_IPCLK1X =           "BUFR",
     parameter BUF_IPCLK2X =           "BUFR",  
     parameter SENS_DIVCLK_DIVIDE =     1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =     0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
@@ -1121,9 +1128,9 @@ module  sensor_channel#(
             .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
             .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
             .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
-            .IPCLK_PHASE            (IPCLK_PHASE),
+            .IPCLK_PHASE            (IPCLK1X_PHASE),
             .IPCLK2X_PHASE          (IPCLK2X_PHASE),
-            .BUF_IPCLK              (BUF_IPCLK),
+            .BUF_IPCLK1X            (BUF_IPCLK1X),
             .BUF_IPCLK2X            (BUF_IPCLK2X),
             .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),
             .SENS_REF_JITTER1       (SENS_REF_JITTER1),
@@ -1205,6 +1212,7 @@ module  sensor_channel#(
             .SENS_CTRL_GP1          (SENS_CTRL_GP1),
             .SENS_CTRL_GP2          (SENS_CTRL_GP2),
             .SENS_CTRL_GP3          (SENS_CTRL_GP3),
+            .SENS_CTRL_DPR          (SENS_CTRL_DPR),
             .SENS_UART_EXTIF_EN     (SENS_UART_EXTIF_EN),
             .SENS_UART_XMIT_RST     (SENS_UART_XMIT_RST),
             .SENS_UART_RECV_RST     (SENS_UART_RECV_RST),
@@ -1224,14 +1232,17 @@ module  sensor_channel#(
             .IDELAY_VALUE           (IDELAY_VALUE),
             .REFCLK_FREQUENCY       (SENS_REFCLK_FREQUENCY),
             .HIGH_PERFORMANCE_MODE  (SENS_HIGH_PERFORMANCE_MODE), 
-            .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
+//            .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
             .SENS_BANDWIDTH         (SENS_BANDWIDTH),
             .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
             .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
             .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
-            .PCLK_PHASE             (IPCLK_PHASE), // use IPCLK* for PCLK*
+            .PCLK_PHASE             (PCLK_PHASE),
+            .IPCLK1X_PHASE          (IPCLK1X_PHASE),
             .IPCLK2X_PHASE          (IPCLK2X_PHASE),
-            .BUF_PCLK               (BUF_IPCLK), // use IPCLK* for PCLK*
+            .BUF_PCLK               (BUF_PCLK),
+            .BUF_CLK_FB             (BUF_CLK_FB),
+            .BUF_IPCLK1X            (BUF_IPCLK1X),
             .BUF_IPCLK2X            (BUF_IPCLK2X),
             .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),
             .SENS_REF_JITTER1       (SENS_REF_JITTER1),
@@ -1469,10 +1480,10 @@ module  sensor_channel#(
             .CLKIN_PERIOD_SENSOR   (CLKIN_PERIOD_SENSOR),
             .CLKFBOUT_MULT_SENSOR  (CLKFBOUT_MULT_SENSOR),
             .CLKFBOUT_PHASE_SENSOR (CLKFBOUT_PHASE_SENSOR),
-            .IPCLK_PHASE           (IPCLK_PHASE),
+            .IPCLK_PHASE           (IPCLK1X_PHASE),
             .IPCLK2X_PHASE         (IPCLK2X_PHASE),
             .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
-            .BUF_IPCLK             (BUF_IPCLK),
+            .BUF_IPCLK1X           (BUF_IPCLK1X),
             .BUF_IPCLK2X           (BUF_IPCLK2X),
             .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),
             .SENS_REF_JITTER1      (SENS_REF_JITTER1),

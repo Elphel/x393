@@ -37,7 +37,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
+`define USE_SERIALIZER_103993
 module  sens_103993 #(
     parameter SENSIO_ADDR =        'h330,
     parameter SENSIO_ADDR_MASK =   'h7f8,
@@ -81,6 +81,8 @@ module  sens_103993 #(
     parameter SENS_TEST_MODES =            26,
     parameter SENS_TEST_BITS =              3,
     parameter SENS_TEST_SET=               29,
+    parameter SENS_CTRL_DPR=               30,  // 30:31 DRP command
+    
     parameter SENS_TEST_WIDTH_BITS =       10,
     parameter SENS_TEST_HEIGHT_BITS =      10,
     parameter SENS_TEST_WIDTH_INC =         3,
@@ -93,7 +95,7 @@ module  sens_103993 #(
     parameter integer IDELAY_VALUE =       0,
     parameter real REFCLK_FREQUENCY =      200.0,
     parameter HIGH_PERFORMANCE_MODE =     "FALSE",
-    parameter SENS_PHASE_WIDTH=            8,      // number of bits for te phase counter (depends on divisors)
+//    parameter SENS_PHASE_WIDTH=            8,      // number of bits for te phase counter (depends on divisors)
 //    parameter SENS_PCLK_PERIOD =           3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =             "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
@@ -101,9 +103,12 @@ module  sens_103993 #(
     parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
     parameter CLKFBOUT_PHASE_SENSOR =      0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter PCLK_PHASE =                 0.000,
+    parameter IPCLK1X_PHASE =              0.000,
     parameter IPCLK2X_PHASE =              0.000,
     parameter BUF_PCLK =                  "BUFR",  
     parameter BUF_IPCLK2X =               "BUFR",  
+    parameter BUF_IPCLK1X =               "BUFR",  
+    parameter BUF_CLK_FB =                "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =         1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =         0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
@@ -227,8 +232,8 @@ module  sens_103993 #(
     reg                             set_status_r;
     
     wire                            perr; // parity error from deserializer
-    wire                            ps_rdy;
-    wire                      [7:0] ps_out;
+//    wire                            ps_rdy;
+//    wire                      [7:0] ps_out;
     wire                      [7:0] test_out; // should be 0x17 from unused serial signals      
     wire                            clkin_pxd_stopped_mmcm;
     wire                            clkfb_pxd_stopped_mmcm;
@@ -237,6 +242,10 @@ module  sens_103993 #(
     reg                         imrst = 0;  // active low 
     reg                         rst_mmcm=1; // rst and command - en/dis 
     reg                         ld_idelay=0;
+    
+    reg                   [1:0] drp_cmd;
+    wire                        drp_bit;
+    wire                        drp_odd_bit;
 
     wire                 [25:0] status;
     
@@ -288,8 +297,11 @@ module  sens_103993 #(
                      test_patt? nonlock_persistent : clkin_pxd_stopped_mmcm,              // 11
                      recv_odd_even,                       // clkfb_pxd_stopped_mmcm,              // 10
                      perr_persistent,                     //  9 deserializer parity error
-                     test_patt? perr : ps_rdy,            //  8
-                     test_patt? test_out[7:0]:ps_out[7:0],// [7:0]
+//                     test_patt? perr : ps_rdy,            //  8
+//                     test_patt? test_out[7:0]:ps_out[7:0],// [7:0]
+                     perr,                                //  8
+                     test_out[7:2],                       // [7:2]
+                     test_patt? test_out[1:0]:{drp_bit, drp_odd_bit},// [1:0]
                      xmit_busy,                           // 25
                      senspgmin};                          // 24
 
@@ -385,6 +397,8 @@ module  sens_103993 #(
         if      (mrst || set_ctrl_r)                                                nonlock_persistent <= 0;
         else if (!locked_pclk || clkin_pxd_stopped_mmcm || clkfb_pxd_stopped_mmcm)  nonlock_persistent <= 1;
         
+        drp_cmd[1:0] <= (mrst || !set_ctrl_r)? 2'b0 : data_r[SENS_CTRL_DPR +: 2]; 
+        
     end
 
     cmd_deser #(
@@ -455,7 +469,88 @@ module  sens_103993 #(
          
     );
 
-
+/*
+    wire        pclk1;
+    wire [15:0] pxd_w1;
+    wire        vsync1;
+    wire        hsync1;
+    wire        dvalid_w1;
+    wire        perr1;
+    wire        ps_rdy1;
+    wire  [7:0] ps_out1;
+    wire  [7:0] test_out1;
+    wire        locked_pclk1;
+    wire        clkin_pxd_stopped_mmcm1;
+    wire        clkfb_pxd_stopped_mmcm1;
+*/
+`ifdef USE_SERIALIZER_103993    
+     sens_103993_lanes #(
+        .IODELAY_GRP            (IODELAY_GRP),
+        .IDELAY_VALUE           (IDELAY_VALUE),
+        .REFCLK_FREQUENCY       (REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE  (HIGH_PERFORMANCE_MODE),
+//        .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
+        .SENS_BANDWIDTH         (SENS_BANDWIDTH),
+        .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),    // 37.037),
+        .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),   // (30),
+        .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),  // (54.0),
+        .PCLK_PHASE             (PCLK_PHASE),             // (0.000),
+        .IPCLK1X_PHASE          (IPCLK1X_PHASE),          //(0.000), // not actually used
+        .IPCLK2X_PHASE          (IPCLK2X_PHASE),          //(0.000),
+        .BUF_PCLK               (BUF_PCLK),               // "BUFR"),
+        .BUF_IPCLK1X            (BUF_IPCLK1X),
+        .BUF_IPCLK2X            (BUF_IPCLK2X),            // "BUFR"),
+        .BUF_CLK_FB             (BUF_CLK_FB),
+        .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),     // 1),
+        .SENS_REF_JITTER1       (SENS_REF_JITTER1),       // 0.010),
+        .SENS_REF_JITTER2       (SENS_REF_JITTER2),       // 0.010),
+        .SENS_SS_EN             (SENS_SS_EN),             // "FALSE"),
+        .SENS_SS_MODE           (SENS_SS_MODE),           // "CENTER_HIGH"),
+        .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),     // 10000),
+        .NUMLANES               (NUMLANES),               // 3),
+        .LVDS_DELAY_CLK         (LVDS_DELAY_CLK),         // "FALSE"),
+        .LVDS_MMCM              (LVDS_MMCM),              // "TRUE"),
+        .LVDS_CAPACITANCE       (LVDS_CAPACITANCE),       // "DONT_CARE"),
+        .LVDS_DIFF_TERM         (LVDS_DIFF_TERM),         // "TRUE"),
+        .LVDS_UNTUNED_SPLIT     (LVDS_UNTUNED_SPLIT),     // "FALSE"),
+        .LVDS_DQS_BIAS          (LVDS_DQS_BIAS),          // "TRUE"),
+        .LVDS_IBUF_DELAY_VALUE  (LVDS_IBUF_DELAY_VALUE),  // "0"),
+        .LVDS_IBUF_LOW_PWR      (LVDS_IBUF_LOW_PWR),      // "TRUE"),
+        .LVDS_IFD_DELAY_VALUE   (LVDS_IFD_DELAY_VALUE),   // "AUTO"),
+        .LVDS_IOSTANDARD        (LVDS_IOSTANDARD),         // "DIFF_SSTL18_I")
+        .DEGLITCH_DVALID        (1),
+        .DEGLITCH_HSYNC         (3),
+        .DEGLITCH_VSYNC         (7)
+    ) sens_103993_l3_i ( // same instance name
+        .pclk                   (pclk),                   // output
+        .prsts                  (prsts),                  // input,
+        .sns_dp                 (sns_dp[2:0]),            // input[2:0] 
+        .sns_dn                 (sns_dn[2:0]),            // input[2:0] 
+        .sns_clkp               (sns_clkp),               // input
+        .sns_clkn               (sns_clkn),               // input
+        .pxd_out                (pxd_w),                  // output[15:0] 
+        .vsync                  (vsync),                  // output
+        .hsync                  (hsync),                  // output
+        .dvalid                 (dvalid_w),               // output
+        .mclk                   (mclk),                   // input
+        .mrst                   (mrst),                   // input
+        .dly_data               (data_r[23:0]),           // input[23:0] 
+        .set_idelay             ({NUMLANES{set_idelays}}),// input[2:0] 
+        .apply_idelay           (ld_idelay),              // input
+        .set_clk_phase          (set_iclk_phase),         // input
+        .rst_mmcm               (rst_mmcm),               // input
+        .perr                   (perr),                   // output
+//        .ps_rdy                 (ps_rdy),                 // output
+//        .ps_out                 (ps_out),                 // output[7:0] 
+        .test_out               (test_out),               // output[7:0] // should be 0x17 
+        .locked_pxd_mmcm        (locked_pclk),            // output
+        .clkin_pxd_stopped_mmcm (clkin_pxd_stopped_mmcm), // output
+        .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm), // output
+        .drp_cmd                (drp_cmd),                // input[1:0] 
+        .drp_bit                (drp_bit),                // output
+        .drp_odd_bit            (drp_odd_bit)             // output
+    );
+`else //USE_SERIALIZER_103993 - need to update to use DRP, current ports will be invalid
     sens_103993_l3 #(
         .IODELAY_GRP            (IODELAY_GRP),
         .IDELAY_VALUE           (IDELAY_VALUE),
@@ -467,9 +562,12 @@ module  sens_103993 #(
         .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),   // (30),
         .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),  // (0.000),
         .PCLK_PHASE             (PCLK_PHASE),             // (0.000),
+        .IPCLK1X_PHASE          (IPCLK1X_PHASE),          //(0.000), // not actually used
         .IPCLK2X_PHASE          (IPCLK2X_PHASE),          //(0.000),
         .BUF_PCLK               (BUF_PCLK),               // "BUFR"),
+        .BUF_IPCLK1X            (BUF_IPCLK1X),
         .BUF_IPCLK2X            (BUF_IPCLK2X),            // "BUFR"),
+        .BUF_CLK_FB             (BUF_CLK_FB),
         .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),     // 1),
         .SENS_REF_JITTER1       (SENS_REF_JITTER1),       // 0.010),
         .SENS_REF_JITTER2       (SENS_REF_JITTER2),       // 0.010),
@@ -489,8 +587,9 @@ module  sens_103993 #(
         .LVDS_IOSTANDARD        (LVDS_IOSTANDARD)         // "DIFF_SSTL18_I")
     ) sens_103993_l3_i (
         .pclk                   (pclk),                   // output
-        .sns_dp                 (sns_dp[2:0]),                 // input[2:0] 
-        .sns_dn                 (sns_dn[2:0]),                 // input[2:0] 
+        .prsts                  (prsts),                  // input,
+        .sns_dp                 (sns_dp[2:0]),            // input[2:0] 
+        .sns_dn                 (sns_dn[2:0]),            // input[2:0] 
         .sns_clkp               (sns_clkp),               // input
         .sns_clkn               (sns_clkn),               // input
         .pxd_out                (pxd_w),                  // output[15:0] 
@@ -512,6 +611,8 @@ module  sens_103993 #(
         .clkin_pxd_stopped_mmcm (clkin_pxd_stopped_mmcm), // output
         .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm)  // output
     );
+`endif // USE_SERIALIZER_103993    
+    
   
  // implement test gradient
     assign pxd_test =

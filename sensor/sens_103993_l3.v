@@ -50,9 +50,12 @@ module  sens_103993_l3#(
     parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
     parameter CLKFBOUT_PHASE_SENSOR =      0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter PCLK_PHASE =                 0.000,
+    parameter IPCLK1X_PHASE =              0.000,
     parameter IPCLK2X_PHASE =              0.000,
     parameter BUF_PCLK =                  "BUFR",  
+    parameter BUF_IPCLK1X =               "BUFR", // not used here  
     parameter BUF_IPCLK2X =               "BUFR",  
+    parameter BUF_CLK_FB =                "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =         1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =         0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
@@ -71,9 +74,13 @@ module  sens_103993_l3#(
     parameter LVDS_IBUF_DELAY_VALUE =     "0",
     parameter LVDS_IBUF_LOW_PWR =         "TRUE",
     parameter LVDS_IFD_DELAY_VALUE =      "AUTO",
-    parameter LVDS_IOSTANDARD =           "DIFF_SSTL18_I" //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA),
+    parameter LVDS_IOSTANDARD =           "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA),
+    parameter DEGLITCH_DVALID =           1,
+    parameter DEGLITCH_HSYNC =            3,
+    parameter DEGLITCH_VSYNC =            7
 )(
-    output            pclk,   // global clock input, pixel rate (27MHz for 103993) (220MHz for MT9F002)
+    output                         pclk,   // global clock input, pixel rate (27MHz for 103993) (220MHz for MT9F002)
+    input                          prsts,
     // I/O pads
     input           [NUMLANES-1:0] sns_dp,
     input           [NUMLANES-1:0] sns_dn,
@@ -104,18 +111,21 @@ module  sens_103993_l3#(
     wire                     ipclk2x;// re-generated HiSPi clock (270 MHa) 330 MHz)
     wire [NUMLANES * 10-1:0] sns_d;
     reg               [15:0] pxd_out_r; 
-    reg                      vsync_r; 
-    reg                      hsync_r;
-    reg                      dvalid_r;
+    reg               [15:0] pxd_out_r2; 
+//    reg                      vsync_r; 
+//    reg                      hsync_r;
+//    reg                      dvalid_r;
     reg                      perr_r;
     reg                      cp_r;
+    wire              [15:0] pxd_w;
     
-    assign pxd_out =    pxd_out_r;
-    assign vsync =      vsync_r;
-    assign hsync =      hsync_r;
-    assign dvalid =     dvalid_r;
+    assign pxd_out =    (DEGLITCH_DVALID>0)? pxd_out_r:  pxd_out_r2;
+//    assign vsync =      vsync_r;
+//    assign hsync =      hsync_r;
+//    assign dvalid =     dvalid_r;
     assign perr =       perr_r;
     assign test_out =   sns_d[29:22];
+    assign pxd_w =      {sns_d[19:12],sns_d[9:2]};
 
     sens_103993_clock #(
         .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
@@ -124,9 +134,12 @@ module  sens_103993_l3#(
         .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
         .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
         .PCLK_PHASE             (PCLK_PHASE),
+        .IPCLK1X_PHASE          (IPCLK1X_PHASE),
         .IPCLK2X_PHASE          (IPCLK2X_PHASE),
         .BUF_PCLK               (BUF_PCLK),
+        .BUF_IPCLK1X            (BUF_IPCLK1X),
         .BUF_IPCLK2X            (BUF_IPCLK2X),
+        .BUF_CLK_FB             (BUF_CLK_FB),
         .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),
         .SENS_REF_JITTER1       (SENS_REF_JITTER1),
         .SENS_REF_JITTER2       (SENS_REF_JITTER2),
@@ -143,6 +156,7 @@ module  sens_103993_l3#(
          
         .LVDS_CAPACITANCE       (LVDS_CAPACITANCE),
         .LVDS_DIFF_TERM         (LVDS_DIFF_TERM),
+        .LVDS_UNTUNED_SPLIT     (LVDS_UNTUNED_SPLIT),
         .LVDS_DQS_BIAS          (LVDS_DQS_BIAS),
         .LVDS_IBUF_DELAY_VALUE  (LVDS_IBUF_DELAY_VALUE),
         .LVDS_IBUF_LOW_PWR      (LVDS_IBUF_LOW_PWR),
@@ -195,14 +209,41 @@ module  sens_103993_l3#(
         .dout         (sns_d)        // output[29:0] 
     );
     always @(posedge pclk) begin
-        pxd_out_r <= {sns_d[19:12],sns_d[9:2]};
-        vsync_r <=   sns_d[1]; // input - active high
-        hsync_r <=   sns_d[11]; // input - active high
-        dvalid_r <=  sns_d[21]; // input - active hight
+        pxd_out_r  <= pxd_w;
+        pxd_out_r2 <= pxd_out_r;
+//        vsync_r <=   sns_d[1]; // input - active high
+//        hsync_r <=   sns_d[11]; // input - active high
+//        dvalid_r <=  sns_d[21]; // input - active hight
         cp_r <=      sns_d[0]; 
 //        perr_r <= ~ cp_r ^ (^pxd_out_r)  ^ vsync_r  ^ hsync_r ^ dvalid_r; 
         perr_r <= ~ (^sns_d[9:0]) ^ (^sns_d[19:11]) ^ (^sns_d[29:21]); //DS: XOR of all selected bits result in odd parity 
     end
+
+    deglitch #(
+        .CLOCKS(DEGLITCH_DVALID)
+    ) deglitch_dvalid_i (
+        .clk(pclk),    // input
+        .rst(prsts),   // input
+        .d(sns_d[21]), // input
+        .q(dvalid)     // output
+    );
+
+    deglitch #(
+        .CLOCKS(DEGLITCH_HSYNC)
+    ) deglitch_hsync_i (
+        .clk(pclk),    // input
+        .rst(prsts),   // input
+        .d(sns_d[11]), // input
+        .q(hsync)      // output
+    );
     
+    deglitch #(
+        .CLOCKS(DEGLITCH_VSYNC)
+    ) deglitch_vsync_i (
+        .clk(pclk),    // input
+        .rst(prsts),   // input
+        .d(sns_d[1]),  // input
+        .q(vsync)      // output
+    );
 endmodule
 

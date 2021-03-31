@@ -935,16 +935,21 @@ class X393SensCmprs(object):
             bits16 =     bits16) #False)
 
         if sensorType ==  x393_sensor.SENSOR_INTERFACE_BOSON:
-            skip_frames = 70 # 65 < min <70. 70 shows 4 frames, 100 shows 35 frames over uart  
-            fn = self.get_frame_number_i2c(channel=num_sensor)
-            print ("Frame number = %d"%(fn))
-            for _ in range (skip_frames): # 65): #70): #80): #100): # 60 10 2
-                self.skip_frame_i2c(
-                   channel_mask = (1 << num_sensor),
-                   loop_delay = 0.01,
-                   timeout = 5.0) # 2.0)
-            fn = self.get_frame_number_i2c(channel=num_sensor)
-            print ("Frame number (after skip to make sure Boson is in booted state before UART commands) = %d"%(fn))
+            if not self.DRY_MODE:
+                skip_frames = 70 # 65 < min <70. 70 shows 4 frames, 100 shows 35 frames over uart  
+                fn = self.get_frame_number_i2c(channel=num_sensor)
+                print ("Frame number = %d"%(fn))
+                for _ in range (skip_frames): # 65): #70): #80): #100): # 60 10 2
+                    self.skip_frame_i2c(
+                       channel_mask = (1 << num_sensor),
+                       loop_delay = 0.01,
+                       timeout = 5.0) # 2.0)
+                fn = self.get_frame_number_i2c(channel=num_sensor)
+                print ("Frame number (after skip to make sure Boson is in booted state before UART commands) = %d"%(fn))
+            else:
+                print ("No frame skipping for Boson in simulated mode")
+                
+                    
 
         if verbose >0 :
             print ("===================== CMPRS_EN_ARBIT =========================")

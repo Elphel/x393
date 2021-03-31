@@ -213,6 +213,8 @@ class X393Sensor(object):
             print ("   busy =                   %d"%((status>>25) & 1))
             print ("   seq =                    %d"%((status>>26) & 0x3f))
         elif (sensorType == SENSOR_INTERFACE_BOSON):
+            print ("   drp_odd_bit =            %d"%((status>> 0) & 0x01))
+            print ("   drp_bit =                %d"%((status>> 1) & 0x01))
             print ("   ps_out =               0x%x"%((status>> 0) & 0xff))
             print ("   ps_rdy =                 %d"%((status>> 8) & 1))
             print ("   perr =                   %d"%((status>> 9) & 1))
@@ -603,7 +605,8 @@ class X393Sensor(object):
                             gpio2 =        None,
                             gpio3 =        None,
                             alt_status =   None,
-                            test_pattern = None):
+                            test_pattern = None,
+                            drp_cmd =      0):
         """
         Combine sensor I/O control parameters into a control word
         @param mrst -  True - activate MRST signal (low), False - deactivate MRST (high), None - no change
@@ -615,6 +618,7 @@ class X393Sensor(object):
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param alt_status - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
         @param test_pattern - 0..7 - 0 normal data, 1+ - test petterns (1 - diagnal by 3, 2 - horizontal gradient , 3 - vertical gradient
+        @param drp_cmd - DRP command di-bit: 0 - nop, 1 - shift 0, 2 - shift 1, 3 - execute command 
         @return sensor i/o control word
         """
         rslt = 0
@@ -639,6 +643,10 @@ class X393Sensor(object):
             test_mode_masked = test_pattern & ((1 << vrlg.SENS_TEST_BITS) - 1)
             rslt |= test_mode_masked << vrlg.SENS_TEST_MODES
             rslt |= 1 << vrlg.SENS_TEST_SET
+            
+        if (drp_cmd > 0) and (drp_cmd < 4):
+            rslt |= drp_cmd << vrlg.SENS_CTRL_DPR
+                
         return rslt
 
     def func_sensor_uart_ctl_boson (self,
@@ -1326,7 +1334,8 @@ class X393Sensor(object):
                             gpio2 =         None,
                             gpio3 =         None,
                             alt_status =    None,
-                            test_pattern =  None):
+                            test_pattern =  None,
+                            drp_cmd =       0):
         """
         Set sensor I/O controls, including I/O signals
         @param num_sensor - sensor port number (0..3)
@@ -1339,36 +1348,39 @@ class X393Sensor(object):
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param alt_status - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
         @param test_pattern - 0..7 - 0 normal data, 1+ - test patterns (1 - LSB col//3. MSB row//3, 2 - horizontal gradient , 3 - vertical gradient
-
+        @param drp_cmd - DRP command di-bit: 0 - nop, 1 - shift 0, 2 - shift 1, 3 - execute command 
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
                 for num_sensor in range(4):
-                    self.set_sensor_io_ctl_boson (num_sensor,
-                            mrst =       mrst,
-                            mmcm_rst =   mmcm_rst,
-                            set_delays = set_delays,
-                            gpio0 =      gpio0,
-                            gpio1 =      gpio1,
-                            gpio2 =      gpio2,
-                            gpio3 =      gpio3,
-                            alt_status =  alt_status,
-                            test_pattern =  test_pattern)
+                    self.set_sensor_io_ctl_boson (
+                            num_sensor,
+                            mrst =         mrst,
+                            mmcm_rst =     mmcm_rst,
+                            set_delays =   set_delays,
+                            gpio0 =        gpio0,
+                            gpio1 =        gpio1,
+                            gpio2 =        gpio2,
+                            gpio3 =        gpio3,
+                            alt_status =   alt_status,
+                            test_pattern = test_pattern,
+                            drp_cmd =      drp_cmd)
                 return
         except:
             pass
 
 
         data = self.func_sensor_io_ctl_boson (
-                            mrst =       mrst,
-                            mmcm_rst =   mmcm_rst,
-                            set_delays = set_delays,
-                            gpio0 =      gpio0,
-                            gpio1 =      gpio1,
-                            gpio2 =      gpio2,
-                            gpio3 =      gpio3,
-                            alt_status =  alt_status,
-                            test_pattern =  test_pattern)
+                            mrst =         mrst,
+                            mmcm_rst =     mmcm_rst,
+                            set_delays =   set_delays,
+                            gpio0 =        gpio0,
+                            gpio1 =        gpio1,
+                            gpio2 =        gpio2,
+                            gpio3 =        gpio3,
+                            alt_status =   alt_status,
+                            test_pattern = test_pattern,
+                            drp_cmd =      drp_cmd)
 
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
@@ -1535,6 +1547,45 @@ class X393Sensor(object):
         if not mmcm_phase is None:
             self.x393_axi_tasks.write_control_register(reg_addr + 3, mmcm_phase & 0xff)
         self.set_sensor_io_ctl_boson (num_sensor, set_delays = True)
+
+    def get_boson_err_rate(self,
+                            num_sensor,
+                            test_time = 10): #in seconds
+        """
+        Measure parity error rate over LVDS pairs
+        @param num_sensor - sensor port number (0..3)
+        @param test_time - number of seconds for the test to run
+        @return (sign17, rate, number_of_tests)
+        """
+        time_start=time.time()
+        time_end = time_start + test_time
+        self.set_sensor_io_ctl_boson (num_sensor, alt_status = True)
+        self.program_status_sensor_io(num_sensor, mode=1, seq_num=0)        
+        status= self.get_status_sensor_io(num_sensor)
+        sign17 = status & 0xff
+        if sign17 != 0x17:
+            print("Signature: 0x%x (should be 0x17)"%(sign17,))
+            return (sign17, -1, 0)
+        nerr=0
+        ntry = 0
+        prev_errs = (status>>16) & 0xff
+#        print ("prev_errs = %d"%(prev_errs,))
+        while time.time() < time_end:
+            self.program_status_sensor_io(num_sensor, mode=1, seq_num=0)
+            status= self.get_status_sensor_io(num_sensor)
+            new_errs= (status>>16) & 0xff
+            nerr += (new_errs - prev_errs) % 256
+            prev_errs = new_errs
+            ntry += 1
+        print ("%.3f (%d tests)"%(nerr/test_time, ntry))
+#        print ("prev_errs = %d"%(prev_errs,))
+        return (sign17, nerr/test_time, ntry)
+            
+            
+            
+        
+
+#        self.set_sensor_io_ctl_boson (num_sensor, alt_status = False)
         
     def set_sensor_hispi_lanes(self,
                                num_sensor,
@@ -1771,6 +1822,152 @@ uart_print_packet 0 False False
                 num_sensor = num_sensor,
                 uart_extif_en = True)
         return packet        
+
+    def drp_close(self,
+                 num_sensor,
+                 wait_lock = True):
+        """
+        Close DRP connection, remove MMCM/PLL reset
+        @param num_sensor - sensor port number (0..3)
+        @param wait_lock -  wait MMCM/PLL to lock
+        """
+        self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = False)
+        
+        locked_pxd_mmcm = False
+        while not locked_pxd_mmcm:
+            sensor_status = self.x393Sensor.get_new_status(num_sensor=num_sensor)
+            locked_pxd_mmcm = ((sensor_status >> 12) & 1) != 0
+        
+
+
+    def drp_read_reg(self,
+                     num_sensor,
+                     addr):
+        """
+        Read DRP register from the MMCM/PLL. MMCM/PLL will be left in reset
+        @param num_sensor - sensor port number (0..3)
+        @param addr register 7-bit address
+        @return 16-bit register data
+        """
+        self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True)
+        # send 7-bit address
+        for i in range (7):
+            b = (addr >> (6-i)) & 1
+            self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = b + 1)
+        # Read current odd bit
+        sensor_status = self.get_new_status(num_sensor)
+        odd_bit = (sensor_status >> 0) & 1
+        #execute command
+        self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = 3)
+        odd_bit1 = odd_bit
+        for i in range (10): # should be done immediately
+            sensor_status = self.get_new_status(num_sensor)
+            odd_bit1 = (sensor_status >> 0) & 1 # will be inverted after address
+            if odd_bit1 != odd_bit:
+                break
+        if (odd_bit == odd_bit1):
+             raise TimeoutError('Timeout while waiting for the DRP register read.')
+        # shift in 16 data bits
+        data = 0
+        for _ in range (16):
+            sensor_status = self.get_new_status(num_sensor)
+            data_bit = (sensor_status >> 1) & 1 # will be inverted after address
+            data = (data << 1) + data_bit
+            self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = 1) # shift 0
+        # finish command    
+        self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = 3)
+        return data
+
+    def drp_write_reg(self,
+                     num_sensor,
+                     addr,
+                     data,
+                     mask=None):
+        """
+        write DRP register to the MMCM/PLL. MMCM/PLL will be left in reset, if mask is defined
+        only selected bits will be updated (read operation will be performed first)
+        @param num_sensor - sensor port number (0..3)
+        @param addr register 7-bit address
+        @param data 16-bit data to write
+        @param data 16-bit mask (only ones will be updated)
+        """
+        self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True)
+        old_data = None
+        if not mask is None:
+            old_data = self.drp_read_reg(num_sensor, addr)
+            data = ((old_data ^ data) & mask) ^ old_data
+            
+        # send 7-bit address
+        for i in range (7):
+            b = (addr >> (6-i)) & 1
+            self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = b + 1)
+        #send 16-bit data:
+        for i in range (16):
+            b = (data >> (15-i)) & 1
+            self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = b + 1)
+        # Read current odd bit
+        sensor_status = self.get_new_status(num_sensor)
+        odd_bit = (sensor_status >> 0) & 1
+        #execute command
+        self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = 3)
+        odd_bit1 = odd_bit
+        for i in range (10): # should be done immediately
+            sensor_status = self.get_new_status(num_sensor)
+            odd_bit1 = (sensor_status >> 0) & 1 # will be inverted after address
+            if odd_bit1 != odd_bit:
+                break
+        if (odd_bit == odd_bit1):
+             raise TimeoutError('Timeout while waiting for the DRP register write.')
+
+    def drp_phase_addr(self,
+                       clk_out=-1):
+        """
+        Get a pair (ClkReg1,ClkReg2 - SEE xapp888) of DRP registers for clock phases
+        @param clk_out - clock number: -1 - CLKFBOUT, 0..6 - CLKOUT0...CLKOUT6
+        @return a pair of corresponding DRP register addresses
+        """
+        clk_reg_addr=[[0x14,0x15], #CLKFBOUT
+                      [0x08, 0x09],
+                      [0x0a, 0x0b],
+                      [0x0c, 0x09],
+                      [0x08, 0x09],
+                      [0x08, 0x09],
+                      ]
+        return clk_reg_addr[clk_out + 1]
+        
+    
+    def drp_read_clock_phase(self,
+                             num_sensor,
+                             clk_out = -1):# -1 - FB, 0..6 - CLKOUT0...CLKOUT6
+        """
+        Read MMCME2/PLLE2 clock phases (in 1/8 of the VCO periods)
+        @param num_sensor - sensor port number (0..3)
+        @param clk_out - clock number: -1 - CLKFBOUT, 0..6 - CLKOUT0...CLKOUT6
+        @return current phase shift in 1/8s of the VCO period
+        """
+
+        ClkReg1, ClkReg2 = self.drp_phase_addr(clk_out)
+        data1 = self.drp_read_reg(num_sensor, ClkReg1)
+        data2 = self.drp_read_reg(num_sensor, ClkReg2)
+        phase = ((data1 >> 13) & 7) | ((data2 & 0x1f) << 3)
+        return phase
+
+    def drp_write_clock_phase(self,
+                             num_sensor,
+                             clk_out = -1,# -1 - FB, 0..6 - CLKOUT0...CLKOUT6
+                             phase = 0):
+        """
+        Read MMCME2/PLLE2 clock phases (in 1/8 of the VCO periods)
+        @param num_sensor - sensor port number (0..3)
+        @param clk_out - clock number: -1 - CLKFBOUT, 0..6 - CLKOUT0...CLKOUT6
+        @param phase - phase shift in 1/8s of the VCO period
+        """
+
+        ClkReg1, ClkReg2 = self.drp_phase_addr(clk_out)
+        data1 = (phase & 7) << 13
+        data2 = (phase >> 3) & 0x1f
+        self.drp_write_reg(num_sensor, addr=ClkReg1, data=data1, mask=0xe000)
+        self.drp_write_reg(num_sensor, addr=ClkReg2, data=data2, mask=0x001f)
 
     def jtag_get_tdo(self, chn):
         seq_num = ((self.get_status_sensor_io(num_sensor = chn) >> 26) + 1) & 0x3f
