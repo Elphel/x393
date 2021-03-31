@@ -1912,8 +1912,10 @@ class X393ExportC(object):
 
     def _enc_status_sens_io_boson(self):
         dw=[]
-        dw.append(("ps_out",                 0, 8,0,  "Sensor MMCM current phase"))
-        dw.append(("ps_rdy",                 8, 1,0,  "Sensor MMCM phase ready"))
+#        dw.append(("ps_out",                 0, 8,0,  "Sensor MMCM current phase"))
+#        dw.append(("ps_rdy",                 8, 1,0,  "Sensor MMCM phase ready"))
+        dw.append(("drp_odd_bit",            0, 1,0,  "Alternating even/odd bit from the MMCM/PLL DRP controller"))
+        dw.append(("drp_bit",                1, 1,0,  "Read data bit (big-endian) from the MMCM/PLL DRP controller"))
         dw.append(("perr",                   9, 1,0,  "Parity error in video stream"))
         dw.append(("recv_odd_even",         10, 1,0,  "UART receive odd/even output byte (next byte should have it inverted)"))
         dw.append(("clkin_pxd_stopped_mmcm",11, 1,0,  "Sensor MMCM input clock stopped"))
@@ -2188,25 +2190,30 @@ class X393ExportC(object):
     
     def _enc_sensio_ctrl_boson(self):
         dw=[]
-        dw.append(("mrst",         vrlg.SENS_CTRL_MRST,         1,   0,  "MRST signal level to the sensor (0 - low(active), 1 - high (inactive)"))
-        dw.append(("mrst_set",     vrlg.SENS_CTRL_MRST + 1,     1,   0,  "when set to 1, MRST is set  to the 'mrst' field value"))
+        dw.append(("mrst",           vrlg.SENS_CTRL_MRST,         1,   0,  "MRST signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("mrst_set",       vrlg.SENS_CTRL_MRST + 1,     1,   0,  "when set to 1, MRST is set  to the 'mrst' field value"))
 #        dw.append(("arst",         vrlg.SENS_CTRL_ARST,         1,   0,  "ARST signal to the sensor"))
 #        dw.append(("arst_set",     vrlg.SENS_CTRL_ARST + 1,     1,   0,  "ARST set  to the 'arst' field"))
 #        dw.append(("aro",          vrlg.SENS_CTRL_ARO,          1,   0,  "ARO signal to the sensor"))
 #        dw.append(("aro_set",      vrlg.SENS_CTRL_ARO + 1,      1,   0,  "ARO set to the 'aro' field"))
-        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sensor clock) reset signal"))
-        dw.append(("mmcm_rst_set", vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
+        dw.append(("mmcm_rst",       vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sensor clock) reset signal"))
+        dw.append(("mmcm_rst_set",   vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
 #        dw.append(("ign_embed",    vrlg.SENS_CTRL_IGNORE_EMBED, 1,   0,  "Ignore embedded data (non-image pixel lines"))
 #        dw.append(("ign_embed_set",vrlg.SENS_CTRL_IGNORE_EMBED + 1,1,0,  "Set mode to 'ign_embed' field"))
-        dw.append(("set_dly",      vrlg.SENS_CTRL_LD_DLY,       1,   0,  "Set all pre-programmed delays to the sensor port input delays"))
-        dw.append(("gp0",          vrlg.SENS_CTRL_GP0,          2,   0 , "GP0 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
-        dw.append(("gp0_set",      vrlg.SENS_CTRL_GP0 + 2,      1,   0,  "Set GP0 to 'gp0' value"))
-        dw.append(("gp1",          vrlg.SENS_CTRL_GP1,          2,   0 , "GP1 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
-        dw.append(("gp1_set",      vrlg.SENS_CTRL_GP1 + 2,      1,   0,  "Set GP1 to 'gp1' value"))
-        dw.append(("gp2",          vrlg.SENS_CTRL_GP2,          2,   0 , "GP2 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
-        dw.append(("gp2_set",      vrlg.SENS_CTRL_GP2 + 2,      1,   0,  "Set GP2 to 'gp2' value"))
-        dw.append(("gp3",          vrlg.SENS_CTRL_GP3,          2,   0 , "GP3 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
-        dw.append(("gp3_set",      vrlg.SENS_CTRL_GP3 + 2,      1,   0,  "Set GP3 to 'gp3' value"))
+        dw.append(("set_dly",        vrlg.SENS_CTRL_LD_DLY,       1,   0,  "Set all pre-programmed delays to the sensor port input delays"))
+        dw.append(("gp0",            vrlg.SENS_CTRL_GP0,          2,   0 , "GP0 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp0_set",        vrlg.SENS_CTRL_GP0 + 2,      1,   0,  "Set GP0 to 'gp0' value"))
+        dw.append(("gp1",            vrlg.SENS_CTRL_GP1,          2,   0 , "GP1 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp1_set",        vrlg.SENS_CTRL_GP1 + 2,      1,   0,  "Set GP1 to 'gp1' value"))
+        dw.append(("gp2",            vrlg.SENS_CTRL_GP2,          2,   0 , "GP2 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp2_set",        vrlg.SENS_CTRL_GP2 + 2,      1,   0,  "Set GP2 to 'gp2' value"))
+        dw.append(("gp3",            vrlg.SENS_CTRL_GP3,          2,   0 , "GP3 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp3_set",        vrlg.SENS_CTRL_GP3 + 2,      1,   0,  "Set GP3 to 'gp3' value"))
+        dw.append(("alt_status",     vrlg.SENS_ALT_STATUS,        1,   0 , "Alternative status map to test serial communication parity"))
+        dw.append(("alt_status_set", vrlg.SENS_ALT_STATUS_SET,    1,   0,  "Set alt_status"))
+        dw.append(("test_modes",     vrlg.SENS_TEST_MODES, vrlg.SENS_TEST_BITS,   0 , "Test pattern modes"))
+        dw.append(("test_modes_set", vrlg.SENS_TEST_SET,          1,   0,  "Set test_modes bits"))
+        dw.append(("drp_cmd",        vrlg.SENS_CTRL_DPR,          2,   0,  "MMCM/PLL DRP control: 0 - nop, 1 - shift 0, 2 - shift 1, 3 - execute"))
         return dw
     
     def _enc_sensio_jtag(self):

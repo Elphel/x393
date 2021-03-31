@@ -508,17 +508,18 @@
 //`elsif BOSON
         parameter SENS_CTRL_GP2=         18,  // 20:18 00 - float, 01 - low, 10 - high, 11 - trigger
         parameter SENS_CTRL_GP3=         21,  // 23:21 00 - float, 01 - low, 10 - high, 11 - trigger
-        parameter SENS_UART_EXTIF_EN =    0,  //  1: 0
-        parameter SENS_UART_XMIT_RST =    2,  //  3: 2
-        parameter SENS_UART_RECV_RST =    4,  //  5: 4
-        parameter SENS_UART_XMIT_START =  6,  //  6
-        parameter SENS_UART_RECV_NEXT =   7,  //  7
         parameter SENS_ALT_STATUS =      24,
         parameter SENS_ALT_STATUS_SET =  25,
         parameter SENS_TEST_MODES =      26,
         parameter SENS_TEST_BITS =        3,
         parameter SENS_TEST_SET=         29,
         parameter SENS_CTRL_DPR=         30,  // 30:31 DRP command
+
+        parameter SENS_UART_EXTIF_EN =    0,  //  1: 0
+        parameter SENS_UART_XMIT_RST =    2,  //  3: 2
+        parameter SENS_UART_RECV_RST =    4,  //  5: 4
+        parameter SENS_UART_XMIT_START =  6,  //  6
+        parameter SENS_UART_RECV_NEXT =   7,  //  7
         
         parameter SENS_TEST_WIDTH_BITS = 10,
         parameter SENS_TEST_HEIGHT_BITS= 10,
