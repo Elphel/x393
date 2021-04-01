@@ -732,7 +732,7 @@
 `ifdef SIMULATION
     parameter CLKFBOUT_PHASE_SENSOR =      54.0,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
 `else
-    parameter CLKFBOUT_PHASE_SENSOR =      -22.5, // -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter CLKFBOUT_PHASE_SENSOR =      70.5,  // -22.5, // -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
 `endif
     parameter PCLK_PHASE =                 0.000, // not used
     parameter IPCLK1X_PHASE =              0.000, // -3.000, // trying both ways (PCLK_PHASE inside sens_103993)

@@ -1827,7 +1827,7 @@ uart_print_packet 0 False False
                  num_sensor,
                  wait_lock = True):
         """
-        Close DRP connection, remove MMCM/PLL reset
+        Close DRP connection by de-asserting MMCM/PLL reset
         @param num_sensor - sensor port number (0..3)
         @param wait_lock -  wait MMCM/PLL to lock
         """
@@ -1835,7 +1835,7 @@ uart_print_packet 0 False False
         
         locked_pxd_mmcm = False
         while not locked_pxd_mmcm:
-            sensor_status = self.x393Sensor.get_new_status(num_sensor=num_sensor)
+            sensor_status = self.get_new_status(num_sensor=num_sensor)
             locked_pxd_mmcm = ((sensor_status >> 12) & 1) != 0
         
 
