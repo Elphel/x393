@@ -2004,7 +2004,21 @@ simul_axi_hp_wr #(
         .uart_in       (sns1_dp[4]),       // input sns_txd
         .uart_out      (sns1_dn[4])        // output  sns_rxd
     );
-
+`ifdef BOSON_REVA // 103993 REVA board
+    simul_103993A_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_1_i (
+        .ta({2'b10, boson_pxd1[ 4: 0]}),   // input[6:0] 
+        .tb({2'b10, boson_pxd1[ 9: 5]}),   // input[6:0] 
+        .tc({2'b10, boson_pxd1[14:10]}),   // input[6:0] 
+        .td({3'b100,boson_dvalid1, boson_vsync1,boson_hsync1,boson_pxd1[15]}), // input[6:0] 
+        .pclk(boson_pclk1),                // input
+        .dp(sns1_dp[3:0]),                 // output[3:0] 
+        .dn(sns1_dn[3:0]),                 // output[3:0] 
+        .clkp(sns1_clkp),                  // output
+        .clkn(sns1_clkn)                   // output
+    );
+`else
     simul_103993_serializer #(
         .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
     ) simul_103993_serializer_1_i (
@@ -2020,7 +2034,7 @@ simul_axi_hp_wr #(
         .clkp          (sns1_clkp),        // output
         .clkn          (sns1_clkn)         // output
     );
-
+`endif
     simul_boson640 #(
         .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
         .WIDTH         (BOSON_WIDTH),      // 160), 640),
@@ -2044,7 +2058,21 @@ simul_axi_hp_wr #(
         .uart_in       (sns2_dp[4]),       // input sns_txd
         .uart_out      (sns2_dn[4])        // output  sns_rxd
     );
-
+`ifdef BOSON_REVA // 103993 REVA board
+    simul_103993A_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_2_i (
+        .ta({2'b10, boson_pxd2[ 4: 0]}),   // input[6:0] 
+        .tb({2'b10, boson_pxd2[ 9: 5]}),   // input[6:0] 
+        .tc({2'b10, boson_pxd2[14:10]}),   // input[6:0] 
+        .td({3'b100,boson_dvalid2, boson_vsync2,boson_hsync2,boson_pxd2[15]}), // input[6:0] 
+        .pclk(boson_pclk2),                // input
+        .dp(sns2_dp[3:0]),                 // output[3:0] 
+        .dn(sns2_dn[3:0]),                 // output[3:0] 
+        .clkp(sns2_clkp),                  // output
+        .clkn(sns2_clkn)                   // output
+    );
+`else
     simul_103993_serializer #(
         .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
     ) simul_103993_serializer_2_i (
@@ -2060,6 +2088,7 @@ simul_axi_hp_wr #(
         .clkp          (sns2_clkp),        // output
         .clkn          (sns2_clkn)         // output
     );
+`endif
 
     simul_boson640 #(
         .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
@@ -2085,6 +2114,21 @@ simul_axi_hp_wr #(
         .uart_out      (sns3_dn[4])        // output  sns_rxd
     );
 
+`ifdef BOSON_REVA // 103993 REVA board
+    simul_103993A_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_3_i (
+        .ta({2'b10, boson_pxd3[ 4: 0]}),   // input[6:0] 
+        .tb({2'b10, boson_pxd3[ 9: 5]}),   // input[6:0] 
+        .tc({2'b10, boson_pxd3[14:10]}),   // input[6:0] 
+        .td({3'b100,boson_dvalid3, boson_vsync3,boson_hsync3,boson_pxd3[15]}), // input[6:0] 
+        .pclk(boson_pclk3),                // input
+        .dp(sns3_dp[3:0]),                 // output[3:0] 
+        .dn(sns3_dn[3:0]),                 // output[3:0] 
+        .clkp(sns3_clkp),                  // output
+        .clkn(sns3_clkn)                   // output
+    );
+`else
     simul_103993_serializer #(
         .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
     ) simul_103993_serializer_3_i (
@@ -2100,6 +2144,7 @@ simul_axi_hp_wr #(
         .clkp          (sns3_clkp),        // output
         .clkn          (sns3_clkn)         // output
     );
+`endif
 
     simul_boson640 #(
         .DATA_FILE     (BOSON_DATA_FILE),  // "/input_data/pattern_160_120_16.dat"),
@@ -2124,7 +2169,21 @@ simul_axi_hp_wr #(
         .uart_in       (sns4_dp[4]),       // input sns_txd
         .uart_out      (sns4_dn[4])        // output  sns_rxd
     );
-
+`ifdef BOSON_REVA // 103993 REVA board
+    simul_103993A_serializer #(
+        .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
+    ) simul_103993_serializer_4_i (
+        .ta({2'b10, boson_pxd4[ 4: 0]}),   // input[6:0] 
+        .tb({2'b10, boson_pxd4[ 9: 5]}),   // input[6:0] 
+        .tc({2'b10, boson_pxd4[14:10]}),   // input[6:0] 
+        .td({3'b100,boson_dvalid4, boson_vsync4,boson_hsync4,boson_pxd4[15]}), // input[6:0] 
+        .pclk(boson_pclk4),                // input
+        .dp(sns4_dp[3:0]),                 // output[3:0] 
+        .dn(sns4_dn[3:0]),                 // output[3:0] 
+        .clkp(sns4_clkp),                  // output
+        .clkn(sns4_clkn)                   // output
+    );
+`else
     simul_103993_serializer #(
         .PCLK_FREQ_MHZ(BOSON_FPS * 0.45)   // 27.0)
     ) simul_103993_serializer_4_i (
@@ -2140,9 +2199,7 @@ simul_axi_hp_wr #(
         .clkp          (sns4_clkp),        // output
         .clkn          (sns4_clkn)         // output
     );
-
-
-
+`endif
 `else
 
 

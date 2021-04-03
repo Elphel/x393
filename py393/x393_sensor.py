@@ -1951,7 +1951,8 @@ uart_print_packet 0 False False
         ClkReg1, ClkReg2 = self.drp_phase_addr(clk_out)
         data1 = self.drp_read_reg(num_sensor, ClkReg1)
         data2 = self.drp_read_reg(num_sensor, ClkReg2)
-        phase = ((data1 >> 13) & 7) | ((data2 & 0x1f) << 3)
+#        phase = ((data1 >> 13) & 7) | ((data2 & 0x1f) << 3)
+        phase = ((data1 >> 13) & 7) | ((data2 & 0x3f) << 3)
         return phase
 
     def drp_write_clock_phase(self,
@@ -1967,9 +1968,9 @@ uart_print_packet 0 False False
 
         ClkReg1, ClkReg2 = self.drp_phase_addr(clk_out)
         data1 = (phase & 7) << 13
-        data2 = (phase >> 3) & 0x1f
+        data2 = (phase >> 3) & 0x3f
         self.drp_write_reg(num_sensor, addr=ClkReg1, data=data1, mask=0xe000)
-        self.drp_write_reg(num_sensor, addr=ClkReg2, data=data2, mask=0x001f)
+        self.drp_write_reg(num_sensor, addr=ClkReg2, data=data2, mask=0x003f)
 
     def jtag_get_tdo(self, chn):
         seq_num = ((self.get_status_sensor_io(num_sensor = chn) >> 26) + 1) & 0x3f

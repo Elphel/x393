@@ -727,12 +727,17 @@
     `endif
 `elsif BOSON    
     parameter CLKIN_PERIOD_SENSOR =        37.037, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
-    parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
+    `ifdef BOSON_REVA
+        parameter CLKFBOUT_MULT_SENSOR =       35, // 945 MHz 28,      // 27 MHz --> 756 MHz
+    `else
+        parameter CLKFBOUT_MULT_SENSOR =       30,      // 27 MHz --> 810 MHz (3*270MHz)
+    `endif
 //MMCME2_ADV_i has a CLKFBOUT_PHASE value (-20.000)  with CLKFBOUT_USE_FINE_PS set to FALSE. It should be a multiple of [45 / CLKFBOUT_MULT_F] = [45 / 30.000] = 1.500.
 `ifdef SIMULATION
     parameter CLKFBOUT_PHASE_SENSOR =      54.0,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
 `else
-    parameter CLKFBOUT_PHASE_SENSOR =      70.5,  // -22.5, // -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+//It should be a multiple of [45 / CLKFBOUT_MULT_F] = [45 / 35.000] = 1.286
+    parameter CLKFBOUT_PHASE_SENSOR =      0.0, // 70.5,  // -22.5, // -21.0, // 19.5,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
 `endif
     parameter PCLK_PHASE =                 0.000, // not used
     parameter IPCLK1X_PHASE =              0.000, // -3.000, // trying both ways (PCLK_PHASE inside sens_103993)
@@ -850,7 +855,11 @@
 //`ifdef HISPI
     parameter HISPI_MSB_FIRST =            0,
 `ifdef BOSON
-    parameter HISPI_NUMLANES =             3,
+   `ifdef BOSON_REVA
+        parameter HISPI_NUMLANES =         4,
+   `else
+        parameter HISPI_NUMLANES =         3,
+    `endif
 `else
     parameter HISPI_NUMLANES =             4,
 `endif

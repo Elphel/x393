@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-   parameter FPGA_VERSION = 32'h03934006; // Boson640, adjusted initial phase to 70.5 degrees (47 counts)
+   parameter FPGA_VERSION = 32'h03934010; // Boson640, for 103993A
+// parameter FPGA_VERSION = 32'h03934006; // Boson640, adjusted initial phase to 70.5 degrees (47 counts)
 // parameter FPGA_VERSION = 32'h03934005; // Boson640, testing
 // parameter FPGA_VERSION = 32'h03934005; // Boson640, implementing DRP to control MMCME2/PLLE2 trying more BUFR
 // parameter FPGA_VERSION = 32'h03934004; // Boson640, implementing DRP to control MMCME2/PLLE2

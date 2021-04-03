@@ -118,7 +118,11 @@ module  sens_103993 #(
     parameter SENS_SS_MOD_PERIOD =         10000,        // integer 4000-40000 - SS modulation period in ns
 
 //    parameter LVDS_MSB_FIRST =            0,
+`ifdef BOSON_REVA
+    parameter NUMLANES =                   4,
+`else
     parameter NUMLANES =                   3,
+`endif    
     parameter LVDS_DELAY_CLK =           "FALSE",      
     parameter LVDS_MMCM =                "TRUE",
     parameter LVDS_CAPACITANCE =         "DONT_CARE",
@@ -283,7 +287,11 @@ module  sens_103993 #(
     wire                        senspgmin;   // detect sensorboard
     // GP0..GP3 are not yet used, fake-use gp_comb to keep
     wire [3:0] gp;
+`ifdef BOSON_REVA
+    wire [0:0] dummy; // to keep iostandard of unused pins in a bank
+`else    
     wire [2:0] dummy; // to keep iostandard of unused pins in a bank
+`endif    
     wire       gp_comb = (^gp[3:0]) ^ (^dummy);
     reg        test_patt;
     reg  [7:0] perr_cntr;
@@ -483,13 +491,76 @@ module  sens_103993 #(
     wire        clkin_pxd_stopped_mmcm1;
     wire        clkfb_pxd_stopped_mmcm1;
 */
-`ifdef USE_SERIALIZER_103993    
+`ifdef BOSON_REVA
+     sens_103993A_lanes #(
+        .IODELAY_GRP            (IODELAY_GRP),
+        .IDELAY_VALUE           (IDELAY_VALUE),
+        .REFCLK_FREQUENCY       (REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE  (HIGH_PERFORMANCE_MODE),
+        .SENS_BANDWIDTH         (SENS_BANDWIDTH),
+        .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),    // 37.037),
+        .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),   // (30),
+        .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),  // (54.0),
+        .PCLK_PHASE             (PCLK_PHASE),             // (0.000),
+        .IPCLK1X_PHASE          (IPCLK1X_PHASE),          //(0.000), // not actually used
+        .IPCLK2X_PHASE          (IPCLK2X_PHASE),          //(0.000),
+        .BUF_PCLK               (BUF_PCLK),               // "BUFR"),
+        .BUF_IPCLK1X            (BUF_IPCLK1X),
+        .BUF_IPCLK2X            (BUF_IPCLK2X),            // "BUFR"),
+        .BUF_CLK_FB             (BUF_CLK_FB),
+        .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),     // 1),
+        .SENS_REF_JITTER1       (SENS_REF_JITTER1),       // 0.010),
+        .SENS_REF_JITTER2       (SENS_REF_JITTER2),       // 0.010),
+        .SENS_SS_EN             (SENS_SS_EN),             // "FALSE"),
+        .SENS_SS_MODE           (SENS_SS_MODE),           // "CENTER_HIGH"),
+        .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),     // 10000),
+        .NUMLANES               (NUMLANES),               // 3),
+        .LVDS_DELAY_CLK         (LVDS_DELAY_CLK),         // "FALSE"),
+        .LVDS_MMCM              (LVDS_MMCM),              // "TRUE"),
+        .LVDS_CAPACITANCE       (LVDS_CAPACITANCE),       // "DONT_CARE"),
+        .LVDS_DIFF_TERM         (LVDS_DIFF_TERM),         // "TRUE"),
+        .LVDS_UNTUNED_SPLIT     (LVDS_UNTUNED_SPLIT),     // "FALSE"),
+        .LVDS_DQS_BIAS          (LVDS_DQS_BIAS),          // "TRUE"),
+        .LVDS_IBUF_DELAY_VALUE  (LVDS_IBUF_DELAY_VALUE),  // "0"),
+        .LVDS_IBUF_LOW_PWR      (LVDS_IBUF_LOW_PWR),      // "TRUE"),
+        .LVDS_IFD_DELAY_VALUE   (LVDS_IFD_DELAY_VALUE),   // "AUTO"),
+        .LVDS_IOSTANDARD        (LVDS_IOSTANDARD),         // "DIFF_SSTL18_I")
+        .DEGLITCH_DVALID        (1),
+        .DEGLITCH_HSYNC         (3),
+        .DEGLITCH_VSYNC         (7)
+    ) sens_103993_l3_i ( // same instance name
+        .pclk                   (pclk),                   // output
+        .prsts                  (prsts),                  // input,
+        .sns_dp                 (sns_dp[3:0]),            // input[3:0] 
+        .sns_dn                 (sns_dn[3:0]),            // input[3:0] 
+        .sns_clkp               (sns_clkp),               // input
+        .sns_clkn               (sns_clkn),               // input
+        .pxd_out                (pxd_w),                  // output[15:0] 
+        .vsync                  (vsync),                  // output
+        .hsync                  (hsync),                  // output
+        .dvalid                 (dvalid_w),               // output
+        .mclk                   (mclk),                   // input
+        .mrst                   (mrst),                   // input
+        .dly_data               (data_r[31:0]),           // input[31:0] 
+        .set_idelay             ({NUMLANES{set_idelays}}),// input[2:0] 
+        .apply_idelay           (ld_idelay),              // input
+        .set_clk_phase          (set_iclk_phase),         // input
+        .rst_mmcm               (rst_mmcm),               // input
+        .perr                   (perr),                   // output
+        .test_out               (test_out),               // output[7:0] // should be 0x17 
+        .locked_pxd_mmcm        (locked_pclk),            // output
+        .clkin_pxd_stopped_mmcm (clkin_pxd_stopped_mmcm), // output
+        .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm), // output
+        .drp_cmd                (drp_cmd),                // input[1:0] 
+        .drp_bit                (drp_bit),                // output
+        .drp_odd_bit            (drp_odd_bit)             // output
+    );
+`elsif USE_SERIALIZER_103993    
      sens_103993_lanes #(
         .IODELAY_GRP            (IODELAY_GRP),
         .IDELAY_VALUE           (IDELAY_VALUE),
         .REFCLK_FREQUENCY       (REFCLK_FREQUENCY),
         .HIGH_PERFORMANCE_MODE  (HIGH_PERFORMANCE_MODE),
-//        .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
         .SENS_BANDWIDTH         (SENS_BANDWIDTH),
         .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),    // 37.037),
         .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),   // (30),
@@ -767,7 +838,8 @@ module  sens_103993 #(
         .T  (1'b0)        // input
     );
     */
-    
+`ifdef BOSON_REVA
+`else    
     ibuf_ibufg #(
         .CAPACITANCE      (PXD_CAPACITANCE),
         .IBUF_DELAY_VALUE("0"),
@@ -788,7 +860,7 @@ module  sens_103993 #(
         .O(dummy[2]), // output
         .I(sns_dp[3]) // input
     );
-    
+`endif    
 // end of dummy
 
 // pulldown to detect sensor presense
