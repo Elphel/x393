@@ -35,7 +35,11 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-   parameter FPGA_VERSION = 32'h03934010; // Boson640, for 103993A
+   parameter FPGA_VERSION = 32'h03934014; // Boson640, for 103993A, debugging 4 removed DE deglitch
+//   parameter FPGA_VERSION = 32'h03934013; // Boson640, for 103993A, debugging 3  failed (maybe just phases)
+// parameter FPGA_VERSION = 32'h03934012; // Boson640, for 103993A, debugging 2 works, shifted by 1 pix hor (found bug)
+// parameter FPGA_VERSION = 32'h03934011; // Boson640, for 103993A, debugging 1
+// parameter FPGA_VERSION = 32'h03934010; // Boson640, for 103993A
 // parameter FPGA_VERSION = 32'h03934006; // Boson640, adjusted initial phase to 70.5 degrees (47 counts)
 // parameter FPGA_VERSION = 32'h03934005; // Boson640, testing
 // parameter FPGA_VERSION = 32'h03934005; // Boson640, implementing DRP to control MMCME2/PLLE2 trying more BUFR

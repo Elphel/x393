@@ -108,6 +108,22 @@ module  sens_103993A_lanes #(
     output                         drp_bit,
     output                         drp_odd_bit 
 );
+/*
+   Lanes     bits:   6   5   4   3   2   1   0   
+            0 (TA)   1   0   d4  d3  d2  d1  d0   sns_d[ 6: 0]
+            1 (TB)   1   0   d9  d8  d7  d6  d5   sns_d[13: 7]
+            2 (TC)   1   0   d14 d13 d12 d11 d10  sns_d[20:14]
+            3 (TD)   1   0   0   de  vs  hs  d15  sns_d[27:21]
+            
+            0 (TA)   6   5   4   3   2   1   0    sns_d[ 6: 0]
+            1 (TB)  13  12  11  10   9   8   7    sns_d[13: 7]
+            2 (TC)  20  19  18  17  16  15  14    sns_d[20:14]
+            3 (TD)  27  26  25  24  23  22  21    sns_d[27:21]
+            
+            
+        perr_r <= ~sns_d[27] | sns_d[26] | sns_d[25] | ~sns_d[20] | sns_d[19] | ~sns_d[13] | sns_d[12] | ~sns_d[6] | sns_d[5];  
+            
+*/
 
     wire  [NUMLANES * 7-1:0] sns_d;
     wire                     ipclk2x;// re-generated clock (135 MHz)
@@ -119,10 +135,10 @@ module  sens_103993A_lanes #(
     wire                     for_pclk;
     wire                     for_pclk_last;
     
-    assign pxd_out =    (DEGLITCH_DVALID>0) ? pxd_out_r:  pxd_out_r2;
+    assign pxd_out =    (DEGLITCH_DVALID == 0) ? pxd_out_r:  pxd_out_r2;
     assign perr =       perr_r;
     assign test_out =   {sns_d[27:26],sns_d[20:19],sns_d[13:12],sns_d[6:5]}; // should be 8'haa
-    assign pxd_w =      {sns_d[19:12],sns_d[9:2]};
+    assign pxd_w =      {sns_d[21],sns_d[18:14],sns_d[11:7],sns_d[4:0]};
    
     sens_103993A_clock #(
         .SENS_BANDWIDTH         (SENS_BANDWIDTH),
@@ -218,7 +234,7 @@ module  sens_103993A_lanes #(
      always @(posedge pclk) begin
         pxd_out_r  <= pxd_w;
         pxd_out_r2 <= pxd_out_r;
-        perr_r <= ~sns_d[27] | sns_d[26] | sns_d[25] | ~sns_d[20] | sns_d[19] | ~sns_d[13] | sns_d[13] | ~sns_d[6] | sns_d[5];  
+        perr_r <= ~sns_d[27] | sns_d[26] | sns_d[25] | ~sns_d[20] | sns_d[19] | ~sns_d[13] | sns_d[12] | ~sns_d[6] | sns_d[5];  
     end
 
     deglitch #(

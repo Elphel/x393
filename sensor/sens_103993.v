@@ -305,7 +305,7 @@ module  sens_103993 #(
                      test_patt? nonlock_persistent : clkin_pxd_stopped_mmcm,              // 11
                      recv_odd_even,                       // clkfb_pxd_stopped_mmcm,              // 10
                      perr_persistent,                     //  9 deserializer parity error
-//                     test_patt? perr : ps_rdy,            //  8
+//                     test_patt? perr : ps_rdy,          //  8
 //                     test_patt? test_out[7:0]:ps_out[7:0],// [7:0]
                      perr,                                //  8
                      test_out[7:2],                       // [7:2]
@@ -525,7 +525,7 @@ module  sens_103993 #(
         .LVDS_IBUF_LOW_PWR      (LVDS_IBUF_LOW_PWR),      // "TRUE"),
         .LVDS_IFD_DELAY_VALUE   (LVDS_IFD_DELAY_VALUE),   // "AUTO"),
         .LVDS_IOSTANDARD        (LVDS_IOSTANDARD),         // "DIFF_SSTL18_I")
-        .DEGLITCH_DVALID        (1),
+        .DEGLITCH_DVALID        (0), // 1),
         .DEGLITCH_HSYNC         (3),
         .DEGLITCH_VSYNC         (7)
     ) sens_103993_l3_i ( // same instance name

@@ -215,16 +215,16 @@ class X393Sensor(object):
         elif (sensorType == SENSOR_INTERFACE_BOSON):
             print ("   drp_odd_bit =            %d"%((status>> 0) & 0x01))
             print ("   drp_bit =                %d"%((status>> 1) & 0x01))
-            print ("   ps_out =               0x%x"%((status>> 0) & 0xff))
-            print ("   ps_rdy =                 %d"%((status>> 8) & 1))
-            print ("   perr =                   %d"%((status>> 9) & 1))
+            print ("   test_bits =            0x%x"%((status>> 0) & 0xff))
+            print ("   perr_now =               %d"%((status>> 8) & 1))
+            print ("   perr_persist             %d"%((status>> 9) & 1))
             print ("   clkfb_pxd_stopped_mmcm = %d"%((status>>10) & 1))
             print ("   clkin_pxd_stopped_mmcm = %d"%((status>>11) & 1))
             print ("   locked_pxd_mmcm =        %d"%((status>>12) & 1))
             print ("   hact_alive =             %d"%((status>>13) & 1))
             print ("   recv_prgrs =             %d"%((status>>14) & 1))
             print ("   recv_dav =               %d"%((status>>15) & 1))
-            print ("   recv_data =              %d"%((status>>16) & 0xff))
+            print ("   recv_data/numerr =       %d"%((status>>16) & 0xff))
             print ("   senspgmin =              %d"%((status>>24) & 1))
             print ("   xmit_busy =              %d"%((status>>25) & 1))
             print ("   seq =                    %d"%((status>>26) & 0x3f))
@@ -616,7 +616,7 @@ class X393Sensor(object):
         @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
-        @param alt_status - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
+        @param alt_status - True: set status output to test pattern (should be 0xaa /0x17 for rev0 ), False: set to MMCM phase
         @param test_pattern - 0..7 - 0 normal data, 1+ - test petterns (1 - diagnal by 3, 2 - horizontal gradient , 3 - vertical gradient
         @param drp_cmd - DRP command di-bit: 0 - nop, 1 - shift 0, 2 - shift 1, 3 - execute command 
         @return sensor i/o control word
@@ -1346,7 +1346,7 @@ class X393Sensor(object):
         @param gpio1 -   GPIO[1]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio2 -   GPIO[2]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
         @param gpio3 -   GPIO[3]: 0 - float(input), 1 - out low, 2 out high, 3 - pulse high
-        @param alt_status - True: set status output to test pattern (should be 0x17), False: set to MMCM phase
+        @param alt_status - True: set status output to test pattern (should be 0xaa for RevA and 0x17 for Rev0), False: set to MMCM phase
         @param test_pattern - 0..7 - 0 normal data, 1+ - test patterns (1 - LSB col//3. MSB row//3, 2 - horizontal gradient , 3 - vertical gradient
         @param drp_cmd - DRP command di-bit: 0 - nop, 1 - shift 0, 2 - shift 1, 3 - execute command 
         """
@@ -1516,9 +1516,10 @@ class X393Sensor(object):
     def set_sensor_io_dly_boson (self,
                                     num_sensor,
                                     mmcm_phase = None, #24 steps in 3ns period
-                                    lane0_dly =  None,
-                                    lane1_dly =  None,
-                                    lane2_dly =  None):
+                                    lane0_dly =  0,
+                                    lane1_dly =  0,
+                                    lane2_dly =  0,
+                                    lane3_dly =  0):
         """
         Set sensor port input delays and mmcm phase
         @param num_sensor - sensor port number (0..3) or all, 'A'
@@ -1526,6 +1527,7 @@ class X393Sensor(object):
         @param lane0_dly - delay in the lane0 (3 LSB are not used) // All 4 lane delays should be set simultaneously
         @param lane1_dly - delay in the lane1 (3 LSB are not used)
         @param lane2_dly - delay in the lane2 (3 LSB are not used)
+        @param lane3_dly - delay in the lane3 (3 LSB are not used)
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -1534,13 +1536,14 @@ class X393Sensor(object):
                                                   mmcm_phase = mmcm_phase,
                                                   lane0_dly =  lane0_dly,
                                                   lane1_dly =  lane1_dly,
-                                                  lane2_dly =  lane2_dly)
+                                                  lane2_dly =  lane2_dly,
+                                                  lane3_dly =  lane3_dly)
                 return
         except:
             pass
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS
         try: # if any delay is None - do not set
-            dlys=(lane0_dly & 0xff) | ((lane1_dly & 0xff) << 8) | ((lane2_dly & 0xff) << 16)            
+            dlys=(lane0_dly & 0xff) | ((lane1_dly & 0xff) << 8) | ((lane2_dly & 0xff) << 16)  | ((lane3_dly & 0xff) << 24)            
             self.x393_axi_tasks.write_control_register(reg_addr + 2, dlys)
         except:
             return # do not apply delays
@@ -1563,8 +1566,8 @@ class X393Sensor(object):
         self.program_status_sensor_io(num_sensor, mode=1, seq_num=0)        
         status= self.get_status_sensor_io(num_sensor)
         sign17 = status & 0xff
-        if sign17 != 0x17:
-            print("Signature: 0x%x (should be 0x17)"%(sign17,))
+        if (sign17 != 0x17) and (sign17 != 0xaa) :
+            print("Signature: 0x%x (should be 0x17 for rev0 and 0xaa for revA)"%(sign17,))
             return (sign17, -1, 0)
         nerr=0
         ntry = 0
@@ -1878,6 +1881,16 @@ uart_print_packet 0 False False
         self.set_sensor_io_ctl_boson ( num_sensor, mmcm_rst = True, drp_cmd = 3)
         return data
 
+    def drp_read_all(self,
+                     num_sensor):
+        """
+        Read all defined DRP registers for MMCM/PLL
+        @param num_sensor - sensor port number (0..3)
+        """
+        for addr in (0x6,0x7,0x8,0x9,0xa,0xa,0xb,0xc,0xd,0xe,0xf,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x18,0x19,0x1a,0x27,0x28,0x4e,0x4f):
+            d= self.drp_read_reg(num_sensor,addr)
+            print("0x%02x: 0x%04x"%(addr,d))
+    
     def drp_write_reg(self,
                      num_sensor,
                      addr,
