@@ -227,6 +227,7 @@ module camsync393       #(
     wire          decimate_we; // write trigger decimate (per-cnannel)
     wire    [3:0] set_decimate; // @mclk per channel - set decimate value (0 - every trigger, 1 - every second, 2 - every third, ...)
     wire    [3:0] reset_decimate; // @pclk - reset decimate counter, so next pulse will go through
+    wire    [3:0] reset_decimate_mclk; // Makes next trigger to go through, enabled by data bit[16]
     
     wire          set_mode_reg_w;
     wire          set_trig_src_w;
@@ -466,6 +467,11 @@ module camsync393       #(
     assign set_decimate[1] =    decimate_we && (cmd_a[1:0] == 1);
     assign set_decimate[2] =    decimate_we && (cmd_a[1:0] == 2);
     assign set_decimate[3] =    decimate_we && (cmd_a[1:0] == 3);
+    
+    assign reset_decimate_mclk[0] = set_decimate[0] & cmd_data[CAMSYNC_DECIMATE_BITS]; 
+    assign reset_decimate_mclk[1] = set_decimate[1] & cmd_data[CAMSYNC_DECIMATE_BITS]; 
+    assign reset_decimate_mclk[2] = set_decimate[2] & cmd_data[CAMSYNC_DECIMATE_BITS]; 
+    assign reset_decimate_mclk[3] = set_decimate[3] & cmd_data[CAMSYNC_DECIMATE_BITS]; 
     
     assign pre_input_use = {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],
                             cmd_data[9],cmd_data[7],cmd_data[5],cmd_data[3],cmd_data[1]};
@@ -1003,10 +1009,10 @@ module camsync393       #(
 
     pulse_cross_clock i_suppress_immediate_set_pclk(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(suppress_immediate_set_mclk), .out_pulse(suppress_immediate_set_pclk),.busy());
 
-    pulse_cross_clock i_rdecim_to_pclk0 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[0]), .out_pulse(reset_decimate[0]),.busy());
-    pulse_cross_clock i_rdecim_to_pclk1 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[1]), .out_pulse(reset_decimate[1]),.busy());
-    pulse_cross_clock i_rdecim_to_pclk2 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[2]), .out_pulse(reset_decimate[2]),.busy());
-    pulse_cross_clock i_rdecim_to_pclk3 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(set_decimate[3]), .out_pulse(reset_decimate[3]),.busy());
+    pulse_cross_clock i_rdecim_to_pclk0 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(reset_decimate_mclk[0]), .out_pulse(reset_decimate[0]),.busy());
+    pulse_cross_clock i_rdecim_to_pclk1 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(reset_decimate_mclk[1]), .out_pulse(reset_decimate[1]),.busy());
+    pulse_cross_clock i_rdecim_to_pclk2 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(reset_decimate_mclk[2]), .out_pulse(reset_decimate[2]),.busy());
+    pulse_cross_clock i_rdecim_to_pclk3 (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(reset_decimate_mclk[3]), .out_pulse(reset_decimate[3]),.busy());
 
     
 endmodule

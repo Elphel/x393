@@ -1483,7 +1483,7 @@ module  sensor_channel#(
             .IPCLK_PHASE           (IPCLK1X_PHASE),
             .IPCLK2X_PHASE         (IPCLK2X_PHASE),
             .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
-            .BUF_IPCLK1X           (BUF_IPCLK1X),
+            .BUF_IPCLK           (BUF_IPCLK1X),
             .BUF_IPCLK2X           (BUF_IPCLK2X),
             .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),
             .SENS_REF_JITTER1      (SENS_REF_JITTER1),

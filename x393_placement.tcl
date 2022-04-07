@@ -56,6 +56,8 @@ seek $infile 0 start
 while { [gets $infile line] >= 0 } {
     if { [regexp {(.*)`define(\s*)BOSON} $line matched prematch] } {
 	if {[regexp "//" $prematch] != 0} { continue }
+	puts $line
+	if {[regexp {(.*)`define(\s*)BOSON_REVA} $line matched prematch] } { continue }    
 	set BOSON 1
 	break
     }

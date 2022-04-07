@@ -598,6 +598,10 @@ class X393ExportC(object):
                                  data =      self._enc_camsync_mode(),
                                  name =      "x393_camsync_mode", typ="wo",
                                  frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "CAMSYNC decimation mode",
+                                 data =      self._enc_camsync_decimate(),
+                                 name =      "x393_camsync_decimate", typ="wo",
+                                 frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "CMDFRAMESEQ mode",
                                  data =      self._enc_cmdframeseq_mode(),
                                  name =      "x393_cmdframeseq_mode", typ="wo",
@@ -1116,9 +1120,15 @@ class X393ExportC(object):
         ba = vrlg.CAMSYNC_DECIMATE_ADDR
         ia = 0
         c =  "sens_chn"
+        """
         sdefines +=[
             (('CAMSYNC trigger decimation',)),
             (("X393_CAMSYNC_TRIG_DECIMATION",             c,  0 +                                    ba, 1, z3,   "u32*", "rw",                     "CAMSYNC trigger decimation"))]
+        """
+        sdefines +=[
+            (('CAMSYNC trigger decimation',)),
+            (("X393_CAMSYNC_TRIG_DECIMATION",             c,  0 +                                    ba, 1, z3,   "x393_camsync_decimate", "rw",    "CAMSYNC trigger decimation"))]
+
         
         ba = vrlg.CMDFRAMESEQ_ADDR_BASE
         ia = vrlg.CMDFRAMESEQ_ADDR_INC
@@ -2602,6 +2612,7 @@ class X393ExportC(object):
         dw.append(("line8",   16,   2,   1, "line 8 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
         dw.append(("line9",   18,   2,   1, "line 9 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
         return dw
+
     def _enc_camsync_mode(self):
         dw=[]
         dw.append(("en",             vrlg.CAMSYNC_EN_BIT-1,           1,   1, "Enable CAMSYNC module"))
@@ -2616,6 +2627,12 @@ class X393ExportC(object):
         dw.append(("master_chn_set", vrlg.CAMSYNC_MASTER_BIT,         1,   0, "Set 'master_chn'"))
         dw.append(("ts_chns",        vrlg.CAMSYNC_CHN_EN_BIT - 7,     4,   1, "Channels to generate timestmp messages (bit mask)"))
         dw.append(("ts_chns_set",    vrlg.CAMSYNC_CHN_EN_BIT - 3,     4,   0, "Sets for 'ts_chns' (each bit controls corresponding 'ts_chns' bit)"))
+        return dw
+
+    def _enc_camsync_decimate(self):
+        dw=[]
+        dw.append(("decimate",       0,      vrlg.CAMSYNC_DECIMATE_BITS,   0, "Trigger decimation minus 1 value. 'decimate==0' - each trigger goes through, 1 - each other."))
+        dw.append(("first_pulse",    vrlg.CAMSYNC_DECIMATE_BITS,      1,   0, "If set, the first incoming trigger will go through, if 0 - decimation will be applied to the next cycle"))
         return dw
 
     def _enc_cmdframeseq_mode(self):

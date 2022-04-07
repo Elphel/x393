@@ -56,6 +56,8 @@ seek $infile 0 start
 while { [gets $infile line] >= 0 } {
     if { [regexp {(.*)`define(\s*)BOSON} $line matched prematch] } {
 	if {[regexp "//" $prematch] != 0} { continue }
+	puts $line
+	if {[regexp {(.*)`define(\s*)BOSON_REVA} $line matched prematch] } { continue }    
 	set BOSON 1
 	break
     }
@@ -67,7 +69,7 @@ if       { $LWIR} {
 } elseif { $HISPI} {
     puts "x393_timing.tcl: using HISPI sensors"
 } elseif { $BOSON} {
-    puts "x393_placement.tcl: using Boson640 sensors"
+    puts "x393_timing.tcl: using Boson640 sensors"
 } else {
     puts "x393_timing.tcl: using parallel sensors"
 }
