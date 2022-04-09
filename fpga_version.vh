@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-   parameter FPGA_VERSION = 32'h03934015; // Boson640, for 103993A, debugging 4 removed DE deglitch  - modifying decimation
+   parameter FPGA_VERSION = 32'h03931003; // parallel, adding camsync trigger decimation - modifying decimation
+//   parameter FPGA_VERSION = 32'h03934015; // Boson640, for 103993A, debugging 4 removed DE deglitch  - modifying decimation
 //   parameter FPGA_VERSION = 32'h03931004; // parallel, adding camsync trigger decimation - modifying decimation
 // parameter FPGA_VERSION = 32'h03934014; // Boson640, for 103993A, debugging 4 removed DE deglitch
 // parameter FPGA_VERSION = 32'h03934013; // Boson640, for 103993A, debugging 3  failed (maybe just phases)
