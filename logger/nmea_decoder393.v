@@ -106,7 +106,6 @@ module  nmea_decoder393(
     reg    [ 7:0] debug0;
     reg    [15:0] debug1;
     reg    [15:0] debug1_or;
-
     assign debug[23:0] =  {1'b0,
                            proc_fields,
                            vfy_first_comma,
@@ -282,10 +281,21 @@ module  nmea_decoder393(
     reg     [3:0] odbuf1_ram[0:31];
     reg     [3:0] odbuf2_ram[0:31];
     reg     [3:0] odbuf3_ram[0:31];
-    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h0)) odbuf0_ram[nibble_count[6:2]] <= nibble[3:0];
-    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h1)) odbuf1_ram[nibble_count[6:2]] <= nibble[3:0];
-    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h2)) odbuf2_ram[nibble_count[6:2]] <= nibble[3:0];
-    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h3)) odbuf3_ram[nibble_count[6:2]] <= nibble[3:0];
+///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h0)) odbuf0_ram[nibble_count[6:2]] <= nibble[3:0];
+///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h1)) odbuf1_ram[nibble_count[6:2]] <= nibble[3:0];
+///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h2)) odbuf2_ram[nibble_count[6:2]] <= nibble[3:0];
+///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h3)) odbuf3_ram[nibble_count[6:2]] <= nibble[3:0];
+    
+    wire          nibble_0 = nibble_count[1:0] == 2'h0;  
+    wire          nibble_1 = nibble_count[1:0] == 2'h1;  
+    wire          nibble_2 = nibble_count[1:0] == 2'h2;  
+    wire          nibble_3 = nibble_count[1:0] == 2'h3;  
+
+    // writing zeros to unused nibbles (2023)   
+    always @ (posedge xclk) if (nibble_stb && (nibble_0))             odbuf0_ram[nibble_count[6:2]] <= nibble[3:0];
+    always @ (posedge xclk) if (nibble_stb && (nibble_0 || nibble_1)) odbuf1_ram[nibble_count[6:2]] <= nibble[3:0] & {4{nibble_1}};
+    always @ (posedge xclk) if (nibble_stb && (nibble_0 || nibble_2)) odbuf2_ram[nibble_count[6:2]] <= nibble[3:0] & {4{nibble_2}};
+    always @ (posedge xclk) if (nibble_stb && (nibble_0 || nibble_3)) odbuf3_ram[nibble_count[6:2]] <= nibble[3:0] & {4{nibble_3}};
 
     assign rdata[ 3: 0] = odbuf0_ram[raddr[4:0]];
     assign rdata[ 7: 4] = odbuf1_ram[raddr[4:0]];

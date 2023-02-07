@@ -285,7 +285,8 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.DATA_REG, divisor - 1)
         
     def zterm(self,l):
-        return ''.join(l[:l.index(chr(0))])
+#        return ''.join(l[:l.index(chr(0))])
+        return l[:l.index(0)]
 
     def logger_set_nmea(self, nmea_format):
         """
@@ -294,22 +295,24 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         """
 #    int nmea_sel[16];
 #    int nmea_fpga_frmt[16];
-        nmea_chars=list(nmea_format)
+        nmea_chars= list(nmea_format)
         nmea_sel =       [0]*16
         nmea_fpga_frmt = [0]*16
         for n in range(4):
             nmea_chars[32*n+27]=0; # just in case
-            print("Setting NMEA sentence format for $GP%s"%(self.zterm(nmea_chars[32*n:])))
-            print("(0x%x, 0x%x, 0x%x\n"%(ord(nmea_chars[32*n]),ord(nmea_chars[32*n+1]),ord(nmea_chars[32*n+2])));
+            print("Setting NMEA sentence format for $GP%s"%(bytearray(self.zterm(nmea_chars[32*n:])).decode()))
+#            print("(0x%x, 0x%x, 0x%x\n"%(ord(nmea_chars[32*n]),ord(nmea_chars[32*n+1]),ord(nmea_chars[32*n+2])));
+            print("(0x%x, 0x%x, 0x%x\n"%(nmea_chars[32*n],nmea_chars[32*n+1],nmea_chars[32*n+2]));
             f=0;
             for i in range(2,-1,-1):
-                b=ord(nmea_chars[32*n+i]) # first 3 letters in each sentence
+#                b=ord(nmea_chars[32*n+i]) # first 3 letters in each sentence
+                b=nmea_chars[32*n+i] # first 3 letters in each sentence
                 print("n=%d, i=%d, b=0x%x"%(n,i,b))
                 for j in  range (4,-1,-1): # (j=4; j>=0; j--) {
                     f<<=1;
                     if ((b & (1<<j)) != 0):
                         f += 1
-            print("n=%d, f=0x%x"%(n,f))
+            print("n=%d, f=0x%x"%(n,f)) # good
             for i in range(15):
                 if ((f & (1<<i))!=0):
                     nmea_sel[i] |= (1<<n);
@@ -319,20 +322,22 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
             
             #for (i=0; (i<24) && (nmea_format[32*n+3+i]!=0);i++ ) {
             for i in range(24):
-                if nmea_chars[32*n+3+i]==chr(0):
+#                if nmea_chars[32*n+3+i]==chr(0):
+                if nmea_chars[32*n+3+i]==0:
                     break
                 b=nmea_chars[32*n+3+i]
-                if (b=='b') or (b=='B'):
+#                if (b=='b') or (b=='B'):
+                if (b==ord('b')) or (b==ord('B')):
                      f |= (1<<i);
                 nmea_fpga_frmt[n*4] += 1
             nmea_fpga_frmt[n*4+1] = f         & 0xff;
             nmea_fpga_frmt[n*4+2] = (f >>  8) & 0xff;
             nmea_fpga_frmt[n*4+3] = (f >> 16) & 0xff;
-
+    
         print("Selection data is %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x"%(nmea_sel[0],nmea_sel[1],nmea_sel[2],
                 nmea_sel[3],nmea_sel[4],nmea_sel[5],nmea_sel[6],nmea_sel[7],nmea_sel[8],nmea_sel[9],
-                nmea_sel[10],nmea_sel[11],nmea_sel[12],nmea_sel[13],nmea_sel[14]))
-        print("Format data for sentence 1 is %02x %02x %02x %02x\n"%(nmea_fpga_frmt[ 0],nmea_fpga_frmt[ 1],nmea_fpga_frmt[ 2],nmea_fpga_frmt[ 3]))
+                nmea_sel[10],nmea_sel[11],nmea_sel[12],nmea_sel[13],nmea_sel[14])) # good
+        print("Format data for sentence 1 is %02x %02x %02x %02x\n"%(nmea_fpga_frmt[ 0],nmea_fpga_frmt[ 1],nmea_fpga_frmt[ 2],nmea_fpga_frmt[ 3])) # all but [0] are 0
         print("Format data for sentence 2 is %02x %02x %02x %02x\n"%(nmea_fpga_frmt[ 4],nmea_fpga_frmt[ 5],nmea_fpga_frmt[ 6],nmea_fpga_frmt[ 7]))
         print("Format data for sentence 3 is %02x %02x %02x %02x\n"%(nmea_fpga_frmt[ 8],nmea_fpga_frmt[ 9],nmea_fpga_frmt[10],nmea_fpga_frmt[11]))
         print("Format data for sentence 4 is %02x %02x %02x %02x\n"%(nmea_fpga_frmt[12],nmea_fpga_frmt[13],nmea_fpga_frmt[14],nmea_fpga_frmt[15]))
@@ -362,7 +367,8 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         """
         self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.ADDR_REG, self.X313_IMU_REGISTERS_ADDR);
         for i,c in enumerate(registers):
-            d = ord(c)
+#            d = ord(c)
+            d = c
             print("%d: logging IMU register with 0x%lx"%(i+1, d))
             self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.DATA_REG, d);
 
@@ -375,11 +381,11 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         if len(lmessage) < 56:
             lmessage +=chr(0)*(56-len(lmessage))
         lmessage = lmessage[:56]
-        print("Setting odometer message %56s"%(self.zterm(lmessage)))
-
+        print("Setting odometer message %56s"%(bytearray(self.zterm(lmessage)).decode()))
         self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.ADDR_REG, self.X313_IMU_REGISTERS_ADDR)
         for i in range(0,56,4):
-            d=ord(lmessage[i]) + (ord(lmessage[i+1]) << 8)  + (ord(lmessage[i+1]) << 16)  + (ord(lmessage[i+1]) << 24)
+#            d=ord(lmessage[i]) + (ord(lmessage[i+1]) << 8)  + (ord(lmessage[i+1]) << 16)  + (ord(lmessage[i+1]) << 24)
+            d=lmessage[i] + (lmessage[i+1] << 8)  + (lmessage[i+1] << 16)  + (lmessage[i+1] << 24)
             print("%d: message 4 bytes= 0x%08x"%((i//4)+1,d))
             self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.DATA_REG, d)
 
@@ -427,7 +433,7 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         for i, d in enumerate(wbuf):
             if (i & 0x1f) == 0:
                 print("\n %03x"%(i), end = "")
-            print(" %02x"%(ord(wbuf[i])),end="")
+            print(" %02x"%(wbuf[i]),end="")
         if which & self.WHICH_RESET:
             self.logger_reset(1)
         if which & self.WHICH_INIT:
@@ -470,10 +476,10 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
             WHICH_EN_LOGGER =        2048
         @param wbuf - string with configuration data (as generated by start_gps_compas.php    
         """
-        with open (file_path,"r") as f:
+        with open (file_path,"rb") as f:
             wbuf=f.read()
-        self.set_logger_params(which = which, wbuf=wbuf)    
-
+        self.set_logger_params(which = which, wbuf=wbuf)
+        
     """
     def logger_reset(self, rst):
     def logger_init(self,config):

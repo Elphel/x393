@@ -1,178 +1,63 @@
 [*]
-[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Wed Mar 16 06:26:20 2016
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Fri Feb  3 08:57:07 2023
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160315224430019.fst"
-[dumpfile_mtime] "Wed Mar 16 05:18:26 2016"
-[dumpfile_size] 287405686
-[savefile] "/home/andrey/git/x393/x393_testbench04.gtkw"
-[timestart] 0
-[size] 1823 1180
-[pos] -1 -1
-*-25.170794 11766250 105383200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] x393_testbench03.
-[treeopen] x393_testbench03.simul_axi_hp1_wr_i.
-[treeopen] x393_testbench03.simul_axi_hp_wr_i.
-[treeopen] x393_testbench03.x393_i.
-[treeopen] x393_testbench03.x393_i.compressor393_i.
-[treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].
-[treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
-[treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.
-[treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.
+[dumpfile] "/home/elphel/git/x393/simulation/x393_dut-20230203013317437.fst"
+[dumpfile_mtime] "Fri Feb  3 08:56:46 2023"
+[dumpfile_size] 119037938
+[savefile] "/home/elphel/git/x393/x393_testbench04.gtkw"
+[timestart] 11741760
+[size] 1828 1171
+[pos] 105 -1
+*-13.170794 11761250 105383200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] x393_dut.
+[treeopen] x393_dut.simul_axi_hp1_wr_i.
+[treeopen] x393_dut.x393_i.
+[treeopen] x393_dut.x393_i.cmd_mux_i.
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
+[treeopen] x393_dut.x393_i.event_logger_i.
+[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].
+[treeopen] x393_dut.x393_i.sensors393_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_103993_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_103993_i.sens_103993_l3_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_103993_i.serial_103993_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_103993_i.serial_103993_i.serial_fslp_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.chn1wr_buf_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_103993_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_103993_i.sens_103993_l3_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_103993_i.
+[treeopen] x393_dut.x393_i.timing393_i.
+[treeopen] x393_dut.x393_i.timing393_i.rtc393_i.
 [sst_width] 391
 [signals_width] 325
 [sst_expanded] 1
-[sst_vpaned_height] 500
-@800200
--interrupts
--wresp
+[sst_vpaned_height] 537
 @28
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.hclk
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.afi_bvalid_r
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.afi_bready_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sof
+x393_dut.x393_i.timing393_i.rtc393_i.khz
+x393_dut.x393_i.event_logger_i.enable_gps
+x393_dut.x393_i.event_logger_i.enable_msg
 @22
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.id_r[4:0]
-@200
--
-@1000200
--wresp
-@800022
-[color] 3
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_stb[3:0]
+x393_dut.x393_i.event_logger_i.enable_syn_mclk[3:0]
+x393_dut.x393_i.event_logger_i.imu_data[15:0]
 @28
-[color] 2
-(0)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_stb[3:0]
-[color] 2
-(1)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_stb[3:0]
-[color] 2
-(2)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_stb[3:0]
-[color] 2
-(3)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_stb[3:0]
-@1001200
--group_end
-@28
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_written3
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_written2
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_written1
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_written0
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.afi_bvalid
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.afi_bvalid_r
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.afi_bready
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.afi_bready_r
+x393_dut.x393_i.event_logger_i.mclk
+x393_dut.x393_i.event_logger_i.miso
+x393_dut.x393_i.event_logger_i.mosi
 @22
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.afi_bid[5:0]
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.id_r[4:0]
+x393_dut.x393_i.event_logger_i.sample_counter[23:0]
 @28
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.pre_busy
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.en
-@c00022
-x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.busy[4:0]
-@28
-(0)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.busy[4:0]
-(1)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.busy[4:0]
-(2)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.busy[4:0]
-(3)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.busy[4:0]
-(4)x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.busy[4:0]
-@1401200
--group_end
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_status_i.is_r
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_status_i.mrst
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.mrst
-@800023
-x393_testbench03.x393_i.frseq_is[3:0]
+x393_dut.x393_i.event_logger_i.we_gps
+x393_dut.x393_i.event_logger_i.we_imu
+x393_dut.x393_i.event_logger_i.we_message
+x393_dut.x393_i.event_logger_i.we_period
 @29
-(0)x393_testbench03.x393_i.frseq_is[3:0]
-(1)x393_testbench03.x393_i.frseq_is[3:0]
-(2)x393_testbench03.x393_i.frseq_is[3:0]
-(3)x393_testbench03.x393_i.frseq_is[3:0]
-@1001201
--group_end
-@22
-x393_testbench03.x393_i.frseq_im[3:0]
-x393_testbench03.x393_i.frseq_irq[3:0]
-@1000200
--interrupts
-@800200
--simulate_hp
-@c00022
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-@28
-(0)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-(1)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-(2)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-(3)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-(4)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-(5)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-(6)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-(7)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.data_out[7:0]
-@1401200
--group_end
-@28
-x393_testbench03.simul_axi_hp1_wr_i.bready
-x393_testbench03.simul_axi_hp1_wr_i.bresp_in[1:0]
-x393_testbench03.simul_axi_hp1_wr_i.bvalid
-@22
-x393_testbench03.simul_axi_hp1_wr_i.bid[5:0]
-x393_testbench03.simul_axi_hp1_wr_i.bid_in[5:0]
-@28
-x393_testbench03.simul_axi_hp1_wr_i.bresp[1:0]
-x393_testbench03.simul_axi_hp1_wr_i.last_confirmed_write
-@22
-x393_testbench03.simul_axi_hp1_wr_i.wid[5:0]
-@28
-x393_testbench03.simul_axi_hp1_wr_i.wresp_ext_i.we
-x393_testbench03.simul_axi_hp1_wr_i.fifo_wd_rd_dly
-@22
-x393_testbench03.simul_axi_hp1_wr_i.bid_in[5:0]
-@c00022
-x393_testbench03.simul_axi_hp1_wr_i.wresp_num_in_fifo[5:0]
-@28
-(0)x393_testbench03.simul_axi_hp1_wr_i.wresp_num_in_fifo[5:0]
-(1)x393_testbench03.simul_axi_hp1_wr_i.wresp_num_in_fifo[5:0]
-(2)x393_testbench03.simul_axi_hp1_wr_i.wresp_num_in_fifo[5:0]
-(3)x393_testbench03.simul_axi_hp1_wr_i.wresp_num_in_fifo[5:0]
-(4)x393_testbench03.simul_axi_hp1_wr_i.wresp_num_in_fifo[5:0]
-(5)x393_testbench03.simul_axi_hp1_wr_i.wresp_num_in_fifo[5:0]
-@1401200
--group_end
-@28
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.we
-@c00022
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.fill[5:0]
-@28
-(0)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.fill[5:0]
-(1)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.fill[5:0]
-(2)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.fill[5:0]
-(3)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.fill[5:0]
-(4)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.fill[5:0]
-(5)x393_testbench03.simul_axi_hp1_wr_i.wresp_i.fill[5:0]
-@1401200
--group_end
-@28
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.re
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.rem
-@200
--
-@28
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.nempty
-@22
-x393_testbench03.simul_axi_hp1_wr_i.bid[5:0]
-@200
--
-@22
-x393_testbench03.simul_axi_hp1_wr_i.wresp_ext_i.wa[4:0]
-x393_testbench03.simul_axi_hp1_wr_i.wresp_ext_i.data_in[7:0]
-@28
-x393_testbench03.simul_axi_hp1_wr_i.wresp_ext_i.re
-x393_testbench03.simul_axi_hp1_wr_i.wresp_ext_i.rem
-@22
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.wa[4:0]
-@28
-x393_testbench03.simul_axi_hp1_wr_i.wresp_i.we
-@200
--
-@1000200
--simulate_hp
+x393_dut.x393_i.event_logger_i.xclk
 [pattern_trace] 1
 [pattern_trace] 0

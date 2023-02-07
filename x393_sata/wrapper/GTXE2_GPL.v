@@ -772,7 +772,9 @@ assign  next_disparity = ^oword[word_count - 1] ? word_disparity[word_count - 1]
 endmodule
 
 module gtxe2_chnl_tx_oob #(
-    parameter width = 20
+    parameter       width = 20,
+    parameter [3:0] SATA_BURST_SEQ_LEN = 4'b0101,
+    parameter       SATA_CPLL_CFG = "VCO_3000MHZ"
 )
 (
 // top-level ifaces
@@ -787,8 +789,8 @@ module gtxe2_chnl_tx_oob #(
     output  wire    [width - 1:0]   outdata,
     output  wire                    outval
 );
-parameter   [3:0]   SATA_BURST_SEQ_LEN = 4'b0101;
-parameter           SATA_CPLL_CFG = "VCO_3000MHZ";
+//parameter   [3:0]   SATA_BURST_SEQ_LEN = 4'b0101;
+//parameter           SATA_CPLL_CFG = "VCO_3000MHZ";
 
 localparam  burst_len_mult  = SATA_CPLL_CFG == "VCO_3000MHZ" ? 2 // assuming each usrclk cycle == 20 sata serial clk cycles
                             : SATA_CPLL_CFG == "VCO_1500MHZ" ? 4 
@@ -1140,6 +1142,7 @@ wire    [internal_data_width - 1:0] oob_data;
 wire                                oob_val;
 
 assign  oob_active = oob_val;
+
 gtxe2_chnl_tx_oob #(
     .width              (internal_data_width),
     .SATA_BURST_SEQ_LEN (SATA_BURST_SEQ_LEN),

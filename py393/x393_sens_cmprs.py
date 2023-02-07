@@ -900,9 +900,10 @@ class X393SensCmprs(object):
                                   height2_m1 = 0)
 
         # Configure histograms
-        if verbose >0 :
-            print ("===================== HISTOGRAMS_SETUP =========================")
-        self.x393Sensor.set_sensor_histogram_window ( # 353 did it using command sequencer)
+        if (histogram_left >= 0):
+            if verbose >0 :
+                print ("===================== HISTOGRAMS_SETUP =========================")
+            self.x393Sensor.set_sensor_histogram_window ( # 353 did it using command sequencer)
                                     num_sensor =     num_sensor,
                                     subchannel =     0,
                                     left =           histogram_left,
@@ -910,16 +911,20 @@ class X393SensCmprs(object):
                                     width_m1 =       histogram_width_m1,
                                     height_m1 =      histogram_height_m1)
 
-        self.x393Sensor.set_sensor_histogram_saxi_addr (
+            self.x393Sensor.set_sensor_histogram_saxi_addr (
                                     num_sensor = num_sensor,
                                     subchannel = 0,
                                     page = histogram_start_phys_page) # for the channel/subchannel = 0/0
 
-        self.x393Sensor.set_sensor_histogram_saxi (
+            self.x393Sensor.set_sensor_histogram_saxi (
                                    en = True,
                                    nrst = True,
                                    confirm_write = False, # True,
                                    cache_mode = 3)
+        else:
+            if verbose >0 :
+                print ("===================== HISTOGRAMS_SETUP SKIPPED!=========================")
+        
 
         if exit_step == 18: return False
 

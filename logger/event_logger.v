@@ -313,12 +313,13 @@ module  event_logger#(
 
     assign enable_syn_mclk= config_rst_mclk? 4'b0 : config_syn_mclk;
     always @ (posedge xclk) begin
-        if (we_bitHalfPeriod_xclk) bitHalfPeriod[15:0] <= bitHalfPeriod_mclk[15:0];
-        if (we_config_imu_xclk)    config_imu <=          config_imu_mclk;
-        if (we_config_gps_xclk)    config_gps <=          config_gps_mclk;
-        if (we_config_msg_xclk)    config_msg <=          config_msg_mclk;
-        if (we_config_rst_xclk)    config_rst <=          config_rst_mclk;
-        if (we_config_debug_xclk)  config_debug <=        config_debug_mclk;
+        if      (xrst)               config_rst <=          1'b1;
+        else if (we_config_rst_xclk) config_rst <=          config_rst_mclk;
+        if (we_bitHalfPeriod_xclk)   bitHalfPeriod[15:0] <= bitHalfPeriod_mclk[15:0];
+        if (we_config_imu_xclk)      config_imu <=          config_imu_mclk;
+        if (we_config_gps_xclk)      config_gps <=          config_gps_mclk;
+        if (we_config_msg_xclk)      config_msg <=          config_msg_mclk;
+        if (we_config_debug_xclk)    config_debug <=        config_debug_mclk;
         enable_gps         <= (^config_gps[1:0]) && !config_rst;  // both 00 and 11 - disable
         enable_msg         <= (config_gps[3:0] != 4'hf) && !config_rst;
         enable_timestamps  <= !config_rst;

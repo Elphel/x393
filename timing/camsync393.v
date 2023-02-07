@@ -265,10 +265,10 @@ module camsync393       #(
     reg     [9:0] gpio_out_en_r;
     reg           pre_input_use_intern = 1;// @(posedge mclk) Use internal trigger generator, 0 - use external trigger (also switches delay from input to output)
     reg           input_use_intern;//  @(posedge clk) 
-    reg    [31:0] input_dly_chn0;  // delay value for the trigger
-    reg    [31:0] input_dly_chn1;  // delay value for the trigger
-    reg    [31:0] input_dly_chn2;  // delay value for the trigger
-    reg    [31:0] input_dly_chn3;  // delay value for the trigger
+    reg    [31:0] input_dly_chn0 = 0;  // delay value for the trigger
+    reg    [31:0] input_dly_chn1 = 0;  // delay value for the trigger
+    reg    [31:0] input_dly_chn2 = 0;  // delay value for the trigger
+    reg    [31:0] input_dly_chn3 = 0;  // delay value for the trigger
     reg     [3:0] chn_en_r;
     wire    [3:0] chn_en = chn_en_r & {4{en}};  // enable channels
     
