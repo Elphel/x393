@@ -661,8 +661,10 @@ module  x393 #(
     
 
 // Timestamp messages (@mclk) - combine to a single ts_data?    
-    wire                      [3:0] ts_pre_stb; // input[ 3:0] 4 compressor channels
-    wire                     [31:0] ts_data;    // input[31:0] 4 compressor channels
+///    wire                      [3:0] ts_pre_stb; // input[ 3:0] 4 compressor channels
+///    wire                     [31:0] ts_data;    // input[31:0] 4 compressor channels
+    wire                      [4:0] ts_pre_stb; // input[ 3:0] 4 compressor channels
+    wire                     [39:0] ts_data;    // input[31:0] 4 compressor channels
 
 // Timestamp messages (@mclk) - combine to a single ts_data?    
     wire                            ts_pre_logger_stb; // input logger timestamp sync (@logger_clk)
@@ -2420,8 +2422,8 @@ assign axi_grst = axi_rst_pre;
 
         .frame_number_finished     (cmprs_frame_number_finished),// output[63:0] frame numbers compressed
 
-        .ts_pre_stb                (ts_pre_stb),                 // input[3:0]
-        .ts_data                   (ts_data),                    // input[31:0] 
+        .ts_pre_stb                (ts_pre_stb[3:0]),            // input[3:0]
+        .ts_data                   (ts_data[31:0]),              // input[31:0] 
         
         .eof_written_mclk          (eof_written_mclk),           // output[3:0]
         .stuffer_done_mclk         (stuffer_done_mclk),          // output[3:0]
@@ -2587,6 +2589,8 @@ assign axi_grst = axi_rst_pre;
         .ts_data_chn2   (ts_data[2 * 8 +: 8]),   // output[7:0] 
         .ts_stb_chn3    (ts_pre_stb[3]),         // output
         .ts_data_chn3   (ts_data[3 * 8 +: 8]),   // output[7:0] 
+        .ts_stb_chn4    (ts_pre_stb[4]),         // output
+        .ts_data_chn4   (ts_data[4 * 8 +: 8]),   // output[7:0] 
         .lclk           (logger_clk),            // input global clock, common with the logger (use 100 MHz?)
         .lrst           (lrst),                  // input
         .ts_logger_snap (logger_snap),           // input
@@ -2651,6 +2655,8 @@ assign axi_grst = axi_rst_pre;
         .ts_data_chn2  (ts_data[2 * 8 +: 8]), // input[7:0] 
         .ts_stb_chn3   (ts_pre_stb[3]),       // input
         .ts_data_chn3  (ts_data[3 * 8 +: 8]), // input[7:0] 
+        .ts_stb_chn4   (ts_pre_stb[4]),       // input
+        .ts_data_chn4  (ts_data[4 * 8 +: 8]), // input[7:0] 
         
         .data_out      (logger_out),          // output[15:0] @mclk
         .data_out_stb  (logger_stb),          // output @mclk

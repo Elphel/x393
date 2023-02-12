@@ -153,6 +153,11 @@ module camsync393       #(
     output                        ts_snap_mclk_chn3,     // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
     input                         ts_snd_stb_chn3,  // 1 clk before ts_snd_data is valid
     input                   [7:0] ts_snd_data_chn3, // byte-wide serialized timestamp message  
+
+///    output                        ts_snap_mclk_chn4,     // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
+///    input                         ts_snd_stb_chn4,  // 1 clk before ts_snd_data is valid
+///    input                   [7:0] ts_snd_data_chn4, // byte-wide serialized timestamp message  
+
     
 // Timestamps to be sent over the network (or provided internally)    
     output                        ts_master_snap,   // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
@@ -176,7 +181,10 @@ module camsync393       #(
     output                  [7:0] ts_rcv_data_chn2, // byte-wide serialized timestamp message received or local
 
     output                        ts_rcv_stb_chn3, // 1 clock before ts_rcv_data is valid
-    output                  [7:0] ts_rcv_data_chn3 // byte-wide serialized timestamp message received or local
+    output                  [7:0] ts_rcv_data_chn3, // byte-wide serialized timestamp message received or local
+
+    output                        ts_rcv_stb_chn4, // 1 clock before ts_rcv_data is valid
+    output                  [7:0] ts_rcv_data_chn4 // byte-wide serialized timestamp message received or local
 );
     reg           en = 0;       // enable camsync module
 //    wire          rst = mrst || !en;
@@ -349,6 +357,7 @@ module camsync393       #(
     reg           rcv_done_rq; // request to copy time stamp (if it is not ready yet)
     reg           rcv_done_rq_d;
     reg           rcv_done;  // rcv_run ended, copy timestamp if requested
+    wire          rcv_done_mclk; // copy ts of received ts for the logger
 //    wire          rcv_done_mclk; // rcv_done re-clocked @mclk 
     wire          pre_rcv_error;  // pre/post magic does not match, set ts to all ff-s
     reg           rcv_error;
@@ -386,8 +395,14 @@ module camsync393       #(
     reg           ts_incoming;         // expect incoming timestamps (ts_snd_en && !input_use_intern)
     reg           received_or_master;  // either received timestamp or master
 
-    wire   [31:0] ts_sec_received_or_master =  ts_incoming? {sr_rcv_first[25:0],  sr_rcv_second[31:26]} : ts_snd_sec[31:0];
-    wire   [19:0] ts_usec_received_or_master = ts_incoming? {rcv_error?20'hfffff:  sr_rcv_second[25:6]} : ts_snd_usec[19:0];
+    wire   [31:0] ts_sec_received =  {sr_rcv_first[25:0],  sr_rcv_second[31:26]};
+    wire   [19:0] ts_usec_received = {rcv_error?20'hfffff:  sr_rcv_second[25:6]};
+
+///    wire   [31:0] ts_sec_received_or_master =  ts_incoming? {sr_rcv_first[25:0],  sr_rcv_second[31:26]} : ts_snd_sec[31:0];
+///    wire   [19:0] ts_usec_received_or_master = ts_incoming? {rcv_error?20'hfffff:  sr_rcv_second[25:6]} : ts_snd_usec[19:0];
+
+    wire   [31:0] ts_sec_received_or_master =  ts_incoming? ts_sec_received  : ts_snd_sec[31:0];
+    wire   [19:0] ts_usec_received_or_master = ts_incoming? ts_usec_received : ts_snd_usec[19:0];
     
     reg    [3:0]  frsync_pend;                // from start_dly->start_early to frsync_pclk[i]; (start_dly too late in internal trigger mode)
     reg           received_or_master_pending; // from start_dly->start_early to received_or_master;
@@ -406,7 +421,7 @@ module camsync393       #(
     wire   [3:0] frsync_pclk; // time to copy timestamps from master/received to channels (will always be after it is available)
     wire   [3:0] dly_cntr_start; // start delay counters (added non-triggered mode option)
 
-    // in triggered mode uses ts_master_stb, ts_master_data inputs (as was before), in free runnig - timestyamps from the master channel 
+    // in triggered mode uses ts_master_stb, ts_master_data inputs (as was before), in free runnig - timestamps from the master channel 
     wire         ts_master_stb_with_free;    // 1 clk before ts_snd_data is valid
     wire   [7:0] ts_master_data_with_free;   // byte-wide serialized timestamp message  
 
@@ -961,6 +976,14 @@ module camsync393       #(
         .tdata      (ts_rcv_data_chn3)  // output[7:0] reg 
     );
 
+    timestamp_to_serial timestamp_to_serial4_i (
+        .clk        (mclk),             // input
+        .stb        (rcv_done_mclk),    // input
+        .sec        (ts_sec_received),  // input[31:0] 
+        .usec       (ts_usec_received), // input[19:0] 
+        .tdata      (ts_rcv_data_chn4)  // output[7:0] reg 
+    );
+
 
 
     level_cross_clocks #(
@@ -974,6 +997,7 @@ module camsync393       #(
 
 
     assign {ts_rcv_stb_chn3, ts_rcv_stb_chn2, ts_rcv_stb_chn1, ts_rcv_stb_chn0}= ts_stb;
+    assign ts_rcv_stb_chn4 = rcv_done_mclk;
     pulse_cross_clock i_start_to_pclk (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(start_d && start_en), .out_pulse(start_to_pclk),.busy());
 
     pulse_cross_clock i_ts_snap_mclk0 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[0]), .out_pulse(ts_snap_triggered_mclk[0]),.busy());
@@ -1006,6 +1030,7 @@ module camsync393       #(
     pulse_cross_clock i_ts_stb_mclk1 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[1]), .out_pulse(ts_stb[1]),.busy());
     pulse_cross_clock i_ts_stb_mclk2 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[2]), .out_pulse(ts_stb[2]),.busy());
     pulse_cross_clock i_ts_stb_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[3]), .out_pulse(ts_stb[3]),.busy());
+    pulse_cross_clock i_ts_stb_mclkx (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done),         .out_pulse(rcv_done_mclk),.busy());
 
     pulse_cross_clock i_suppress_immediate_set_pclk(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(suppress_immediate_set_mclk), .out_pulse(suppress_immediate_set_pclk),.busy());
 

@@ -128,6 +128,9 @@ module  timing393       #(
     output                        ts_stb_chn3, // 1 clock before ts_rcv_data is valid
     output                  [7:0] ts_data_chn3, // byte-wide serialized timestamp message received or local
     
+    output                        ts_stb_chn4, // 1 clock before ts_rcv_data is valid
+    output                  [7:0] ts_data_chn4, // byte-wide serialized timestamp message received or local
+
     // timestamp for the event logger
     input                         lclk,           // clock used by the event logger 
     input                         lrst,           // @ posedge lclk - sync reset
@@ -149,15 +152,15 @@ module  timing393       #(
 
 
 
-    wire   [3:0] ts_stb;        // 1 clk before ts_snd_data is valid
-    wire  [31:0] ts_data;       // byte-wide serialized timestamp message (channels concatenated)
+    wire   [4:0] ts_stb;        // 1 clk before ts_snd_data is valid
+    wire  [39:0] ts_data;       // byte-wide serialized timestamp message (channels concatenated)
     
     wire  [31:0] live_sec;      // current time seconds, updated @ mclk  
     wire  [19:0] live_usec;     // current time microseconds, updated @ mclk
 
 
-    assign {ts_stb_chn3, ts_stb_chn2, ts_stb_chn1, ts_stb_chn0} = ts_stb;
-    assign {ts_data_chn3, ts_data_chn2, ts_data_chn1, ts_data_chn0} = ts_data; 
+    assign {ts_stb_chn4, ts_stb_chn3, ts_stb_chn2, ts_stb_chn1, ts_stb_chn0} = ts_stb;
+    assign {ts_data_chn4, ts_data_chn3, ts_data_chn2, ts_data_chn1, ts_data_chn0} = ts_data; 
     assign {trig_chn3, trig_chn2, trig_chn1, trig_chn0} = trig;
     assign frame_sync = {frsync_chn3, frsync_chn2, frsync_chn1, frsync_chn0};
 
@@ -173,7 +176,6 @@ module  timing393       #(
         .RTC_SET_CORR           (RTC_SET_CORR),
         .RTC_SET_STATUS         (RTC_SET_STATUS)
     ) rtc393_i (
-//        .rst                    (rst),          // input
         .mclk                   (mclk),         // input
         .mrst                   (mrst),          // input
         .refclk                 (refclk),       // input
@@ -185,12 +187,10 @@ module  timing393       #(
         .live_sec               (live_sec),     // output[31:0] 
         .live_usec              (live_usec),    // output[19:0]
         .khz                    (khz)           // output
-         
     );
 
 
     timestamp_snapshot timestamp_snapshot_logger_i (
-//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
@@ -202,7 +202,6 @@ module  timing393       #(
     );
 
     timestamp_snapshot timestamp_snapshot_chn0_i (
-//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
@@ -214,7 +213,6 @@ module  timing393       #(
     );
 
     timestamp_snapshot timestamp_snapshot_chn1_i (
-//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
@@ -226,7 +224,6 @@ module  timing393       #(
     );
 
     timestamp_snapshot timestamp_snapshot_chn2_i (
-//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
@@ -238,7 +235,6 @@ module  timing393       #(
     );
 
     timestamp_snapshot timestamp_snapshot_chn3_i (
-//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
@@ -316,10 +312,10 @@ module  timing393       #(
         .ts_snd_data_chn1  (ts_local_data[1 * 8 +: 8]), // input[7:0] 
         .ts_snap_mclk_chn2 (ts_local_snap[2]),          // output
         .ts_snd_stb_chn2   (ts_local_stb[2]),           // input
-        .ts_snd_data_chn2  (ts_local_data[2 * 8 +: 8]), // input[7:0] 
+        .ts_snd_data_chn2  (ts_local_data[2 * 8 +: 8]), // input[7:0]
         .ts_snap_mclk_chn3 (ts_local_snap[3]),          // output
         .ts_snd_stb_chn3   (ts_local_stb[3]),           // input
-        .ts_snd_data_chn3  (ts_local_data[3 * 8 +: 8]), // input[7:0] 
+        .ts_snd_data_chn3  (ts_local_data[3 * 8 +: 8]), // input[7:0]
         .ts_master_snap    (ts_master_snap),            // output
         .ts_master_stb     (ts_master_stb),             // input
         .ts_master_data    (ts_master_data),            // input[7:0] 
@@ -330,7 +326,9 @@ module  timing393       #(
         .ts_rcv_stb_chn2   (ts_stb[2]),                 // output
         .ts_rcv_data_chn2  (ts_data[2 * 8 +: 8]),       // output[7:0] 
         .ts_rcv_stb_chn3   (ts_stb[3]),                 // output
-        .ts_rcv_data_chn3  (ts_data[3 * 8 +: 8])        // output[7:0] 
+        .ts_rcv_data_chn3  (ts_data[3 * 8 +: 8]),       // output[7:0] 
+        .ts_rcv_stb_chn4   (ts_stb[4]),                 // output
+        .ts_rcv_data_chn4  (ts_data[4 * 8 +: 8])        // output[7:0] 
     );
 
 endmodule

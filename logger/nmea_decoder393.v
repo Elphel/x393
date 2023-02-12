@@ -44,7 +44,7 @@ module  nmea_decoder393(
     input                         we,     // registers write enable (@negedge mclk)
     input                   [4:0] wa,     // registers write address
     input                   [7:0] wd,     // write data
-    input                         start,  // start of the serail message
+    input                         start,  // start of the serial message
     input                         rs232_wait_pause,// may be used as reset for decoder
     input                         start_char,           // serial character start (single pulse)
     output reg                    nmea_sent_start,  // serial character start (single pulse)
@@ -100,7 +100,7 @@ module  nmea_decoder393(
     wire    [3:0] gpxxx_w_one;
     wire    [7:0] format_data;
     wire          w_sentence_over;
-    reg     [4:0] last_word_written;  // number of the last word (4 nibbles) written - used ro deassert rdy (garbage after)
+    reg     [4:0] last_word_written;  // number of the last word (4 nibbles) written - used to deassert rdy (garbage after)
     reg           rdy_r=1'b0;
     reg           save_sent_number;
     reg    [ 7:0] debug0;
@@ -281,10 +281,6 @@ module  nmea_decoder393(
     reg     [3:0] odbuf1_ram[0:31];
     reg     [3:0] odbuf2_ram[0:31];
     reg     [3:0] odbuf3_ram[0:31];
-///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h0)) odbuf0_ram[nibble_count[6:2]] <= nibble[3:0];
-///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h1)) odbuf1_ram[nibble_count[6:2]] <= nibble[3:0];
-///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h2)) odbuf2_ram[nibble_count[6:2]] <= nibble[3:0];
-///    always @ (posedge xclk) if (nibble_stb && (nibble_count[1:0] == 2'h3)) odbuf3_ram[nibble_count[6:2]] <= nibble[3:0];
     
     wire          nibble_0 = nibble_count[1:0] == 2'h0;  
     wire          nibble_1 = nibble_count[1:0] == 2'h1;  

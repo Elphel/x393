@@ -51,39 +51,21 @@ module  logger_arbiter393(
     output                        ts_en,        // 1 - use timestamp, 0 - channel data (or 16'h0 if !ready)
     output reg                    dv,           // output data valid (from registered mux - 2 stage - first selects data and ready, second ts/data/zero)
     output                 [23:0] sample_counter);// number of 64-byte samples logged
-/*
-  input         xclk;  // half frequency (80 MHz nominal)
-  input         rst;   // reset module
-  input  [ 3:0] ts_rq_in; // in requests for timestamp (sinlgle-cycle)
-  output [ 3:0] ts_rq;        // out request for timestamp, to timestmp module
-  input  [ 3:0] ts_grant;     // granted ts requests from timestamping module
-  input  [ 3:0] rdy;          // channels ready (leading edge - became ready, trailing - no more data, use zero)
-  output [ 3:0] nxt;          // pulses to modules to output next word
-  output [ 1:0] channel;      // decoded channel number (2 bits)
-  output [ 1:0] ts_sel;       // select timestamp word to be output (0..3)
-  output        ts_en;        // 1 - use timestamp, 0 - channel data (or 16'h0 if !ready)
-  output        dv;           // output data valid (from registered mux - 2 stage - first selects data and ready, second ts/data/zero)
-  output [23:0] sample_counter;// number of 64-byte samples logged
-*/
     reg     [3:0] ts_rq_in_d;
     reg     [3:0] ts_rq_r;
     reg     [3:0] ts_valid;
-//  reg     [3:0] ts_rq_reset;
     reg     [3:0] channels_ready;// channels granted and ready
     reg     [3:1] chn1hot;       // channels 1-hot - granted and ready, priority applied
     reg           rq_not_zero;   // at least one channel is ready for processing (same time as chn1hot[3:0])
     reg     [1:0] channel_r;
-//  reg           start; Not used!
     reg           busy;
     wire          wstart;
     reg           ts_en_r;
     reg     [4:0] seq_cntr;
     reg           seq_cntr_last;
     reg     [1:0] ts_sel_r;
-//  reg           dv;
     reg           inc_sample_counter;
     reg    [23:0] sample_counter_r;// number of 64-byte samples logged
-//  reg    [ 3:0] nxt;
     reg           pre_nxt;
     reg    [ 3:0] chn_servicing; //1-hot channel being service
     wire    [3:0] wts_rq;
@@ -118,8 +100,6 @@ module  logger_arbiter393(
         chn1hot[3:1] <= {channels_ready[3] & ~|channels_ready[2:0],
                          channels_ready[2] & ~|channels_ready[1:0],
                          channels_ready[1] &  ~channels_ready[0]};
-    
-    //    start <= wstart; Not used !
     
         if  ((seq_cntr[4:0]=='h1e) || rst) busy <= 1'b0;
         else if (rq_not_zero)              busy <= 1'b1;

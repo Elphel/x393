@@ -46,6 +46,7 @@ module  imu_timestamps393(
     input                   [7:0] ts_data, // local timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
 
     input                   [3:0] ts_rq,// requests to create timestamps (4 channels), @posedge xclk
+    input                  [15:0] timestamp_chnmod, // 4 bits per channel - return with 4 MSB of usec
     output                  [3:0] ts_ackn, // timestamp for this channel is stored
     input                   [3:0] ra,   // read address (2 MSBs - channel number, 2 LSBs - usec_low, (usec_high ORed with channel <<24), sec_low, sec_high
     output                 [15:0] dout);// output data
@@ -53,6 +54,7 @@ module  imu_timestamps393(
     reg           ts_busy;
     reg           ts_busy_d; 
     reg     [1:0] chn; // channel for which timestamp is bein requested/received
+    reg     [3:0] timestamp_mod;
     wire    [3:0] rq_pri; // 1-hot prioritized timestamp request
     wire    [1:0] rq_enc; // encoded request channel
     reg     [2:0] cntr; // ts rcv counter
@@ -98,9 +100,12 @@ module  imu_timestamps393(
         
         if (!ts_rcv) cntr <= 0;
         else      cntr <= cntr + 1;
-        if (pre_snap) chn <= rq_enc;
+        if (pre_snap) begin 
+            chn <= rq_enc;
+            timestamp_mod <= timestamp_chnmod[4*rq_enc +: 4]; // channel mux 
+        end
         // insert channel instead of the usec MSB, swap usec <-> sec
-        if (ts_rcv && cntr[0]) ts_ram[{chn, ~cntr[2], cntr[1]}] <= {rcv_last ? {6'b0,chn} : ts_data, ts_data_r};
+        if (ts_rcv && cntr[0]) ts_ram[{chn, ~cntr[2], cntr[1]}] <= {rcv_last ? {timestamp_mod, 2'b0, chn} : ts_data, ts_data_r};
         
         if (rst) ts_ackn_r <= 4'hf;
         else     ts_ackn_r <= ts_rq & (ts_ackn_r | (chn1hot & {4{pre_ackn}}));

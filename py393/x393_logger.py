@@ -60,8 +60,8 @@ class X393Logger(object):
     ADDR_REG =        1
     DATA_REG =        0
     PCA9500_PP_ADDR = 0x40 #< PCA9500 i2c slave addr for the parallel port (read will be 0x41)
-    SLOW_SPI =        26 # just for the driver, not written to FPGA (was 23 for NC353)
-    I2C_SA3 =         28   #Low 3 bits of the SA7 of the PCA9500 slave address
+    SLOW_SPI =        27 # just for the driver, not written to FPGA (was 23 for NC353)
+    I2C_SA3 =         29   #Low 3 bits of the SA7 of the PCA9500 slave address
     
 #    X313_IMU_PERIOD_ADDR =      0x0  # request period for IMU (in SPI bit periods)
 #    X313_IMU_DIVISOR_ADDR =     0x1  # xclk (80MHz) clock divisor for half SPI bit period 393: clock is Now clock is logger_clk=100MHz (200 MHz?)
@@ -355,9 +355,9 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         @param config - logger configuration word
         
         """
-        print("Writing logger configuration word: 0x%08x to register 0x%x"%(config & 0x3ffffff, vrlg.LOGGER_CONFIG))
+        print("Writing logger configuration word: 0x%08x to register 0x%x"%(config & 0x7ffffff, vrlg.LOGGER_CONFIG))
         self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.ADDR_REG, vrlg.LOGGER_CONFIG);
-        self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.DATA_REG, config & 0x3ffffff);
+        self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.DATA_REG, config & 0x7ffffff);
 
     def logger_registers(self,registers):
         """
@@ -382,7 +382,7 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
             lmessage +=chr(0)*(56-len(lmessage))
         lmessage = lmessage[:56]
         print("Setting odometer message %56s"%(bytearray(self.zterm(lmessage)).decode()))
-        self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.ADDR_REG, self.X313_IMU_REGISTERS_ADDR)
+        self.x393_axi_tasks.write_control_register(vrlg.LOGGER_ADDR + self.ADDR_REG, self.X313_IMU_MESSAGE_ADDR) # X313_IMU_REGISTERS_ADDR)
         for i in range(0,56,4):
 #            d=ord(lmessage[i]) + (ord(lmessage[i+1]) << 8)  + (ord(lmessage[i+1]) << 16)  + (ord(lmessage[i+1]) << 24)
             d=lmessage[i] + (lmessage[i+1] << 8)  + (lmessage[i+1] << 16)  + (lmessage[i+1] << 24)
@@ -424,9 +424,14 @@ int logger_init_fpga(int force) ///< if 0, only do if not already initialized
         period =      struct.unpack_from("<I", wbuf, offset=self.X313_IMU_PERIOD_OFFS)[0]
         divisor =     struct.unpack_from("<I", wbuf, offset=self.X313_IMU_DIVISOR_OFFS)[0]
         rs232_div =   struct.unpack_from("<I", wbuf, offset=self.X313_IMU_RS232DIV_OFFS)[0]
+        print("period:    0x%08x"%(period))
+        print("divisor:   0x%08x"%(divisor))
+        print("rs232_div: 0x%08x"%(rs232_div))
         if (self.DRY_MODE):
             rs232_div = 8
         config =      struct.unpack_from("<I", wbuf, offset=self.X313_IMU_CONFIGURE_OFFS)[0]
+        print("config:    0x%08x"%(config))
+        
         message =     wbuf[self.X313_IMU_MESSAGE_OFFS:    self.X313_IMU_MESSAGE_OFFS+56]
         nmea_format = wbuf[self.X313_IMU_NMEA_FORMAT_OFFS:self.X313_IMU_NMEA_FORMAT_OFFS+128]
         registers =   wbuf[self.X313_IMU_REGISTERS_OFFS:  self.X313_IMU_NMEA_FORMAT_OFFS]
@@ -590,11 +595,11 @@ which= 0x3f9
     parameter LOGGER_CONF_GPS_BITS =            4,
     parameter LOGGER_CONF_MSG =                13,
     parameter LOGGER_CONF_MSG_BITS =            5,
-    parameter LOGGER_CONF_SYN =                18, // 15,
-    parameter LOGGER_CONF_SYN_BITS =            4, // 1,
-    parameter LOGGER_CONF_EN =                 20, // 17,
+    parameter LOGGER_CONF_SYN =                19, // 18, // 15,
+    parameter LOGGER_CONF_SYN_BITS =            5, // 4, // 1,
+    parameter LOGGER_CONF_EN =                 21, // 20, // 17,
     parameter LOGGER_CONF_EN_BITS =             1,
-    parameter LOGGER_CONF_DBG =                25, // 22,
+    parameter LOGGER_CONF_DBG =                26, // 25, // 22,
     parameter LOGGER_CONF_DBG_BITS =            4,
 
     parameter GPIO_N =                     10 // number of GPIO bits to control

@@ -1076,12 +1076,12 @@
     parameter LOGGER_CONF_GPS_BITS =        4,
     parameter LOGGER_CONF_MSG =            13,
     parameter LOGGER_CONF_MSG_BITS =        5,
-    parameter LOGGER_CONF_SYN =            18, // 15,
-    parameter LOGGER_CONF_SYN_BITS =        4, // 1,
-    parameter LOGGER_CONF_EN =             20, // 17,
-    parameter LOGGER_CONF_EN_BITS =         1,
-    parameter LOGGER_CONF_DBG =            25, // 22,
-    parameter LOGGER_CONF_DBG_BITS =        4,
+    parameter LOGGER_CONF_SYN =            19, // 18, // 15,
+    parameter LOGGER_CONF_SYN_BITS =        5, // 4, // 1,
+    parameter LOGGER_CONF_EN =             21, //20, // 17,
+    parameter LOGGER_CONF_EN_BITS =         1, // 1,
+    parameter LOGGER_CONF_DBG =            26, // 25, // 22,
+    parameter LOGGER_CONF_DBG_BITS =        4, // 4,
 
     parameter MULT_SAXI_HALF_BRAM_IN =      1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
     parameter MULT_SAXI_WLOG =              4,      // number of bits for the input data ( 3 - 8 bit, 4 - 16-bit, 5 - 32-bit

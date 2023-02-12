@@ -6,7 +6,7 @@
  *
  * @brief top module of the event logger (ported from imu_logger)
  *
- * @copyright Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015-2023 Elphel, Inc.
  *
  * <b>License:</b>
  *
@@ -60,12 +60,12 @@ module  event_logger#(
     parameter LOGGER_CONF_GPS_BITS =            4,
     parameter LOGGER_CONF_MSG =                13,
     parameter LOGGER_CONF_MSG_BITS =            5,
-    parameter LOGGER_CONF_SYN =                18, // 15,
-    parameter LOGGER_CONF_SYN_BITS =            4, // 1,
-    parameter LOGGER_CONF_EN =                 20, // 17,
-    parameter LOGGER_CONF_EN_BITS =             1,
-    parameter LOGGER_CONF_DBG =                25, // 22,
-    parameter LOGGER_CONF_DBG_BITS =            4,
+    parameter LOGGER_CONF_SYN =                19, // 18, // 15,
+    parameter LOGGER_CONF_SYN_BITS =            5, // 4, // 1,
+    parameter LOGGER_CONF_EN =                 21, // 20, // 17,
+    parameter LOGGER_CONF_EN_BITS =             1, // 1,
+    parameter LOGGER_CONF_DBG =                26, // 25, // 22,
+    parameter LOGGER_CONF_DBG_BITS =            4, // 4,
 
     parameter GPIO_N =                     10 // number of GPIO bits to control
 )(
@@ -106,6 +106,8 @@ module  event_logger#(
     input                         ts_stb_chn3,  // @mclk 1 clock before ts_rcv_data is valid
     input                   [7:0] ts_data_chn3, // @mclk byte-wide serialized timestamp message received or local
     
+    input                         ts_stb_chn4,  // @mclk 1 clock before ts_rcv_data is valid
+    input                   [7:0] ts_data_chn4, // @mclk byte-wide serialized timestamp message received or local
     
 // TODO: Convert to 32-bit?    
     output                 [15:0] data_out,    // 16-bit data out to DMA1 (@posdge mclk)
@@ -113,7 +115,7 @@ module  event_logger#(
 //                       sample_counter, // could be DMA latency, safe to use sample_counter-1
     output                 [31:0] debug_state);
                        
-
+    localparam     SELECT_IMX5 = 2'h3; // when config_imu == SELECT_IMX5 - use IMX instead of the GPS on serial input
     wire   [23:0] sample_counter; // TODO: read with status! could be DMA latency, safe to use sample_counter-1
 
 
@@ -146,6 +148,9 @@ module  event_logger#(
     reg    [3:0] config_debug;
     reg   [15:0] bitHalfPeriod;//  serial gps speed - number of xclk pulses in half bit period
 
+    // Temporary reusing available bit
+//    wire         use_imx5 = config_gps[2];
+    reg          use_imx5; //  = config_gps[2]; will use config_imu == 3 (not used before)
 
     wire         we_config_imu_xclk; // copy config_imu_mclk (@mclk) to config_imu (@xclk)
     wire         we_config_gps_xclk;
@@ -159,14 +164,14 @@ module  event_logger#(
     reg    [1:0] config_imu_mclk;
     reg    [3:0] config_gps_mclk;
     reg    [4:0] config_msg_mclk;
-    reg    [3:0] config_syn_mclk;
+    reg    [4:0] config_syn_mclk; // [3:0]
     reg          config_rst_mclk = 0;
     reg    [3:0] config_debug_mclk;
     reg   [15:0] bitHalfPeriod_mclk;
 
     reg          enable_gps;
     reg          enable_msg;
-    wire    [3:0] enable_syn_mclk;
+    wire    [4:0] enable_syn_mclk;
 
     reg          enable_timestamps;
     wire         message_trig;
@@ -174,8 +179,13 @@ module  event_logger#(
     wire         gps_ts_stb, ser_do,ser_do_stb;
     wire  [15:0] imu_data;
     wire  [15:0] nmea_data;
+    wire  [15:0] imx5_rdata;
     wire  [15:0] extts_data;
     wire  [15:0] msg_data;
+
+    wire        nmea_rdy;
+    wire        imx5_rdy;
+    wire        imx5_ts_rq;
 
     wire  [15:0] timestamps_rdata; // multiplexed timestamp data
 
@@ -187,6 +197,8 @@ module  event_logger#(
     wire   [3:0] timestamp_request; // 0 - imu, 1 - gps, 2 - ext, 3 - msg
     wire   [3:0] timestamp_ackn;
 
+    wire  [15:0] timestamp_chnmod;          // timestamp channle modification bits (high 4 bits of usec)
+    wire   [3:0] timestamp_chnmod_imx;    
     wire   [3:0] timestamp_request_long; //from sub-module ts request until reset by arbiter, to allow  timestamp_ackn
     wire   [3:0] channel_ready;  // 0 - imu, 1 - gps, 2 - ext, 3 - msg
     wire   [3:0] channel_next;   // 0 - imu, 1 - gps, 2 - ext, 3 - msg
@@ -214,7 +226,11 @@ module  event_logger#(
     wire         cmd_status;
     
     reg    [3:0] timestamps_en;  // enable timestamp to go through (first after sof)
-
+    
+    assign channel_ready[1] = use_imx5 ? imx5_rdy : nmea_rdy;
+    
+    assign timestamp_chnmod = {4'b0, 4'b0, use_imx5? timestamp_chnmod_imx[3:0]: 4'b0, 4'b0};
+//use_imx5 Use timestamp_chnmod_imx to indicate a) imx/not nmea and b) - continued packet
     assign ext_en = {{(GPIO_N-5){1'b0}},
                    (config_imu[1:0]==2'h2)?1'b1:1'b0,
                    1'b0,
@@ -242,10 +258,11 @@ module  event_logger#(
 
     assign message_trig= config_msg[4] ^ pre_message_trig;
 
-    assign timestamp_request[1]=config_gps[3]? (config_gps[2]?nmea_sent_start:gps_ts_stb):gps_pulse1sec_single;
+//    assign timestamp_request[1]= config_gps[3]? (config_gps[2]?nmea_sent_start:gps_ts_stb):gps_pulse1sec_single;
+    assign timestamp_request[1]= use_imx5 ? imx5_ts_rq : (config_gps[3]? (config_gps[2]?nmea_sent_start:gps_ts_stb):gps_pulse1sec_single);
  
-    always @ (posedge mclk) begin
-        timestamps_en <= enable_syn_mclk & (sof_mclk | (timestamps_en & ~{ts_stb_chn3, ts_stb_chn2,ts_stb_chn1, ts_stb_chn0}));
+    always @ (posedge mclk) begin // no enable for channel 4 - incoming ext trigger
+        timestamps_en <= enable_syn_mclk[3:0] & (sof_mclk | (timestamps_en & ~{ts_stb_chn3, ts_stb_chn2,ts_stb_chn1, ts_stb_chn0}));
     end
 
 // filter gps_pulse1sec
@@ -281,21 +298,6 @@ module  event_logger#(
     end
     always @ (posedge mclk) begin // was negedge
         if (cmd_we)  cmd_data_r <= cmd_data; // valid next after cmd_we;
-        /* 
-        we_d            <= cmd_we && !cmd_a;
-        we_imu          <= cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_IMU);
-        we_gps          <= cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_GPS);
-        we_message      <= cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_MSG);
-        we_period       <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_PERIOD);
-        we_bit_duration <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_BIT_DURATION);
-        we_bitHalfPeriod<= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_BIT_HALF_PERIOD);
-        we_config_imu   <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_IMU];
-        we_config_gps   <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_GPS];
-        we_config_msg   <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_MSG];
-        we_config_syn   <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_SYN];
-        we_config_rst   <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_EN];
-        we_config_debug <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_DBG];
-        */
     
         if (we_config_imu)   config_imu_mclk[1:0] <=   cmd_data_r[LOGGER_CONF_IMU - 1 -: LOGGER_CONF_IMU_BITS]; // bits 1:0, 2 - enable slot[1:0]
         if (we_config_gps)   config_gps_mclk[3:0] <=   cmd_data_r[LOGGER_CONF_GPS - 1 -: LOGGER_CONF_GPS_BITS]; // bits 6:3, 7 - enable - {ext,inver, slot[1:0]} slot==0 - disable
@@ -311,7 +313,7 @@ module  event_logger#(
         else if (we_d &&  (ctrl_addr[4:0]!=5'h1f)) ctrl_addr[4:0] <=ctrl_addr[4:0]+1; // no roll over, 
     end
 
-    assign enable_syn_mclk= config_rst_mclk? 4'b0 : config_syn_mclk;
+    assign enable_syn_mclk= config_rst_mclk? 5'b0 : config_syn_mclk;
     always @ (posedge xclk) begin
         if      (xrst)               config_rst <=          1'b1;
         else if (we_config_rst_xclk) config_rst <=          config_rst_mclk;
@@ -323,12 +325,17 @@ module  event_logger#(
         enable_gps         <= (^config_gps[1:0]) && !config_rst;  // both 00 and 11 - disable
         enable_msg         <= (config_gps[3:0] != 4'hf) && !config_rst;
         enable_timestamps  <= !config_rst;
+        use_imx5 <= config_imu[1:0] == SELECT_IMX5;
     end
 
+    wire [15:0] nmea_imx_rdata = use_imx5 ? imx5_rdata : nmea_data;
+//    wire [15:0] imx5_rdata;
     always @ (posedge xclk) begin
         mux_data_source[15:0] <= channel[1]?
                                  (channel[0]?msg_data[15:0]:extts_data[15:0]):
-                                 (channel[0]?nmea_data[15:0]:imu_data[15:0]);
+//                                 (channel[0]?nmea_data[15:0]:imu_data[15:0]);
+                                 (channel[0]?nmea_imx_rdata[15:0]:imu_data[15:0]);
+
         mux_rdy_source        <= channel[1]?
                                  (channel[0]?channel_ready[3]:channel_ready[2]):
                                  (channel[0]?channel_ready[1]:channel_ready[0]);
@@ -429,6 +436,7 @@ fixed-length de-noise circuitry with latency 256*T(xclk) (~3usec)
                         .xclk             (xclk),                            // half frequency (80 MHz nominal)
                         .mrst             (mrst),                            // @mclk - sync reset
                         .xrst             (xrst),                            // @xclk - sync reset
+                        // for now - always enabling chn4 - incomming external trigger
                         .en_chn_mclk      (enable_syn_mclk),                 // input[3:0] enable module operation, if 0 - reset
                         .ts_stb_chn0      (ts_stb_chn0 && timestamps_en[0]), // input
                         .ts_data_chn0     (ts_data_chn0),                    // input[7:0] 
@@ -438,6 +446,8 @@ fixed-length de-noise circuitry with latency 256*T(xclk) (~3usec)
                         .ts_data_chn2     (ts_data_chn2),                    // input[7:0] 
                         .ts_stb_chn3      (ts_stb_chn3 && timestamps_en[3]), // input
                         .ts_data_chn3     (ts_data_chn3),                    // input[7:0] 
+                        .ts_stb_chn4      (ts_stb_chn4), //  && timestamps_en[4]), // input
+                        .ts_data_chn4     (ts_data_chn4),                    // input[7:0] 
                         .ts               (timestamp_request[2]),            // timestamop request
                         .rdy              (channel_ready[2]),                // data ready
                         .rd_stb           (channel_next[2]),                 // data read strobe (increment address)
@@ -450,6 +460,7 @@ fixed-length de-noise circuitry with latency 256*T(xclk) (~3usec)
                         .ts_stb           (ts_local_stb),                      // input (@posedge xclk) - 1 xclk before local ts data
                         .ts_data          (ts_local_data),                     // input[7:0] (@posedge xclk) - local TS data
                         .ts_rq            (timestamp_request_long[3:0]),       // input[3:0] requests to create timestamps (4 channels), @posedge xclk
+                        .timestamp_chnmod (timestamp_chnmod),                  // input[15:0] timestamp_chnmod, // 4 bits per channel - return with 4 MSB of usec
                         .ts_ackn          (timestamp_ackn[3:0]),               // output[3:0] timestamp for this channel is stored
                         .ra               ({channel[1:0],timestamp_sel[1:0]}), // input[3:0]read address (2 MSBs - channel number, 2 LSBs - usec_low, (usec_high ORed with channel <<24), sec_low, sec_high
                         .dout             (timestamps_rdata[15:0]));           // output[15:0] output data
@@ -488,12 +499,24 @@ fixed-length de-noise circuitry with latency 256*T(xclk) (~3usec)
                         .nmea_sent_start  (nmea_sent_start),  // serial character start (single pulse)
                         .ser_di           (ser_do),           // serial data in (LSB first)
                         .ser_stb          (ser_do_stb),       // serial data strobe, single-cycle, first cycle after ser_di valid
-                        .rdy              (channel_ready[1]), // encoded nmea data ready
+                        .rdy              (nmea_rdy),         // channel_ready[1]), // encoded nmea data ready
                         .rd_stb           (channel_next[1]),  // encoded nmea data read strobe (increment address)
                         .rdata            (nmea_data[15:0]),  // encoded data (16 bits)
                         .ser_rst          (!enable_gps),      // reset (now only debug register)
                         .debug()
                         );
+                        
+    imx5_decoder393 i_imx5_decoder393(
+                        .xclk             (xclk),             // 80MHz, posedge
+                        .start_char       (rs232_start),      //     input                         start_char,           // serial character start (single pulse)
+                        .ser_di           (ser_do),           // serial data in (LSB first)
+                        .ser_stb          (ser_do_stb),       // serial data strobe, single-cycle, first cycle after ser_di valid
+                        .rdy              (imx5_rdy),         // encoded nmea data ready
+                        .rd_stb           (channel_next[1]),  // encoded nmea data read strobe (increment address)
+                        .rdata            (imx5_rdata[15:0]), // encoded data (16 bits)
+                        .ser_rst          (!enable_gps),      // reset (now only debug register)
+                        .ts_rq            (imx5_ts_rq),       //     output                        ts_rq,
+                        .ts_mode          (timestamp_chnmod_imx)); //    output                 [3:0]  ts_mode);
                              
 // Logger handshakes timestamps through request/grant, so it is OK to make slow serial communication with RTC)
     logger_arbiter393 i_logger_arbiter(

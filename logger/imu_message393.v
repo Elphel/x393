@@ -48,7 +48,6 @@ module  imu_message393 (
     input                         xclk,    // half frequency (80 MHz nominal)
     input                         we,      // write enable for registers to log (@negedge mclk), with lower data half
     input                   [3:0] wa,      // write address for register (4 bits, @negedge mclk)
-//    input                  [15:0] di,    // 16-bit data in  multiplexed 
     input                  [31:0] din,     // 32-bit data in, non-multiplexed 
     input                         en,      // enable module operation, if 0 - reset
     input                         trig,    // leading edge - sample time, trailing set rdy

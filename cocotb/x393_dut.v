@@ -2424,9 +2424,26 @@ simul_axi_hp_wr #(
 assign x393_i.ps7_i.FCLKCLK=        {4{CLK}};
 assign x393_i.ps7_i.FCLKRESETN=     {RST,~RST,RST,~RST};
 
+`define TEST_IMX
 
-
-
+`ifdef TEST_IMX
+    wire IMS_TXD;    // SuppressThisWarning VEditor 
+    wire IMS_ACTIVE; // SuppressThisWarning VEditor
+    wire ESCAPE;     // SuppressThisWarning VEditor  
+    
+    simul_imx5#(
+        .DATA_FILE     ("/input_data/imx5_did_ins_1.dat"),  //
+        .BIT_DURATION  ( 160), // ns
+        .RECORD_BYTES  (  80), // bytes per record
+        .RECORD_NUM    (  10), // number of records
+        .PAUSE_CLOCKS  ( 100)  // skip clocks between messages
+    ) i_simul_imx5 (
+        .mrst          (RST_SIM_AXI),     // active low longer reset
+        .uart_out      (IMS_TXD), // will just copy when not reset;
+        .sending       (IMS_ACTIVE),   // sending data (including start/stop bits)
+        .escape        (ESCAPE)
+    );    
+`endif
 
 `define TEST_IMU
 `define TEST_EXT_INT
@@ -2579,7 +2596,12 @@ assign #10 gpio_pins[7] = gpio_pins[8];
        #(IMU_READY_PERIOD-IMU_NREADY_DURATION) IMU_DATA_READY=1'b0;
        #(IMU_NREADY_DURATION)                  IMU_DATA_READY=1'b1;
       end
-      assign gpio_pins[4]=SERIAL_BIT;
+      // for testing InertialSense IMX5 - switch only RS232, keep all other IMU-related
+      `ifdef TEST_IMX
+         assign gpio_pins[4]=IMS_TXD;
+      `else
+         assign gpio_pins[4]=SERIAL_BIT;
+      `endif
       assign gpio_pins[5]=GPS1SEC;
 `ifdef ODOMETER_PULSE_6
       assign gpio_pins[6]=ODOMETER_PULSE;

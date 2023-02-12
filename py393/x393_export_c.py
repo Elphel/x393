@@ -2669,7 +2669,7 @@ class X393ExportC(object):
 
     def _enc_logger_conf(self):
         dw=[]
-        dw.append(("imu_slot",   vrlg.LOGGER_CONF_IMU - vrlg.LOGGER_CONF_IMU_BITS,  vrlg.LOGGER_CONF_IMU_BITS,   0, "IMU slot"))
+        dw.append(("imu_slot",   vrlg.LOGGER_CONF_IMU - vrlg.LOGGER_CONF_IMU_BITS,  vrlg.LOGGER_CONF_IMU_BITS,   0, "IMU slot (3 - use IMX5 instead of GPS)"))
         dw.append(("imu_set",    vrlg.LOGGER_CONF_IMU,                                  1,                       0, "Set 'imu_slot'"))
         dw.append(("gps_slot",   vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS,      2,                       0, "GPS slot"))
         dw.append(("gps_invert", vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS + 2,  1,                       0, "GPS inpert 1pps signal"))
