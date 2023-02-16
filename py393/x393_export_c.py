@@ -2672,14 +2672,18 @@ class X393ExportC(object):
         dw.append(("imu_slot",   vrlg.LOGGER_CONF_IMU - vrlg.LOGGER_CONF_IMU_BITS,  vrlg.LOGGER_CONF_IMU_BITS,   0, "IMU slot (3 - use IMX5 instead of GPS)"))
         dw.append(("imu_set",    vrlg.LOGGER_CONF_IMU,                                  1,                       0, "Set 'imu_slot'"))
         dw.append(("gps_slot",   vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS,      2,                       0, "GPS slot"))
-        dw.append(("gps_invert", vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS + 2,  1,                       0, "GPS inpert 1pps signal"))
+        dw.append(("gps_invert", vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS + 2,  1,                       0, "GPS ivpert 1pps signal"))
         dw.append(("gps_ext",    vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS + 3,  1,                       0, "GPS sync to 1 pps signal (0 - sync to serial message)"))
         dw.append(("gps_set",    vrlg.LOGGER_CONF_GPS,                                  1,                       0, "Set 'gps_*' fields"))
         dw.append(("msg_input",  vrlg.LOGGER_CONF_MSG - vrlg.LOGGER_CONF_MSG_BITS,      4,                       0, "MSG pin: GPIO pin number to accept external signal (0xf - disable)"))
         dw.append(("msg_invert", vrlg.LOGGER_CONF_MSG - vrlg.LOGGER_CONF_MSG_BITS + 4,  1,                       0, "MSG input polarity - 0 - active high, 1 - active low"))
         dw.append(("msg_set",    vrlg.LOGGER_CONF_MSG,                                  1,                       0, "Set 'msg_*' fields"))
-        dw.append(("log_sync",   vrlg.LOGGER_CONF_SYN - vrlg.LOGGER_CONF_SYN_BITS,  vrlg.LOGGER_CONF_SYN_BITS,   0, "Log frame sync events (bit per sensor channel)"))
+        dw.append(("log_sync",   vrlg.LOGGER_CONF_SYN - vrlg.LOGGER_CONF_SYN_BITS,  vrlg.LOGGER_CONF_SYN_BITS,   0, "Log frame sync events (bit per sensor channel, MSB - log external sync)"))
         dw.append(("log_sync_set",vrlg.LOGGER_CONF_SYN,                                 1,                       0, "Set 'log_sync' fields"))
+        dw.append(("log_en",     vrlg.LOGGER_CONF_EN -  vrlg.LOGGER_CONF_EN_BITS,   vrlg.LOGGER_CONF_EN_BITS,    0, "Enable event logger (0- reset)"))
+        dw.append(("log_en_set", vrlg.LOGGER_CONF_EN,                                   1,                       0, "Set 'log_enable' field"))
+        dw.append(("log_dbg",    vrlg.LOGGER_CONF_DBG -  vrlg.LOGGER_CONF_DBG_BITS, vrlg.LOGGER_CONF_DBG_BITS,   0, "IMU debug mode"))
+        dw.append(("log_dbg_set",vrlg.LOGGER_CONF_DBG,                                   1,                      0, "Set 'log_dbg' field"))
         return dw
     def _enc_logger_data(self):
         dw=[]

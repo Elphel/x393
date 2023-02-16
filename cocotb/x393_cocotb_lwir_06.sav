@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Sat Feb 11 21:53:42 2023
+[*] Tue Feb 14 19:38:19 2023
 [*]
-[dumpfile] "/home/elphel/git/x393/simulation/x393_dut-20230211143708385.fst"
-[dumpfile_mtime] "Sat Feb 11 21:53:30 2023"
-[dumpfile_size] 141595306
+[dumpfile] "/home/elphel/git/x393/simulation/x393_dut-20230213165222653.fst"
+[dumpfile_mtime] "Tue Feb 14 00:48:28 2023"
+[dumpfile_size] 777646791
 [savefile] "/home/elphel/git/x393/cocotb/x393_cocotb_lwir_06.sav"
 [timestart] 0
-[size] 1920 1171
-[pos] -1920 47
-*-23.998985 81560000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1744 1144
+[pos] 1920 74
+*-27.278334 63200000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.i_simul_imx5.
 [treeopen] x393_dut.x393_i.
@@ -29,11 +29,12 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_103993_i.sens_103993_l3_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_103993_i.
+[treeopen] x393_dut.x393_i.timing393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
 [sst_width] 325
 [signals_width] 278
 [sst_expanded] 1
-[sst_vpaned_height] 773
+[sst_vpaned_height] 365
 @800200
 -simul_imx5
 @28
@@ -112,6 +113,21 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.trig
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.trig_in
 (4)x393_dut.x393_i.gpio_pins[9:0]
 (5)x393_dut.x393_i.gpio_pins[9:0]
+@800022
+x393_dut.x393_i.gpio_pins[9:0]
+@28
+(0)x393_dut.x393_i.gpio_pins[9:0]
+(1)x393_dut.x393_i.gpio_pins[9:0]
+(2)x393_dut.x393_i.gpio_pins[9:0]
+(3)x393_dut.x393_i.gpio_pins[9:0]
+(4)x393_dut.x393_i.gpio_pins[9:0]
+(5)x393_dut.x393_i.gpio_pins[9:0]
+(6)x393_dut.x393_i.gpio_pins[9:0]
+(7)x393_dut.x393_i.gpio_pins[9:0]
+(8)x393_dut.x393_i.gpio_pins[9:0]
+(9)x393_dut.x393_i.gpio_pins[9:0]
+@1001200
+-group_end
 @c00022
 x393_dut.x393_i.gpio_camsync_en[9:0]
 @28
@@ -582,9 +598,17 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.eof
 @800200
 -event_logger
 @28
+x393_dut.x393_i.event_logger_i.xrst
+x393_dut.x393_i.event_logger_i.we_config_rst
+x393_dut.x393_i.event_logger_i.we_config_rst_xclk
+x393_dut.x393_i.event_logger_i.config_rst_mclk
+x393_dut.x393_i.event_logger_i.config_rst
+@22
+x393_dut.x393_i.event_logger_i.enable_syn_mclk[4:0]
+@28
 x393_dut.x393_i.event_logger_i.i_rs232_rcv.xclk
 x393_dut.x393_i.event_logger_i.cmd_we
-@c00023
+@c00022
 x393_dut.x393_i.event_logger_i.ctrl_addr[6:0]
 @28
 (0)x393_dut.x393_i.event_logger_i.ctrl_addr[6:0]
@@ -594,7 +618,7 @@ x393_dut.x393_i.event_logger_i.ctrl_addr[6:0]
 (4)x393_dut.x393_i.event_logger_i.ctrl_addr[6:0]
 (5)x393_dut.x393_i.event_logger_i.ctrl_addr[6:0]
 (6)x393_dut.x393_i.event_logger_i.ctrl_addr[6:0]
-@1401201
+@1401200
 -group_end
 @22
 x393_dut.x393_i.event_logger_i.cmd_data_r[31:0]
@@ -811,7 +835,7 @@ x393_dut.x393_i.event_logger_i.ts_stb_chn1
 x393_dut.x393_i.event_logger_i.ts_stb_chn2
 x393_dut.x393_i.event_logger_i.ts_stb_chn3
 x393_dut.x393_i.event_logger_i.ts_stb_chn4
-@800022
+@c00022
 x393_dut.x393_i.event_logger_i.ts_data_chn4[7:0]
 @28
 (0)x393_dut.x393_i.event_logger_i.ts_data_chn4[7:0]
@@ -822,7 +846,7 @@ x393_dut.x393_i.event_logger_i.ts_data_chn4[7:0]
 (5)x393_dut.x393_i.event_logger_i.ts_data_chn4[7:0]
 (6)x393_dut.x393_i.event_logger_i.ts_data_chn4[7:0]
 (7)x393_dut.x393_i.event_logger_i.ts_data_chn4[7:0]
-@1001200
+@1401200
 -group_end
 @28
 x393_dut.x393_i.event_logger_i.we_config_imu
@@ -908,8 +932,35 @@ x393_dut.x393_i.event_logger_i.timestamps_rdata[15:0]
 x393_dut.x393_i.event_logger_i.config_syn_mclk[4:0]
 @28
 x393_dut.x393_i.event_logger_i.config_rst_mclk
+@c00022
+x393_dut.x393_i.event_logger_i.config_gps[3:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.config_gps[3:0]
+(1)x393_dut.x393_i.event_logger_i.config_gps[3:0]
+(2)x393_dut.x393_i.event_logger_i.config_gps[3:0]
+(3)x393_dut.x393_i.event_logger_i.config_gps[3:0]
+@1401200
+-group_end
 @1000200
 -event_logger
+@c00200
+-rs232_rcv
+@22
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.bitHalfPeriod[15:0]
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.bit_dur_cntr[15:0]
+@28
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.xclk
+@22
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.bit_cntr[4:0]
+@28
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.ser_rst
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.ser_di
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.ser_do
+x393_dut.x393_i.event_logger_i.i_rs232_rcv.ser_do_stb
+@200
+-
+@1401200
+-rs232_rcv
 @c00200
 -nmea_decoder393
 @28
@@ -1130,7 +1181,7 @@ x393_dut.x393_i.event_logger_i.i_imx5_decoder393.last_word_written[5:0]
 -
 @1401200
 -imx5_decoder393
-@800200
+@c00200
 -logger_arbiter393
 @28
 (2)x393_dut.x393_i.event_logger_i.i_logger_arbiter.ts_rq_in[3:0]
@@ -1151,9 +1202,9 @@ x393_dut.x393_i.event_logger_i.i_logger_arbiter.ts_en
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.dv
 @22
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.sample_counter_r[23:0]
-@1000200
+@1401200
 -logger_arbiter393
-@800200
+@c00200
 -imu_message393
 @28
 x393_dut.x393_i.event_logger_i.i_imu_message.we
@@ -1171,7 +1222,7 @@ x393_dut.x393_i.event_logger_i.i_imu_message.raddr[4:0]
 x393_dut.x393_i.event_logger_i.i_imu_message.rdata[15:0]
 @200
 -
-@1000200
+@1401200
 -imu_message393
 @c00200
 -imu_exttime

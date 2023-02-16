@@ -185,6 +185,8 @@ module camsync393       #(
 
     output                        ts_rcv_stb_chn4, // 1 clock before ts_rcv_data is valid
     output                  [7:0] ts_rcv_data_chn4 // byte-wide serialized timestamp message received or local
+//    ,output                 [3:0] dbg_logger2023
+    
 );
     reg           en = 0;       // enable camsync module
 //    wire          rst = mrst || !en;
@@ -435,6 +437,8 @@ module camsync393       #(
                                 (dly_cntr_chn2[31:0]!=0)?1'b1:1'b0,
                                 (dly_cntr_chn1[31:0]!=0)?1'b1:1'b0,
                                 (dly_cntr_chn0[31:0]!=0)?1'b1:1'b0};
+                                
+//    assign dbg_logger2023 = {start_en, ts_external_pclk, rcv_run, trigger_condition};
     
     assign gpio_out_en = gpio_out_en_r;
     

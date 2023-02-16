@@ -113,7 +113,9 @@ module  event_logger#(
     output                 [15:0] data_out,    // 16-bit data out to DMA1 (@posdge mclk)
     output                        data_out_stb,// data out valid (@posedge mclk)
 //                       sample_counter, // could be DMA latency, safe to use sample_counter-1
-    output                 [31:0] debug_state);
+    output                 [31:0] debug_state
+//    ,input [3:0]            dbg_logger2023 
+    );
                        
     localparam     SELECT_IMX5 = 2'h3; // when config_imu == SELECT_IMX5 - use IMX instead of the GPS on serial input
     wire   [23:0] sample_counter; // TODO: read with status! could be DMA latency, safe to use sample_counter-1
@@ -141,16 +143,15 @@ module  event_logger#(
     reg          we_bitHalfPeriod = 0;
 
 
-    reg    [1:0] config_imu;
-    reg    [3:0] config_gps;
+    reg    [1:0] config_imu; // should be 3 for IMXS-5
+    reg    [3:0] config_gps; // should be 1 for IMX-5 (at least two lsb-s), will use ext2 for serial input (alse switches pulse1sec in ext3/ext5)
     reg    [4:0] config_msg;
     reg          config_rst;
     reg    [3:0] config_debug;
     reg   [15:0] bitHalfPeriod;//  serial gps speed - number of xclk pulses in half bit period
 
     // Temporary reusing available bit
-//    wire         use_imx5 = config_gps[2];
-    reg          use_imx5; //  = config_gps[2]; will use config_imu == 3 (not used before)
+    reg          use_imx5; //  will use config_imu == 3 (not used before)
 
     wire         we_config_imu_xclk; // copy config_imu_mclk (@mclk) to config_imu (@xclk)
     wire         we_config_gps_xclk;
@@ -258,7 +259,6 @@ module  event_logger#(
 
     assign message_trig= config_msg[4] ^ pre_message_trig;
 
-//    assign timestamp_request[1]= config_gps[3]? (config_gps[2]?nmea_sent_start:gps_ts_stb):gps_pulse1sec_single;
     assign timestamp_request[1]= use_imx5 ? imx5_ts_rq : (config_gps[3]? (config_gps[2]?nmea_sent_start:gps_ts_stb):gps_pulse1sec_single);
  
     always @ (posedge mclk) begin // no enable for channel 4 - incoming ext trigger
@@ -374,6 +374,34 @@ module  event_logger#(
         .we         ({cmd_status,cmd_we})       // output
     );
 
+    wire [25:0] status;
+//`define DEBUG_LOGGER 1 
+//dbg_logger2023 = {start_en, ts_external_pclk, rcv_run, trigger_condition} 
+   
+`ifdef DEBUG_LOGGER
+//    wire start_en =           dbg_logger2023[3];
+//    wire ts_external_pclk =  dbg_logger2023[2];
+//    wire rcv_run =           dbg_logger2023[1];
+//    wire trigger_condition = dbg_logger2023[0];
+// imx5_ts_rq
+    reg [7:0] ext_di_r;
+    reg [7:0] ext_di_r2;
+    reg [10:0] toggle_bits = 0;
+//    wire[13:0] pulses = {ts_external_pclk, rcv_run, trigger_condition, ts_stb_chn4, (ext_di_r & ~ext_di_r2)};
+//    wire[10:0] pulses = {ts_stb_chn4, (ser_do & ser_do_stb), rs232_start, (ext_di_r & ~ext_di_r2)};
+    wire[10:0] pulses = {(ser_do & ser_do_stb), rs232_start, imx5_ts_rq, (ext_di_r & ~ext_di_r2)};
+    always @ (posedge xclk) begin
+//        ext_di_r <= ext_di;
+        ext_di_r <= {ser_di,  4'b0, imx5_rdy, ext_di[9], ext_di[2]};
+        ext_di_r2 <= ext_di_r;
+        if (xrst) toggle_bits <= 0;
+        else      toggle_bits <= toggle_bits ^ pulses; 
+    end
+    assign  status = {toggle_bits[10:0], sample_counter[12:0], enable_gps, config_rst};
+`else
+    assign  status = {sample_counter,2'b0};
+`endif
+    
     status_generate #(
         .STATUS_REG_ADDR     (LOGGER_STATUS_REG_ADDR),
         .PAYLOAD_BITS        (26),
@@ -384,11 +412,12 @@ module  event_logger#(
         .srst          (mrst),                  // input
         .we            (cmd_status),            // input
         .wd            (cmd_data[7:0]),         // input[7:0] 
-        .status        ({sample_counter,2'b0}), // input[25:0] // 2 LSBs - may add "real" status 
+        .status        (status), // {sample_counter,2'b0}), // input[25:0] // 2 LSBs - may add "real" status 
         .ad            (status_ad),             // output[7:0] 
         .rq            (status_rq),             // output
         .start         (status_start)           // input
     );
+    
 
     imu_spi393 i_imu_spi (
 //                    .rst(rst),

@@ -138,6 +138,7 @@ module  timing393       #(
     output                        ts_logger_stb,  // one clock pulse before sending TS data
     output                  [7:0] ts_logger_data,  // timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
     output                        khz             // 1 KHz 50% output
+//    ,output                 [3:0] dbg_logger2023
 );
 
     wire   [3:0] frame_sync;
@@ -329,6 +330,7 @@ module  timing393       #(
         .ts_rcv_data_chn3  (ts_data[3 * 8 +: 8]),       // output[7:0] 
         .ts_rcv_stb_chn4   (ts_stb[4]),                 // output
         .ts_rcv_data_chn4  (ts_data[4 * 8 +: 8])        // output[7:0] 
+//        ,.dbg_logger2023   (dbg_logger2023)   //    ,output                 [3:0] dbg_logger2023
     );
 
 endmodule

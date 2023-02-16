@@ -2520,7 +2520,7 @@ assign axi_grst = axi_rst_pre;
         .dc            (gpio_logger),       // input[9:0] 
         .dc_en         (gpio_logger_en)     // input[9:0] 
     );
-
+///wire [3:0] dbg_logger2023;
     timing393 #(
         .RTC_ADDR              (RTC_ADDR),
         .CAMSYNC_ADDR          (CAMSYNC_ADDR),
@@ -2601,6 +2601,7 @@ assign axi_grst = axi_rst_pre;
 `else
         .khz            ()                       // output //  1 KHz 50% output 
 `endif
+///        ,.dbg_logger2023(dbg_logger2023) // ,output                 [3:0] dbg_logger2023
     );
 
     event_logger #(
@@ -2661,6 +2662,7 @@ assign axi_grst = axi_rst_pre;
         .data_out      (logger_out),          // output[15:0] @mclk
         .data_out_stb  (logger_stb),          // output @mclk
         .debug_state() // output[31:0] 
+//        ,.dbg_logger2023 (dbg_logger2023) //    ,input [3:0]            dbg_logger2023 
     );
 
     mult_saxi_wr_inbuf #(
