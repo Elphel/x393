@@ -135,8 +135,10 @@ localparam DATA_SIZE =        RECORD_BYTES * RECORD_NUM;
         send_imx_escaped_byte(checkSumValue[ 8 +: 8]);
         send_imx_escaped_byte(checkSumValue[ 0 +: 8]);
         send_imx_byte('hfe); // stop (not escaped)
-        repeat (PAUSE_CLOCKS) begin // make a pause between records
-          wait (clk_r); wait (~clk_r);
+        if (packet_counter & 1) begin // merge two packets without pause
+            repeat (PAUSE_CLOCKS) begin // make a pause between records
+              wait (clk_r); wait (~clk_r);
+            end
         end
         packet_counter = packet_counter + 1;
       end

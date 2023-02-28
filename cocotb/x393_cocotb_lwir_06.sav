@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Tue Feb 14 19:38:19 2023
+[*] Thu Feb 23 01:11:17 2023
 [*]
-[dumpfile] "/home/elphel/git/x393/simulation/x393_dut-20230213165222653.fst"
-[dumpfile_mtime] "Tue Feb 14 00:48:28 2023"
-[dumpfile_size] 777646791
+[dumpfile] "/home/elphel/git/x393/simulation/x393_dut-20230222154040957.fst"
+[dumpfile_mtime] "Thu Feb 23 01:11:06 2023"
+[dumpfile_size] 777621394
 [savefile] "/home/elphel/git/x393/cocotb/x393_cocotb_lwir_06.sav"
 [timestart] 0
 [size] 1744 1144
 [pos] 1920 74
-*-27.278334 63200000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-27.275330 179557388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.i_simul_imx5.
 [treeopen] x393_dut.x393_i.
@@ -84,7 +84,7 @@ x393_dut.gpio_pins[9:0]
 -group_end
 @1401200
 -simulation
-@c00200
+@800200
 -other
 @28
 x393_dut.sns1_ctl
@@ -158,6 +158,7 @@ x393_dut.x393_i.gpio_camsync[9:0]
 (9)x393_dut.x393_i.gpio_camsync[9:0]
 @1401200
 -group_end
+@1000200
 -other
 @200
 -
@@ -597,7 +598,10 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.eof
 -random
 @800200
 -event_logger
+@29
+(0)x393_dut.x393_i.event_logger_i.en_imx_mclk_r[1:0]
 @28
+x393_dut.x393_i.event_logger_i.ext_sync_toggle_r
 x393_dut.x393_i.event_logger_i.xrst
 x393_dut.x393_i.event_logger_i.we_config_rst
 x393_dut.x393_i.event_logger_i.we_config_rst_xclk
@@ -1068,7 +1072,7 @@ x393_dut.x393_i.event_logger_i.timestamp_ackn[3:0]
 -
 @1401200
 -nmea_decoder393
-@c00200
+@800200
 -imx5_decoder393
 @28
 x393_dut.x393_i.event_logger_i.xrst
@@ -1179,7 +1183,7 @@ x393_dut.x393_i.event_logger_i.i_imx5_decoder393.did_len[7:0]
 x393_dut.x393_i.event_logger_i.i_imx5_decoder393.last_word_written[5:0]
 @200
 -
-@1401200
+@1000200
 -imx5_decoder393
 @c00200
 -logger_arbiter393

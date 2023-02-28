@@ -114,12 +114,12 @@ module  event_logger#(
     output                        data_out_stb,// data out valid (@posedge mclk)
 //                       sample_counter, // could be DMA latency, safe to use sample_counter-1
     output                 [31:0] debug_state
+    
 //    ,input [3:0]            dbg_logger2023 
     );
                        
     localparam     SELECT_IMX5 = 2'h3; // when config_imu == SELECT_IMX5 - use IMX instead of the GPS on serial input
     wire   [23:0] sample_counter; // TODO: read with status! could be DMA latency, safe to use sample_counter-1
-
 
     wire         ser_di;      // gps serial data in
     wire         gps_pulse1sec;
@@ -228,17 +228,27 @@ module  event_logger#(
     
     reg    [3:0] timestamps_en;  // enable timestamp to go through (first after sof)
     
+    // output strobe for imx5
+    reg          ext_sync_toggle_r;
+    reg          frame_sync_pri_r;
+    reg    [1:0] en_imx_mclk_r; //
+    
+//    assign out_strobe =  ext_sync_toggle_r;
+//    assign out_strobe_en = en_imx_mclk_r[1];
+    
     assign channel_ready[1] = use_imx5 ? imx5_rdy : nmea_rdy;
     
     assign timestamp_chnmod = {4'b0, 4'b0, use_imx5? timestamp_chnmod_imx[3:0]: 4'b0, 4'b0};
 //use_imx5 Use timestamp_chnmod_imx to indicate a) imx/not nmea and b) - continued packet
-    assign ext_en = {{(GPIO_N-5){1'b0}},
+    assign ext_en = {{(GPIO_N-6){1'b0}},
+                   en_imx_mclk_r[1], // enable strobe output on gpio[5] for imx5
                    (config_imu[1:0]==2'h2)?1'b1:1'b0,
                    1'b0,
                    (config_imu[1:0]==2'h1)?1'b1:1'b0,
                    (config_imu[1:0]!=2'h0)?{sda_en,scl_en}:2'h0};
                    
-    assign ext_do= {{(GPIO_N-5){1'b0}},
+    assign ext_do= {{(GPIO_N-6){1'b0}},
+                   ext_sync_toggle_r, // strobe output on gpio[5] for imx5
                    (config_imu[1:0]==2'h2)?mosi:1'b0,
                    1'b0,
                    (config_imu[1:0]==2'h1)?mosi:1'b0,
@@ -312,6 +322,21 @@ module  event_logger#(
         if      (cmd_we && cmd_a) ctrl_addr[4:0] <= cmd_data[4:0];
         else if (we_d &&  (ctrl_addr[4:0]!=5'h1f)) ctrl_addr[4:0] <=ctrl_addr[4:0]+1; // no roll over, 
     end
+    
+    //ts_stb_chn0, enable_syn_mclk[4:0]
+    always @ (posedge mclk) begin // was negedge
+        if (mrst) en_imx_mclk_r <= 0;
+        else en_imx_mclk_r <= {en_imx_mclk_r[0], enable_gps & use_imx5};
+        frame_sync_pri_r <= 
+             enable_syn_mclk[4] ? ts_stb_chn4 :
+            (enable_syn_mclk[0] ? ts_stb_chn0 :
+            (enable_syn_mclk[1] ? ts_stb_chn1 :
+            (enable_syn_mclk[2] ? ts_stb_chn2 :
+            (enable_syn_mclk[3] ? ts_stb_chn3 : 1'b0))));
+        if (!en_imx_mclk_r[1]) ext_sync_toggle_r <= 0;
+        else if (frame_sync_pri_r) ext_sync_toggle_r <= !ext_sync_toggle_r;
+    end    
+    
 
     assign enable_syn_mclk= config_rst_mclk? 5'b0 : config_syn_mclk;
     always @ (posedge xclk) begin

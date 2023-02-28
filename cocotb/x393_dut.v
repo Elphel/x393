@@ -2601,8 +2601,9 @@ assign #10 gpio_pins[7] = gpio_pins[8];
          assign gpio_pins[4]=IMS_TXD;
       `else
          assign gpio_pins[4]=SERIAL_BIT;
+          assign gpio_pins[5]=GPS1SEC;
       `endif
-      assign gpio_pins[5]=GPS1SEC;
+//      assign gpio_pins[5]=GPS1SEC;
 `ifdef ODOMETER_PULSE_6
       assign gpio_pins[6]=ODOMETER_PULSE;
 `endif

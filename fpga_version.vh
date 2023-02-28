@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
- parameter FPGA_VERSION = 32'h03934019;   // Boson640, logger debug disabled
+  parameter FPGA_VERSION = 32'h0393401a;    // adding strobe output for IMX-5 on ext-5
+// parameter FPGA_VERSION = 32'h03934019;   // Boson640, logger debug disabled
 // parameter FPGA_VERSION = 32'h03934018;   // Boson640, debugging logger 02
 // parameter FPGA_VERSION = 32'h03934017;   // Boson640, debugging logger 01
 // parameter FPGA_VERSION = 32'h03934016;   // Boson640, for 103993A, started IMU
