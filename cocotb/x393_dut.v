@@ -2599,6 +2599,7 @@ assign #10 gpio_pins[7] = gpio_pins[8];
       // for testing InertialSense IMX5 - switch only RS232, keep all other IMU-related
       `ifdef TEST_IMX
          assign gpio_pins[4]=IMS_TXD;
+         assign gpio_pins[2]=GPS1SEC;
       `else
          assign gpio_pins[4]=SERIAL_BIT;
           assign gpio_pins[5]=GPS1SEC;
