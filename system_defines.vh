@@ -65,10 +65,10 @@
   `define DISPLAY_COMPRESSED_DATA
 // if specific sesnor is not defined, parallel sensor interface is used for all channels
 /*************** CHANGE here and x393_hispi | x393_parallel | x393_lwir | x393_boson in bitstream (and few other) tool settings ****************/
-  `define BOSON 1
+// `define BOSON 1
 // `define LWIR
 // `define HISPI
-// also change in utilization and timimg summary tools (x393_parallel_utilization.report, ...)
+// also change in bitstream, utilization and timimg summary tools (x393_parallel_utilization.report, ...)
   `ifdef BOSON
   
   `elsif LWIR
