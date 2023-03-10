@@ -2534,7 +2534,7 @@ module ddr3 (
     end
 
     task cmd_addr_timing_check;
-    input i;
+    input [4:0]i;
     reg [4:0] i;
     begin
         if (rst_n_in && prev_cke) begin
@@ -2578,7 +2578,7 @@ module ddr3 (
 
     // Processes to check setup and hold of data signals
     task dm_timing_check;
-    input i;
+    input [4:0] i;
     reg [4:0] i;
     begin
         if (dqs_in_valid) begin
@@ -2629,7 +2629,7 @@ module ddr3 (
     always @(dm_in[31]) dm_timing_check(31);
 
     task dq_timing_check;
-    input i;
+    input [6:0] i;
     reg [6:0] i;
     begin
         if (dqs_in_valid) begin
@@ -2776,7 +2776,7 @@ module ddr3 (
     always @(dq_in[127]) dq_timing_check(127);
    
     task dqs_pos_timing_check;
-    input i;
+    input [5:0] i;
     reg [5:0] i;
     reg [4:0] j;
     begin
@@ -2911,7 +2911,7 @@ module ddr3 (
     always @(negedge dqs_in[63]) if (!dqs_in[63]) dqs_pos_timing_check(63);
    
     task dqs_neg_timing_check;
-    input i;
+    input [5:0] i;
     reg [5:0] i;
     reg [4:0] j;
     begin
