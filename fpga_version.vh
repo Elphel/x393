@@ -56,7 +56,7 @@
 // parameter FPGA_VERSION = 32'h03934003; // Boson640, mitigating LVDS errors
 // parameter FPGA_VERSION = 32'h03934002; // Boson640, mitigating LVDS errors
 // parameter FPGA_VERSION = 32'h03934001; // Boson640, adding camsync trigger decimation  // git commit
-///parameter FPGA_VERSION = 32'h03931003; // parallel, adding camsync trigger decimation - debugging  // git commit
+///parameter FPGA_VERSION = 32'h03931003; // parallel, adding camsync trigger decimation - debugging  // git commit /last histogram
 // parameter FPGA_VERSION = 32'h03931002; // parallel, adding camsync trigger decimation  
 // parameter FPGA_VERSION = 32'h03931001; // parallel, fixing delays  // git commit
 // parameter FPGA_VERSION = 32'h03930220; // pull down ot serial in to detect sensor presense NOT created 
