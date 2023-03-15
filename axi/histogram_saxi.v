@@ -40,7 +40,11 @@
 // Number of histograms per sensor is now statically defined by NUM_FRAME_BITS
 // It may be modified to both reduce this number (by masking) or increase ( by
 // keeping pointer locally)
+// move to system_defines, it slowes SAXI_AW and reduces requirements on the ready inputs
 
+`define MOD_SAXI 1
+///`define FAKE_WDATA 1 
+///`define FAKE1_WDATA 1 
 module  histogram_saxi#(
     parameter HIST_SAXI_ADDR =           'h380,  // 16 locations to write 20 bits of a 4KB page for the histogram
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
@@ -60,7 +64,7 @@ module  histogram_saxi#(
 )(
 //    input                      rst,
     input                      mclk,   // for command/status
-    input                      aclk,   // global clock to run s_axi (@150MHz?)
+    input                      aclk,   // global clock to run s_axi (@150MHz?) saxi0_aclk
     input                      mrst,      // @posedge mclk, sync reset
     input                      arst,      // @posedge aclk, sync reset
     
@@ -206,7 +210,6 @@ module  histogram_saxi#(
     reg                      [31:10] hist_start_addr; // higher bits of the system memory address of the histogram (1024 bytes) start
     reg                      [31: 6] start_addr_r; // higher bits of the system memory address of the saxi burst start address
     
-    wire                             saxi_start_burst_w;
     reg                              first_burst;
     wire                      [31:0] inter_buf_data; // data between bram buffer and a small FIFO
     reg                        [3:0] wburst_cntr;    // count words in output data burst (using max==16)
@@ -215,10 +218,58 @@ module  histogram_saxi#(
     wire                             fifo_nempty;
     wire                             fifo_half_full;
     reg                        [2:0] buf_re; // {fifo_we, buf_regen, buf_re}
+    wire                             buf_re_last_w; // reading last word from the buffer
     wire                             buf_re_w;
     wire                             fifo_re;
     reg                              saxi_bvalid_r;
     reg                              page_read_run; // reading buffer page until page_ra reads 'hff
+`ifdef FAKE_WDATA    
+    reg  [31:0]                      wdata_fake;
+    reg  [31:0]                      wdata_fake_r;
+    reg                              wdata_fake_inc;
+`else
+    wire [31:0]                      wdata;
+`endif
+
+`ifdef MOD_SAXI   
+    reg                              saxi_start_burst;
+    reg                              saxi_awvalid_r;
+    wire                             start_burst_w;
+    assign start_burst_w = saxi_awvalid && saxi_awready;
+    assign saxi_awvalid =  saxi_awvalid_r; // ((|start_addr_r[9:6]) || first_burst) && !saxi_start_burst && !arst ;    // TODO: make it a register 
+    always @(posedge aclk) begin
+        saxi_start_burst <= start_burst_w;
+        if (arst || start_burst_w) saxi_awvalid_r <= 0;
+        else saxi_awvalid_r <=  first_burst ||
+            (saxi_start_burst ? (start_addr_r[9:6] != 'hf) : (|start_addr_r[9:6])); 
+    end    
+ `else 
+    wire                             saxi_start_burst;
+    assign saxi_awvalid = ((|start_addr_r[9:6]) || first_burst) && !arst;
+    assign saxi_start_burst =  saxi_awvalid && saxi_awready;       
+ `endif
+
+`ifdef FAKE_WDATA
+    assign saxi_wdata = wdata_fake_r;
+    always @ (posedge aclk) begin
+    
+//        wdata_fake_inc <= en_aclk  && saxi_awvalid && saxi_awready; // v 100b
+        wdata_fake_inc <= en_aclk  && saxi_wvalid && saxi_wready; // v 100c
+        if (!en_aclk)            wdata_fake[15:0] <= 0;
+        else if (wdata_fake_inc) wdata_fake[15:0] <= wdata_fake[15:0] + 1;
+        if (!en_aclk)            wdata_fake[31:16] <= 0;
+        else                     wdata_fake[31:16] <= wdata_fake[31:16] + 1;
+`ifdef FAKE1_WDATA
+        wdata_fake_r[31:16] <= wdata_fake[31:16];
+        wdata_fake_r[15:0] <= start_addr_r[21:6];
+`else
+        wdata_fake_r <=          wdata_fake;
+`endif        
+    end
+    //start_addr_r[31:6]
+`else
+    assign saxi_wdata = wdata;
+`endif 
     
 //    reg                        [9:0] buf_raddr; // nuffer read address {page[1:0], addr [7:0]}
     
@@ -312,11 +363,11 @@ module  histogram_saxi#(
     assign attrib_frame = attrib_r[2+:NUM_FRAME_BITS];
     assign attrib_color = attrib_r[1:0];
 
-    assign saxi_start_burst_w =  saxi_awvalid && saxi_awready;
+//    assign saxi_start_burst =  saxi_awvalid && saxi_awready;
     
     assign saxi_awaddr = {start_addr_r[31:6],6'b0};
     
-    assign saxi_awvalid = ((|start_addr_r[9:6]) || first_burst) && !arst;    
+//    assign saxi_awvalid = ((|start_addr_r[9:6]) || first_burst) && !arst;    
 //{enc_rq[1:0], sub_chn_r, frame_r,  burst[1:0]}
     
     // assign block_end= ???;
@@ -340,7 +391,10 @@ module  histogram_saxi#(
     
       
     // TODO: Maybe reduce pause between 16-burst pages? Allow some overlap? 
-    assign buf_re_w = en_aclk && (|pages_in_buf_rd) && !fifo_half_full && !(&page_ra) && page_read_run; // will stay off until next page
+    
+    assign buf_re_last_w = &page_ra && buf_re[0];
+//  assign buf_re_w = en_aclk && (|pages_in_buf_rd) && !fifo_half_full && !(&page_ra) && page_read_run; // will stay off until next page
+    assign buf_re_w = en_aclk && (|pages_in_buf_rd) && !fifo_half_full && !buf_re_last_w && page_read_run; // will stay off until next page
     assign fifo_re= saxi_wvalid && saxi_wready;
     // currently waiting for SAXI to get confirmnation of all data in the current page before proceeding to the next
     //
@@ -417,7 +471,9 @@ module  histogram_saxi#(
         else if (buf_re[0])                    page_ra <= page_ra + 1;
         
         if      (!en_aclk)  page_read_run <= 0;
-        else                page_read_run <= block_start_r[1] || (page_read_run && !(&page_ra)); // until page_ra is 8'hff
+//      else                page_read_run <= block_start_r[1] || (page_read_run && !(&page_ra)); // until page_ra is 8'hff
+        else                page_read_run <= block_start_r[1] || (page_read_run && !buf_re_last_w); // until page_ra is 8'hff
+        //
         
         if      (!en_aclk)                              pages_in_buf_rd <= 0;
         else if ( page_written_aclk && !page_sent_aclk) pages_in_buf_rd <= pages_in_buf_rd + 1;
@@ -437,11 +493,11 @@ module  histogram_saxi#(
         if (block_start_r[2]) hist_start_addr[11:10]  <= attrib_color; 
         
         if (arst || block_start_r[3]) start_addr_r[31:6] <= {hist_start_addr[31:10], 4'b0}; 
-        else if (saxi_start_burst_w)  start_addr_r[31:6] <= start_addr_r[31:6] + 1;
+        else if (saxi_start_burst)    start_addr_r[31:6] <= start_addr_r[31:6] + 1;
         
         if (!nreset_aclk ||  arst)   first_burst <= 0;
         else if (block_start_r[3])   first_burst <= 1; // block_start_r[3] - same as start_addr_r set
-        else if (saxi_start_burst_w) first_burst <= 0;
+        else if (saxi_start_burst) first_burst <= 0;
         
         if (block_start_r[0]) awcache_mode <= mode[HIST_SAXI_AWCACHE+:4];
         if (block_start_r[0]) confirm_write <= mode[HIST_CONFIRM_WRITE];
@@ -531,8 +587,8 @@ module  histogram_saxi#(
         .we        (buf_re[2]),      // input
         .re        (fifo_re),        // input 
         .data_in   (inter_buf_data), // input[31:0] 
-        .data_out  (saxi_wdata),     // output[31:0] 
-        .nempty    (fifo_nempty),    // output
+        .data_out  (wdata),          // output[31:0] 
+        .nempty    (fifo_nempty),    // output (fast register output)
         .half_full (fifo_half_full)  // output reg 
     );
 endmodule

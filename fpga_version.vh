@@ -35,8 +35,25 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-   parameter FPGA_VERSION = 32'h03931005; // parallel, converting from 32'h0393401a  
-//  parameter FPGA_VERSION = 32'h0393401a;    // adding strobe output for IMX-5 on ext-5
+    parameter FPGA_VERSION = 32'h03931016;   // debugging histograms - MOD_SAXI on, restore actual histogram data
+//    parameter FPGA_VERSION = 32'h03931015;   // debugging histograms - MOD_SAXI on, fixed some bugs related to inactive cycle with page_ra == 8'hff - works?
+//    parameter FPGA_VERSION = 32'h03931014;   // debugging histograms - MOD_SAXI on, updates sim_saxi to match hardware (wlast disables wready, smaller fifo)
+//    parameter FPGA_VERSION = 32'h03931013;   // debugging histograms - trying to re-enable FAKE_WDATA1 top word - timer, lower - page address - OK
+//    parameter FPGA_VERSION = 32'h03931012;   // debugging histograms - trying to re-enable FAKE_WDATA1 - failed
+//    parameter FPGA_VERSION = 32'h03931011;   // debugging histograms - disabled FAKE_WDATA1 - works
+//    parameter FPGA_VERSION = 32'h03931010;   // debugging histograms - define FAKE_WDATA1, wdata_fake_r <=          {start_addr_r[21:6], wdata_fake[15:0]}; 
+//    parameter FPGA_VERSION = 32'h0393100f;   // debugging histograms - high 16 bits - always count with MOD_SAXI, getting stuck
+//    parameter FPGA_VERSION = 32'h0393100e;   // debugging histograms - high 16 bits - always count
+//    parameter FPGA_VERSION = 32'h0393100d; // debugging histograms - counts aw saxi_wvalid && saxi_wready - extra buffer
+//    parameter FPGA_VERSION = 32'h0393100c; // debugging histograms - counts aw saxi_wvalid && saxi_wready
+//    parameter FPGA_VERSION = 32'h0393100b; // debugging histograms - counts aw saxi_awvalid && saxi_awready
+//   parameter FPGA_VERSION = 32'h0393100a;  // reducing saxi speed from 150 to 100 MHz (both histograms and the logger) 
+//   parameter FPGA_VERSION = 32'h03931009;  // trying to boost SAXI (clock 190 instead of 150)  with set_clock_uncertainty - got stuck (maybe my fault)
+//   parameter FPGA_VERSION = 32'h03931008;  // trying to boost SAXI (clock 200 instead of 150)   seems OK
+//   parameter FPGA_VERSION = 32'h03931007;  // changed histogram_saxi - still fails   
+//   parameter FPGA_VERSION = 32'h03931006;  // parallel 03931006A - good, 03931006 - bad. will investigate  
+//   parameter FPGA_VERSION = 32'h03931005;  // parallel, converting from 32'h0393401a  
+//  parameter FPGA_VERSION = 32'h0393401a;   // adding strobe output for IMX-5 on ext-5
 // parameter FPGA_VERSION = 32'h03934019;   // Boson640, logger debug disabled
 // parameter FPGA_VERSION = 32'h03934018;   // Boson640, debugging logger 02
 // parameter FPGA_VERSION = 32'h03934017;   // Boson640, debugging logger 01

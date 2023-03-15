@@ -596,7 +596,7 @@ module  sensors393 #(
     
     // S_AXI interface write only (histograms out)
     // write address
-    input                      aclk,                   // global clock for S_AXI0 (150 MHz)    
+    input                      aclk,                   // global clock for S_AXI0 (150 MHz)    saxi0_aclk
     output              [31:0] saxi_awaddr,            // AXI PS Slave GP0 AWADDR[31:0], input
     output                     saxi_awvalid,           // AXI PS Slave GP0 AWVALID, input
     input                      saxi_awready,           // AXI PS Slave GP0 AWREADY, output

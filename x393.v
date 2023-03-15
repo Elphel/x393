@@ -1712,7 +1712,7 @@ assign axi_grst = axi_rst_pre;
     );
     
     // SAXIGP0 signals (read unused)  (for the histograms)
-    wire        saxi0_aclk     = hclk; // 150KHz
+    wire        saxi0_aclk     = camsync_clk; // hclk; // 150KHz -> 100 MHz
     wire [31:0] saxi0_awaddr;
     wire        saxi0_awvalid;
     wire        saxi0_awready;
@@ -1736,7 +1736,7 @@ assign axi_grst = axi_rst_pre;
     wire [ 1:0] saxi0_bresp; 
 
     // SAXIGP1 signals (read unused) (for the event logger - has 3 spare channels for write)
-    wire        saxi1_aclk     = hclk; // 150KHz
+    wire        saxi1_aclk = camsync_clk; // hclk; // 150KHz -> 100 MHz
     wire [31:0] saxi1_awaddr;
     wire        saxi1_awvalid;
     wire        saxi1_awready;
@@ -2633,7 +2633,7 @@ assign axi_grst = axi_rst_pre;
     ) event_logger_i (
 //        .rst           (axi_rst),            // input
         .mclk          (mclk),                // input
-        .xclk          (logger_clk),          // input
+        .xclk          (logger_clk),          // input // 100 MHz
         .mrst          (mrst),                // input
         .xrst          (lrst),                // input
         .cmd_ad        (cmd_logger_ad),       // input[7:0] 
@@ -2673,8 +2673,8 @@ assign axi_grst = axi_rst_pre;
         .mclk                    (mclk),                // input
         .en                      (logger_saxi_en),      // input
         .iclk                    (mclk),                // input
-        .data_in                 (logger_out),          // input[15:0] 
-        .valid                   (logger_stb),          // input
+        .data_in                 (logger_out),          // input[15:0] @posedge iclk input data
+        .valid                   (logger_stb),          // input       @posedge iclk input data valid
         .has_burst               (logger_has_burst),    // output reg 
         .read_burst              (logger_read_burst),   // input
         .data_out                (logger_data32),       // output[31:0] 

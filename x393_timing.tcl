@@ -83,10 +83,19 @@ create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
 create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
 create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre]
 create_generated_clock -name ddr3_clk_ref [get_nets clocks393_i/dly_ref_clk_pre ]
+
 create_generated_clock -name axihp_clk [get_nets clocks393_i/hclk_pre ]
+# trying to boost SAXI performance by forcing higher axihp_clk (5 ns instead of 6.667)
+# create_clock -name axihp_clk -period 5 [get_nets clocks393_i/hclk_pre ]
+# Will add/subtract to 6.667 ns period 150ns -> 190
+# set_clock_uncertainty 1.4 [get_generated_clocks {axihp_clk}]
+# Switched both SAXI0 and SAXI1 to 100 MHz from 150 MHz
+
+
 create_generated_clock -name xclk      [get_nets clocks393_i/xclk_pre ]
-#clock for inter - camera synchronization and event logger
+#clock for inter - camera synchronization and event logger (now for SAXI0/1 also, was 150)
 create_generated_clock -name sclk      [get_nets clocks393_i/sync_clk_pre ]
+
 create_clock -name ffclk0 -period 41.667 [get_ports {ffclk0p}]
 
 #Generated clocks are assumed to be tied to clkin1 (not 2), so until external ffclk0 is constrained, derivative clocks are not generated

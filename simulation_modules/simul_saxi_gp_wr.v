@@ -79,10 +79,14 @@ module  simul_saxi_gp_wr(
     input  [ 3:0] sim_bresp_latency, // latency in writing data outside of the module 
     output [ 3:0] sim_wr_qos
 );
-    localparam AW_FIFO_DEPTH = 3;                 // FIFO number of address bits to fit AW_FIFO_NUM (number is one bit wider)
-    localparam W_FIFO_DEPTH = 3;                  //  FIFO number of address bits to fit W_FIFO_NUM
-    localparam [AW_FIFO_DEPTH:0] AW_FIFO_NUM = 8; // Maximal number of words in AW FIFO 8-words
-    localparam  [W_FIFO_DEPTH:0] W_FIFO_NUM = 8;  // Maximal number of words in AW 8-words
+    // TODO change these localparam to parameters
+    localparam AW_FIFO_DEPTH = 2; // 7; //3;                 // FIFO number of address bits to fit AW_FIFO_NUM (number is one bit wider)
+    localparam W_FIFO_DEPTH = 3; // 2; // 7; //3;                  //  FIFO number of address bits to fit W_FIFO_NUM
+    localparam WREADY_DELAY_AFTER_LAST = 3; // negate wready for these number of clocks after wlast (0..7)
+    
+    
+    localparam [AW_FIFO_DEPTH:0] AW_FIFO_NUM = 1 << AW_FIFO_DEPTH; // 128; // 8; // Maximal number of words in AW FIFO 8-words
+    localparam  [W_FIFO_DEPTH:0] W_FIFO_NUM =  1 << W_FIFO_DEPTH; // 8;  // Maximal number of words in AW 8-words
     
     
     localparam VALID_AWLOCK =  2'b0; // TODO
@@ -98,7 +102,8 @@ To make it work, I set the (AR/AW)CACHE=0x11 and (AR/AW)PROT=0x00. In the CDMA d
 The default values set by VHLS were 0x00 and 0x10 respectively, which is also the case in the last post.
 Alex
 */    
-
+    reg  [WREADY_DELAY_AFTER_LAST : 0]  wlast_d = 0; // [3:0] extra bit, but should work with WREADY_DELAY_AFTER_LAST == 0
+    wire        wlast_nready; 
     wire        aw_nempty;
     wire        w_nempty;
     reg  [11:0] next_wr_address_w; // bits that are incremented in 32-bit mode (higher are kept according to AXI 4KB inc. limit)
@@ -140,10 +145,18 @@ Alex
     // priority transactions are backed up behind it." Whqt about demotion? Assuming it is not demoted
     assign aresetn= ~rst; // probably not needed at all - docs say "do not use"
 
-
+    assign wlast_nready = (((1 << WREADY_DELAY_AFTER_LAST) -1) & wlast_d) != 0;
     // generate ready signals for address and data
 //    assign wready= !wcount[7] && (!(&wcount[6:0]) || !fifo_data_we_d);
-    assign wready =  (wcount <  W_FIFO_NUM)  && ((wcount  <  (W_FIFO_NUM-1)) || !fifo_data_we_d);
+    assign wready =  ((wcount <  W_FIFO_NUM)  && ((wcount  <  (W_FIFO_NUM-1)) || !fifo_data_we_d)) && !wlast_nready;
+    
+    always @ (posedge rst or posedge aclk) begin
+        if (rst) wlast_d<=0;
+        else wlast_d <= (wlast_d << 1) | {{WREADY_DELAY_AFTER_LAST{1'b0}}, (wlast & wready & wvalid)};
+    end
+    
+    
+    
     always @ (posedge rst or posedge aclk) begin
         if (rst) fifo_data_we_d<=0;
         else fifo_data_we_d <= wready && wvalid;
