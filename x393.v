@@ -1712,7 +1712,8 @@ assign axi_grst = axi_rst_pre;
     );
     
     // SAXIGP0 signals (read unused)  (for the histograms)
-    wire        saxi0_aclk     = camsync_clk; // hclk; // 150KHz -> 100 MHz
+    wire        saxi0_aclk = hclk; // v.03931016:  camsync_clk; // hclk; // 150KHz -> 100 MHz
+    
     wire [31:0] saxi0_awaddr;
     wire        saxi0_awvalid;
     wire        saxi0_awready;
@@ -1736,7 +1737,7 @@ assign axi_grst = axi_rst_pre;
     wire [ 1:0] saxi0_bresp; 
 
     // SAXIGP1 signals (read unused) (for the event logger - has 3 spare channels for write)
-    wire        saxi1_aclk = camsync_clk; // hclk; // 150KHz -> 100 MHz
+    wire        saxi1_aclk = hclk; // v.03931016:  camsync_clk; // hclk; // 150KHz -> 100 MHz
     wire [31:0] saxi1_awaddr;
     wire        saxi1_awvalid;
     wire        saxi1_awready;

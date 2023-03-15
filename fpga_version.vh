@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-    parameter FPGA_VERSION = 32'h03931016;   // debugging histograms - MOD_SAXI on, restore actual histogram data
+    parameter FPGA_VERSION = 32'h03931017;   // restoring both saxigp clocks to 150MHz (from 100 MHz)
+//    parameter FPGA_VERSION = 32'h03931016;   // debugging histograms - MOD_SAXI on, restore actual histogram data (works, pushed to git)
 //    parameter FPGA_VERSION = 32'h03931015;   // debugging histograms - MOD_SAXI on, fixed some bugs related to inactive cycle with page_ra == 8'hff - works?
 //    parameter FPGA_VERSION = 32'h03931014;   // debugging histograms - MOD_SAXI on, updates sim_saxi to match hardware (wlast disables wready, smaller fifo)
 //    parameter FPGA_VERSION = 32'h03931013;   // debugging histograms - trying to re-enable FAKE_WDATA1 top word - timer, lower - page address - OK
