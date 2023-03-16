@@ -65,8 +65,8 @@
   `define DISPLAY_COMPRESSED_DATA
 // if specific sesnor is not defined, parallel sensor interface is used for all channels
 /*************** CHANGE here and x393_hispi | x393_parallel | x393_lwir | x393_boson in bitstream (and few other) tool settings ****************/
-// `define BO-SON 1
-// `define BO-SON_REVA 1 /* 103993 REVA board*/ // need to comment both - TCL recognizes as "BO-SON"
+ `define BOSON 1
+ `define BOSON_REVA 1 /* 103993 REVA board*/ // need to comment both - TCL recognizes as "BO-SON"
 
 // `define LWIR
 // `define HISPI
